@@ -1,0 +1,6 @@
+[submodule "deps/protobuf-c"]
+	path = deps/protobuf-c
+	url = https://github.com/protobuf-c/protobuf-c.git
+[submodule "deps/wolfssl"]
+	path = deps/wolfssl
+	url = https://github.com/wolfSSL/wolfssl.git
