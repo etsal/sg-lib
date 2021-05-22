@@ -1,4 +1,4 @@
-#ifndef __STD_FUCNTIONS_H__
+#ifndef __STD_FUNCTIONS_H__
 #define __STD_FUNCTIONS_H__
 
 #include <stdlib.h>

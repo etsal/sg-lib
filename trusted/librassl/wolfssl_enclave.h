@@ -26,7 +26,7 @@ int enc_wolfSSL_get_error(long sslId, int ret);
 int enc_wolfSSL_read(long sslId, void* data, int sz);
 void enc_wolfSSL_free(long sslId);
 void enc_wolfSSL_CTX_free(long id);
-int enc_wolfSSL_Cleanup(void);
+void enc_wolfSSL_Cleanup(void);
 
 int LowResTimer(void);
 size_t recv(int sockfd, void *buf, size_t len, int flags); 

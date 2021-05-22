@@ -9,7 +9,6 @@
 /*
  * For ocalls
  */
-#include "networking_internal.h"
 #include "sg_t.h"
 
 #define PORT "7777"

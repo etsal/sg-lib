@@ -252,7 +252,7 @@ void enc_wolfSSL_CTX_free(long id) {
     RemoveCTX(id);
 }
 
-int enc_wolfSSL_Cleanup(void) {
+void enc_wolfSSL_Cleanup(void) {
     long id;
 
     /* free up all WOLFSSL's */

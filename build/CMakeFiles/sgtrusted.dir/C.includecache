@@ -2307,8 +2307,6 @@ sg_stdfunc.h
 /home/smdukova/sg-lib/trusted/librassl/sg_stdfunc.h
 wolfssl_enclave.h
 /home/smdukova/sg-lib/trusted/librassl/wolfssl_enclave.h
-networking_internal.h
-/home/smdukova/sg-lib/trusted/librassl/networking_internal.h
 sg_t.h
 /home/smdukova/sg-lib/trusted/librassl/sg_t.h
 
