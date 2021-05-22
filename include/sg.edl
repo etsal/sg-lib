@@ -1,0 +1,14 @@
+enclave {
+  from "sgx_tae_service.edl" import *;
+  from "sg_stdfunc.edl" import *;
+  from "fileio.edl" import *;
+  from "networking.edl" import *; 
+  from "ra_tls.edl" import *;
+  trusted {
+  
+  };
+
+  untrusted {
+  
+  };
+};

@@ -1,0 +1,13 @@
+import "vvec.proto";
+
+message kvcrdt_pair {
+	required uint64 key = 1;
+	required bytes value = 2;
+	required version_vector versions = 3;
+}
+
+message kvcrdt_table {
+	required uint64 uid = 1;
+	repeated kvcrdt_pair pairs = 2;
+	required version_vector versions = 3;
+}

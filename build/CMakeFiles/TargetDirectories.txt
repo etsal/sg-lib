@@ -1,0 +1,3 @@
+/home/smdukova/sg-lib/build/CMakeFiles/rebuild_cache.dir
+/home/smdukova/sg-lib/build/CMakeFiles/edit_cache.dir
+/home/smdukova/sg-lib/build/CMakeFiles/sgtrusted.dir

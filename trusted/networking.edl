@@ -1,0 +1,12 @@
+enclave {
+
+  trusted {
+  };
+
+  untrusted {
+    int ocall_host_bind([in, string] const char *host, [in, string] const char *port);
+    int ocall_host_connect([in, string] const char *host, [in, string] const char *port);
+    int ocall_accept_client(int sock_fd);
+  };
+
+};
