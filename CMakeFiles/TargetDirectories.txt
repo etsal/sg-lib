@@ -1,0 +1,4 @@
+/home/smdukova/sg-lib/CMakeFiles/rebuild_cache.dir
+/home/smdukova/sg-lib/CMakeFiles/edit_cache.dir
+/home/smdukova/sg-lib/CMakeFiles/sgtrusted.dir
+/home/smdukova/sg-lib/CMakeFiles/Edger8rHeader.dir

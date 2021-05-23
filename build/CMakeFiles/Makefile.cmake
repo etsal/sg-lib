@@ -116,4 +116,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/sgtrusted.dir/DependInfo.cmake"
+  "CMakeFiles/Edger8rHeader.dir/DependInfo.cmake"
   )
