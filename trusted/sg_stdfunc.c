@@ -7,6 +7,12 @@
 #include "sg_common.h"
 
 void
+exit(int status)
+{
+    ocall_exit(status);
+}
+
+void
 perror(const char *s)
 {
 	int a;

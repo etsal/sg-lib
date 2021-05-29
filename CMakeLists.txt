@@ -99,7 +99,6 @@ set_target_properties(${UNTRUSTED_LIB} PROPERTIES COMPILE_FLAGS "-I/usr/include 
 target_include_directories(${TRUSTED_LIB} PRIVATE ${TRUSTED_INCLUDE})
 target_include_directories(${UNTRUSTED_LIB} PRIVATE ${UNTRUSTED_INCLUDE})
 
-
 #add_dependencies(${UNTRUSTED_LIB}  CopyHeaders UntrustedEdger8r)
 add_dependencies(${TRUSTED_LIB} CopyHeaders TrustedEdger8r)
 

@@ -4,8 +4,8 @@ project(SampleEnclave)
 
 find_package(Threads REQUIRED) #pthread
 
-set(CMAKE_C_COMPILER /usr/local/bin/gcc48)
-set(CMAKE_CXX_COMPILER /usr/local/bin/g++48)
+set(CMAKE_C_COMPILER /usr/local/bin/clang)
+set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
 
 set(SGX_SDK "/opt/intel/sgxsdk")
 set(SGX_MODE "HW")
@@ -150,11 +150,10 @@ add_custom_target(SignEnclave ALL
 
 # These are the targets (1) the app executable and (2) the shared enclave lib
 add_executable(${App_Name} App/Enclave_u.c ${App_Cpp_Files})
-add_library(${Enclave_Name} SHARED Enclave/Enclave_t.c ${Enclave_Src})
+3add_library(${Enclave_Name} SHARED Enclave/Enclave_t.c ${Enclave_Src})
 
-target_include_directories(${App_Name} PUBLIC ${App_Include_Paths} 
-/usr/local/lib/gcc48/include/c++ /usr/local/lib/gcc48/include/c++/x86_64-portbld-freebsd12.1)
-target_include_directories(${Enclave_Name} PUBLIC ${Enclave_Include_Paths})
+target_include_directories(${App_Name} PUBLIC ${App_Include_Paths} )
+#target_include_directories(${Enclave_Name} PUBLIC ${Enclave_Include_Paths})
 
 target_link_directories(${App_Name} PRIVATE ${SG_LIBRARY_PATH} /usr/local/lib/gcc48)
 #target_link_directories(${Enclave_Name} PUBLIC )

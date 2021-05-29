@@ -56,3 +56,6 @@ CMakeFiles
 
 build/*
 CMakeFiles/*
+tests/SampleEnclave/
+tests/SimpleC/build/*
+tests/SimpleC/build

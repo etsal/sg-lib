@@ -85,7 +85,8 @@ void start_server_sg(sg_ctx_t *ctx)
 int
 add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len)
 {
-	int ret = put_u64_db(&ctx->db, key, value, len);
+int ret = 0;
+//	int ret = put_u64_db(&ctx->db, key, value, len);
 #ifdef DEBUG_SG
 	if (!ret) {
 		eprintf("\t+ Successfully added key %lu!\n", key);
@@ -99,7 +100,8 @@ add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len)
 int
 find_sg(sg_ctx_t *ctx, uint64_t key, void *value, size_t len)
 {
-	int ret = get_u64_db(&ctx->db, key, value, len);
+int ret =0;
+//	int ret = get_u64_db(&ctx->db, key, value, len);
 #ifdef DEBUG_SG
 	if (!ret) {
 		eprintf("\t+ Failed to find key %lu!\n", key);

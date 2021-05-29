@@ -1,4 +1,9 @@
+
 #include "xmem.h"
+
+#ifdef __APP__
+#include <stdlib.h>
+#endif
 
 void *
 xmalloc(size_t bytes)
