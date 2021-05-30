@@ -4,7 +4,7 @@
 #include "xmem.h"
 #include "sgx_tseal.h"
 #include "sg_common.h"
-
+#include "sg_stdfunc.h"
 //#define DEBUG_SG_UTIL 1
 
 

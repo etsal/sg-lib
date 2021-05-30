@@ -4,6 +4,9 @@
 #ifdef __APP__
 #include <stdlib.h>
 #endif
+#ifdef __ENCLAVE__
+#include "sg_stdfunc.h"
+#endif
 
 void *
 xmalloc(size_t bytes)
