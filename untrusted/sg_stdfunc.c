@@ -20,20 +20,12 @@ ocall_lprintf(const char *str)
 //	fprintf(log_fp, str, strlen(str));
 	return;
 }
-
+/*
 void
 ocall_exit(int s)
 {
 	exit(s);
 	return;
 }
-
+*/
 /* OCall functions */
-void
-ocall_print_string(const char *str)
-{
-	/* Proxy/Bridge will check the length and null-terminate
-	 * the input string to prevent buffer overflow.
-	 */
-	fprintf(stderr, "%s", str);
-}

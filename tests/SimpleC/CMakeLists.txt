@@ -146,11 +146,11 @@ set(Enclave_C_Flags
 set(Enclave_C_Flags "${Enclave_C_Flags}") #-std=c++03 -nostdinc++")
 
 set(Enclave_Link_Flags
-#-L${SG_ROOT}/build -l:libsgtrusted.a \
-#-L${WOLFSSL_ROOT}/IDE/LINUX-SGX -l:libwolfssl.sgx.static.lib.a \
 "-Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
+-L${SG_ROOT}/build -l:libsgtrusted.a \
 -L${PROTOBUF_ROOT}/build -l:libprotobuf-c.a \
 -L${BEARSSL_ROOT}/build -l:libbearssl.a \
+-L${WOLFSSL_ROOT}/IDE/LINUX-SGX -l:libwolfssl.sgx.static.lib.a \
 -Wl,--whole-archive -l${Trts_Library_Name} -Wl,--no-whole-archive \
 -Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l${Crypto_Library_Name} -l${Service_Library_Name} -Wl,--end-group \
 -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
@@ -206,16 +206,16 @@ ${WOLFSSL_ROOT}/IDE/LINUX-SGX
 )
 
 
-#libsguntrusted.a
-#libwolfssl.sgx.static.lib.a
 target_link_libraries(${App_Name} 
 ${Urts_Library_Name}    #.so 
 sgx_uae_service         #.so
 curl                    #.so
 ${CMAKE_THREAD_LIBS_INIT} #pthread
 libsgx_ukey_exchange.a 
+libsguntrusted.a
 libprotobuf-c.a 
 libbearssl.a
+libwolfssl.sgx.static.lib.a
 )
 
 target_link_directories(${Enclave_Name} PUBLIC 

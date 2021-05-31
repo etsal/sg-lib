@@ -7,7 +7,7 @@
 #include "sg_util.h"    // Sealing functions
 #include "xmem.h"
 
-//#define DEBUG_DB 1
+#define DEBUG_DB 1
 static void int_to_str(uint64_t x, int type, char *str);
 static int load_account(db_ctx_t *db, const char *username, const char *password);
 static int get_update_len_db(db_ctx_t *db, size_t *len);
@@ -56,37 +56,42 @@ void
 init_db(db_ctx_t *db, const char *filename, const char *username,
     const char *password)
 {
+    int ret;
+
 #ifdef DEBUG_DB
-    eprintf("\t+ Initializing database\n");
+    eprintf("\t+ (%s) Initializing database %s\n", __FUNCTION__, filename);
 #endif
 
 	// Set database file
-	if (strlen(filename) > MAX_FILENAME) {
-		eprintf("ERROR: filename too large");
+	if (filename == NULL || strlen(filename) > MAX_FILENAME) {
+		eprintf("ERROR: Db filename too large/NULL");
 		return;
 	}
-	strcpy(db->filename, filename);
+	strcpy(db->db_filename, filename);
 
-	// Attempt to load database
-	int ret = 1; // load_account(db, username, password);
-
-	// If database failed to load just set the kv-store to 0
+    // Try to load databse from file
+	ret = db_load(db);
 	if (ret) {
-		init_store(&db->table, 1);
+	// If database failed to load just set the kv-store to 0
+        init_store(&db->table, 1);
 		db->accounts = NULL;
 		db->serial_buf_len = 0;
 		db->serial_buf = NULL;
 		db->is_init = 1;
 #ifdef DEBUG_DB
-		eprintf("\t+ No account loaded, initializing empty table\n");
+		eprintf("\t+ (%s) Database failed to load from %s, initialized empty db\n", __FUNCTION__, db->db_filename);
 #endif
-	}
+	} else {
+#ifdef DEBUG_DB
+        eprintf("\t+ (%s) Database successfully loaded from %s\n", __FUNCTION__, db->db_filename);
+#endif
+    }
 
 #ifdef DEBUG_DB
 //    edividerWithText("Current Table");
 //	print_store(&db->table);
 //    edivider();
-    eprintf("\t+ Initialization complete.\n");
+    eprintf("\t+ (%s) Initialization complete.\n", __FUNCTION__);
 #endif
 }
 
@@ -125,11 +130,19 @@ get_U64_db(db_ctx_t *db, uint64_t key, void *value, size_t len)
  * @return : 0 on success, >0 else
  */
 int
-db_load(db_ctx_t *db, const char *filename)
+db_load(db_ctx_t *db)
 {	
-	uint8_t *buf = NULL;
+eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+uint8_t *buf = NULL;
 	size_t len = 0;
-	int ret = unseal(filename, &buf, &len);
+	int ret; 
+
+    if (db->db_filename == NULL) {
+        eprintf("db filename NULL\n");
+        return 1;
+    }
+
+    ret = unseal(db->db_filename, &buf, &len);
 	if (ret) {
 #if DEBUG_DB
         eprintf("\t+ %s: Error, unseal returned 0x%08x\n", __FUNCTION__, ret);
@@ -139,7 +152,7 @@ db_load(db_ctx_t *db, const char *filename)
 
 #if DEBUG_DB
 	edividerWithText("Unsealed Table");
-	eprintf("filename: %d length : %d\n", filename, len);
+	eprintf("filename: %d length : %d\n", db->db_filename, len);
 	eprintf("%s\n", hexstring(buf, len));
 	edivider();
 #endif
@@ -160,12 +173,13 @@ db_load(db_ctx_t *db, const char *filename)
  * @return : 0 on success, >0 else
  */
 int
-db_save(db_ctx_t *db, const char *filename)
+db_save(db_ctx_t *db)
 {
-	uint8_t *buf;
+eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+uint8_t *buf;
 	size_t len;
 	int is_new = 0;
-
+    int ret;
 #if DEBUG_DB
     eprintf("\t+ Saving current table\n");
     edividerWithText("Current Table");
@@ -193,7 +207,13 @@ db_save(db_ctx_t *db, const char *filename)
 	}
 */    
 	// Seal table
-    int ret = seal(filename, buf, len);
+
+    if (db->db_filename == NULL) {
+        eprintf("db filename NULL\n");
+        return 1;
+    }
+
+    ret = seal(db->db_filename, buf, len);
     /*
 	// Insert <username, account_file> to account db
 	if (is_new) {

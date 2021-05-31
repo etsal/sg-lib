@@ -8,7 +8,6 @@ typedef struct {
     key_cert_t kc;      // RA-TLS Keys and Certs
     ratls_ctx_t ratls;  // RA-TLS Context (Wolfssl stuff)
     db_ctx_t db;        // Database Context
-    char db_filename[1024];
     char policy_filename[1024];
     
 } sg_ctx_t;

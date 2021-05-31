@@ -1,12 +1,25 @@
 #include "Enclave_t.h"
 #include <string.h>
+#include "sg.h"
 
+sg_ctx_t sg_ctx;
 
 void initialize_sg() {
     ocall_print("Running int_sg()\n");
 //    init_sg(&sg_ctx, "Hello");
 }
 
+int generate_random_number() {
+    ocall_print("Processing random number generation...");
+ 
+    char test2[] = "/opt/instance/sg.db";
+    
+    init_sg(&sg_ctx, test2);
+    
+    return 42;
+}
+
+/*
 int generate_random_number() {
     ocall_print("Processing random number generation...");
  
@@ -25,3 +38,4 @@ int generate_random_number() {
     
     return 42;
 }
+*/

@@ -12,8 +12,9 @@
 
 typedef struct {
 	int is_init;		  				// is initialized?
-	char filename[MAX_FILENAME];	   	// account filename
-	strmap_t accounts;	   				// <username, tablefile> mapping
+	char db_filename[MAX_FILENAME];	   	// db_filename
+	
+    strmap_t accounts;	   				// <username, tablefile> mapping
 	const char *cur_tablefile; 			// table filename, points to accounts memory
 	table_t table;	   					// current table
 	size_t serial_buf_len;
@@ -33,8 +34,8 @@ int put_u64_db(db_ctx_t *db, uint64_t key, const void *value, size_t len);
 int get_u64_db(db_ctx_t *db, uint64_t key, void *value, size_t len);
 
 
-int db_save(db_ctx_t *db, const char *filename);
-int db_load(db_ctx_t *db, const char *filename);
+int db_save(db_ctx_t *db);
+int db_load(db_ctx_t *db);
 int db_serial(db_ctx_t *db, uint8_t **buf, size_t *len);
 
 void db_print(db_ctx_t *db, void(*format)(const void *data));

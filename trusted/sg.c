@@ -19,16 +19,15 @@ extern ra_tls_options_t global_opts;
 static int save_db(sg_ctx_t *ctx);
 static int load_db(sg_ctx_t *ctx);
 
-const char db_filename[] = "/opt/instance/sg.db";
-static const char policy_filename[] = "/opt/instance/policy.txt";
+char db_filename[] = "/opt/instance/sg.db";
+char policy_filename[] = "/opt/instance/policy.txt";
 
 void
 init_sg(sg_ctx_t *ctx, const char *configfilename)
 {
-    eprintf("start\n");
-// Set databade filename and policy filename
-	//strcpy(db_filename, ctx->db_filename);
-    eprintf("%s\n", ctx->db_filename);
+    //strcpy(ctx->db->filename, db_filename);
+    
+    init_db(&ctx->db, db_filename, NULL, NULL);
 
     // Load database
     int ret = load_db(ctx);
@@ -66,7 +65,7 @@ init_new_sg(sg_ctx_t *ctx)
 #ifdef DEBUG_SG
 	eprintf("\t+ (%s) Initializing Key Value Store ...\n", __FUNCTION__);
 #endif
-	init_db(&ctx->db, NULL, NULL, NULL);
+	init_db(&ctx->db, db_filename, NULL, NULL);
 
 #ifdef DEBUG_SG
 	eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
@@ -123,14 +122,14 @@ count_sg(sg_ctx_t *ctx)
 int
 save_sg(sg_ctx_t *ctx, const char *filename)
 {
-	int ret = db_save(&ctx->db, filename);
+	int ret = db_save(&ctx->db);
 	return ret;
 }
 
 int
 load_sg(sg_ctx_t *ctx, const char *filename)
 {
-	int ret = db_load(&ctx->db, filename);
+	int ret = db_load(&ctx->db);
 	return ret;
 }
 
@@ -237,6 +236,7 @@ print_sg(sg_ctx_t *ctx, void (*format)(const void *data))
 static int
 save_db(sg_ctx_t *ctx)
 {
+eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
 	StateSg state = STATE_SG__INIT;
 	state.kc = malloc(sizeof(Keycert));
 	state.t = malloc(sizeof(Table));
@@ -248,7 +248,7 @@ save_db(sg_ctx_t *ctx)
 	size_t len = state_sg__get_packed_size(&state);
 	uint8_t *buf = malloc(len);
 	state_sg__pack(&state, buf);
-	int ret = seal(ctx->db_filename, buf, len);
+	int ret = seal(ctx->db.db_filename, buf, len);
 
 	protobuf_free_packed_keycert(state.kc);
 	protobuf_free_packed_store(state.t);
@@ -262,9 +262,10 @@ save_db(sg_ctx_t *ctx)
 static int
 load_db(sg_ctx_t *ctx)
 {
-	size_t len = 0;
+eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+size_t len = 0;
 	uint8_t *buf = NULL;
-	int ret = unseal(ctx->db_filename, &buf, &len);
+	int ret = unseal(ctx->db.db_filename, &buf, &len);
 	if (ret) {
 		return ret;
 	}

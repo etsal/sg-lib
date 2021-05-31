@@ -24,7 +24,7 @@ strcpy(char *dest, const char *src)
 {
 	size_t i, n;
 	n = strlen(src);
-
+eprintf("IN MY DEFITION OF STRCPY\n");
 	for (i = 0; i <= n && src[i] != '\0'; i++)
 		dest[i] = src[i];
 	dest[i] = '\0';
@@ -72,7 +72,7 @@ printf(const char *fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(buf, BUFSIZ, fmt, ap);
 	va_end(ap);
-	ocall_print_string(buf);
+	ocall_eprintf(buf);
 	return (int)strnlen(buf, BUFSIZ - 1) + 1;
 }
 

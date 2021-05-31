@@ -15,6 +15,12 @@ void ocall_print(const char* str) {
     printf("%s\n", str);
 }
 
+
+void ocall_exit(int s) {
+    exit(s);
+}
+
+
 sgx_status_t initialize_enclave(void) {
     sgx_launch_token_t token = { 0 }; 
     int updated = 0;
