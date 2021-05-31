@@ -9,33 +9,29 @@
 #include "sg_t.h" // ocalls
 extern ra_tls_options_t global_opts;
 
-//#define DEBUG_SG 1
+#define DEBUG_SG 1
 
 // initConfig
 // initACL
 // loadConfig
 // loadACL
 // initServer
-static int dump_sg(sg_ctx_t *ctx);
-static int undump_sg(sg_ctx_t *ctx);
+static int save_db(sg_ctx_t *ctx);
+static int load_db(sg_ctx_t *ctx);
+
+const char db_filename[] = "/opt/instance/sg.db";
+static const char policy_filename[] = "/opt/instance/policy.txt";
 
 void
 init_sg(sg_ctx_t *ctx, const char *configfilename)
 {
-	config_ctx_t conf;
+    eprintf("start\n");
+// Set databade filename and policy filename
+	//strcpy(db_filename, ctx->db_filename);
+    eprintf("%s\n", ctx->db_filename);
 
-	// Load filenames from config file
-	ocall_load_config(NULL, configfilename, &conf);
-
-	// Load filenames to sg_ctx
-	memcpy(ctx->statefilename, conf.statefilename,
-	    strlen(conf.statefilename) + 1);
-	
-    memcpy(ctx->policyfilename, conf.policyfilename,
-	    strlen(conf.policyfilename) + 1);
-
-    // Load state
-    int ret = undump_sg(ctx);
+    // Load database
+    int ret = load_db(ctx);
     if (ret) {
         init_new_sg(ctx); 
     }
@@ -52,7 +48,7 @@ init_new_sg(sg_ctx_t *ctx)
 	ctx->kc.der_cert_len = DER_CERT_LEN;
 
 #ifdef DEBUG_SG
-	eprintf("\t+ Creating RA-TLS Attestation Keys and Certificate\n");
+	eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n", __FUNCTION__);
 #endif
 	create_key_and_x509(ctx->kc.der_key, &ctx->kc.der_key_len,
 	    ctx->kc.der_cert, &ctx->kc.der_cert_len, &global_opts);
@@ -63,17 +59,17 @@ init_new_sg(sg_ctx_t *ctx)
 #endif
 
 #ifdef DEBUG_SG
-	eprintf("\t+ Initializing RA-TLS Server ...\n");
+	eprintf("\t+ (%s) Initializing RA-TLS Server ...\n", __FUNCTION__);
 #endif
 	init_ratls_server(&ctx->ratls, &ctx->kc);
 
 #ifdef DEBUG_SG
-	eprintf("\t+ Initializing Key Value Store ...\n");
+	eprintf("\t+ (%s) Initializing Key Value Store ...\n", __FUNCTION__);
 #endif
 	init_db(&ctx->db, NULL, NULL, NULL);
 
 #ifdef DEBUG_SG
-	eprintf("\t+ Completed initialization of new sgx_ctx!\n");
+	eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
 #endif
 }
 
@@ -239,7 +235,7 @@ print_sg(sg_ctx_t *ctx, void (*format)(const void *data))
 }
 
 static int
-dump_sg(sg_ctx_t *ctx)
+save_db(sg_ctx_t *ctx)
 {
 	StateSg state = STATE_SG__INIT;
 	state.kc = malloc(sizeof(Keycert));
@@ -252,7 +248,7 @@ dump_sg(sg_ctx_t *ctx)
 	size_t len = state_sg__get_packed_size(&state);
 	uint8_t *buf = malloc(len);
 	state_sg__pack(&state, buf);
-	int ret = seal(ctx->statefilename, buf, len);
+	int ret = seal(ctx->db_filename, buf, len);
 
 	protobuf_free_packed_keycert(state.kc);
 	protobuf_free_packed_store(state.t);
@@ -264,11 +260,11 @@ dump_sg(sg_ctx_t *ctx)
 }
 
 static int
-undump_sg(sg_ctx_t *ctx)
+load_db(sg_ctx_t *ctx)
 {
 	size_t len = 0;
 	uint8_t *buf = NULL;
-	int ret = unseal(ctx->statefilename, &buf, &len);
+	int ret = unseal(ctx->db_filename, &buf, &len);
 	if (ret) {
 		return ret;
 	}

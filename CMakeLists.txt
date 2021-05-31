@@ -2,11 +2,16 @@ cmake_minimum_required(VERSION 3.10)
 
 project(sg)
 
+set(CMAKE_C_COMPILER /usr/local/bin/gcc48)
+set(CMAKE_CXX_COMPILER /usr/local/bin/g++48)
+
 set(SGX_SDK "/opt/intel/sgxsdk")
 set(SGX_EDGER8R "${SGX_SDK}/bin/x64/sgx_edger8r")
-set(SGX_COMMON_FLAGS "-m64 -O0 -g")
+set(SGX_COMMON_FLAGS "-m64 -O0 -g -std=c99")
 set(TRUSTED_DIR "${CMAKE_SOURCE_DIR}/trusted")
 set(EDLFILE "${CMAKE_SOURCE_DIR}/trusted/sg.edl")
+
+set(DEBUG_FLAGS "-DDEBUG_SG")
 
 set(TRUSTED_LIB "${PROJECT_NAME}trusted")
 set(UNTRUSTED_LIB "${PROJECT_NAME}untrusted")
@@ -16,7 +21,8 @@ set(ENCLAVE_C_FLAGS "${SGX_COMMON_FLAGS} \
 -fvisibility=hidden \
 -fpie \
 -ffunction-sections \
--fdata-sections -fstack-protector")
+-fdata-sections \
+-fstack-protector")
 
 set(WOLFSSL_C_FLAGS "-DWOLFSSL_SGX -DUSER_TIME \
 -DWOLFSSL_SGX_ATTESTATION \
@@ -94,11 +100,13 @@ add_library(${TRUSTED_LIB} STATIC ${TRUSTED_SRCS})
 add_library(${UNTRUSTED_LIB} STATIC ${UNTRUSTED_SRCS})
 
 set_target_properties(${TRUSTED_LIB} PROPERTIES COMPILE_FLAGS "${ENCLAVE_C_FLAGS} ${WOLFSSL_C_FLAGS} -D__ENCLAVE__")
-set_target_properties(${UNTRUSTED_LIB} PROPERTIES COMPILE_FLAGS "-I/usr/include ${WOLFSSL_C_FLAGS} -fPIC -Wno-attributes -D__APP__")
+set_target_properties(${UNTRUSTED_LIB} PROPERTIES COMPILE_FLAGS "-std=c99 -fPIC -Wno-attributes ${WOLFSSL_C_FLAGS} -D__APP__")
 
-target_include_directories(${TRUSTED_LIB} PRIVATE ${TRUSTED_INCLUDE})
-target_include_directories(${UNTRUSTED_LIB} PRIVATE ${UNTRUSTED_INCLUDE})
+target_include_directories(${TRUSTED_LIB} PUBLIC ${TRUSTED_INCLUDE})
+target_include_directories(${UNTRUSTED_LIB} PUBLIC ${UNTRUSTED_INCLUDE})
 
 #add_dependencies(${UNTRUSTED_LIB}  CopyHeaders UntrustedEdger8r)
 add_dependencies(${TRUSTED_LIB} CopyHeaders TrustedEdger8r)
+
+
 

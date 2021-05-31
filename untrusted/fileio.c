@@ -10,7 +10,6 @@
 
 #include "buffer.h"
 #include "sg_common.h"
-#include "sg_config.h"
 #include "errlist.h"
 
 //#define DEBUG_FILEIO 1
@@ -18,20 +17,6 @@
 buf_uint8_t gb;
 
 static int get_file_len(const char *filename, int *err);
-
-
-int ocall_load_config(const char *filename, config_ctx_t *ctx)
-{
-// TODO: implement file parsing (maybe in C++)
-    char statefilename[] = "/opt/instance/dump.sg";
-    char policyfilename[] = "/opt/instance/policy.txt";
-
-    strcpy(ctx->statefilename, statefilename);
-    strcpy(ctx->policyfilename, policyfilename);
-    
-    return 0;
-}
-
 
 /*
  * @param: Returns 0 on success

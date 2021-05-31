@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include "sgx_edger8r.h" /* for sgx_ocall etc. */
 
-#include "sg_config.h"
 #include "ra_tls.h"
 #include "ra_tls_util.h"
 #include "attester.h"
@@ -41,7 +40,6 @@ sgx_status_t SGX_CDECL ocall_load(int* retval, const char* filename, uint8_t* bu
 sgx_status_t SGX_CDECL ocall_write(int* retval, const int* fd, const unsigned char* buf, size_t len);
 sgx_status_t SGX_CDECL ocall_read(int* retval, const int* fd, unsigned char* buf, size_t len);
 sgx_status_t SGX_CDECL ocall_close(int* retval, int fd);
-sgx_status_t SGX_CDECL ocall_load_config(int* retval, const char* filename, config_ctx_t* ctx);
 sgx_status_t SGX_CDECL ocall_host_bind(int* retval, const char* host, const char* port);
 sgx_status_t SGX_CDECL ocall_host_connect(int* retval, const char* host, const char* port);
 sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd);

@@ -7,7 +7,6 @@
 #include <string.h>
 #include "sgx_edger8r.h" /* for sgx_satus_t etc. */
 
-#include "sg_config.h"
 #include "ra_tls.h"
 #include "ra_tls_util.h"
 #include "attester.h"
@@ -41,7 +40,6 @@ int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_load, (const char* filename, uint8_t* bu
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_write, (const int* fd, const unsigned char* buf, size_t len));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_read, (const int* fd, unsigned char* buf, size_t len));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_close, (int fd));
-int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_load_config, (const char* filename, config_ctx_t* ctx));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_host_bind, (const char* host, const char* port));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_host_connect, (const char* host, const char* port));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_accept_client, (int sock_fd));

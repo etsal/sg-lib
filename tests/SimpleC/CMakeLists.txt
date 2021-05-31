@@ -46,6 +46,7 @@ else()
     set(SGX_COMMON_CFLAGS "${SGX_COMMON_CFLAGS} -O2")
 endif()
 
+set(SGX_COMMON_CFLAGS "${SGX_COMMON_CFLAGS}")
 ### App Settings
 set(App_Name "app")
 
@@ -80,7 +81,7 @@ else()
     set(App_C_Flags "${App_C_Flags} -DNDEBUG -UEDEBUG -UDEBUG")
 endif()
 
-set(App_C_Flags "${App_C_Flags} -Wno-attributes -frtti")#-nostdinc++ ")
+set(App_C_Flags "${App_C_Flags} -Wno-attributes -std=c99")#-nostdinc++ ")
 
 ### Enclave Settings
 set(Enclave_Name "enclave")
@@ -113,25 +114,43 @@ set(Enclave_Include_Paths
     ${PROTOBUF_ROOT}
 )
 
+
 set(Enclave_C_Flags
-"${SGX_COMMON_CFLAGS} \
-${WOLFSSL_C_FLAGS} \
--nostdinc \
--fvisibility=hidden \
--fpie \
--ffunction-sections -fdata-sections -fstack-protector \
--fstack-protector \
--fno-builtin-fwrite"
+#    ${SGX_COMMON_CFLAGS}
+    -m64 -O0 -g
+#${WOLFSSL_C_FLAGS}
+    -nostdinc
+    -fvisibility=hidden
+    -fpie
+    -ffunction-sections 
+    -fdata-sections 
+    -fstack-protector
+    -fstack-protector
+    -std=c99
 )
+
+
+
+#set(Enclave_C_Flags
+#"${SGX_COMMON_CFLAGS} \
+#${WOLFSSL_C_FLAGS} \
+#-nostdinc \
+#-fvisibility=hidden \
+#-fpie \
+#-ffunction-sections -fdata-sections -fstack-protector \
+#-fstack-protector \
+#-std=c99"
+##-fno-builtin-strc"
+#)
 
 set(Enclave_C_Flags "${Enclave_C_Flags}") #-std=c++03 -nostdinc++")
 
 set(Enclave_Link_Flags
+#-L${SG_ROOT}/build -l:libsgtrusted.a \
+#-L${WOLFSSL_ROOT}/IDE/LINUX-SGX -l:libwolfssl.sgx.static.lib.a \
 "-Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
--L${SG_ROOT}/build -l:libsgtrusted.a \
 -L${PROTOBUF_ROOT}/build -l:libprotobuf-c.a \
 -L${BEARSSL_ROOT}/build -l:libbearssl.a \
--L${WOLFSSL_ROOT}/IDE/LINUX-SGX -l:libwolfssl.sgx.static.lib.a \
 -Wl,--whole-archive -l${Trts_Library_Name} -Wl,--no-whole-archive \
 -Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l${Crypto_Library_Name} -l${Service_Library_Name} -Wl,--end-group \
 -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
@@ -166,13 +185,17 @@ DEPENDS ${App_Name}
 add_executable(${App_Name} App/Enclave_u.c ${App_C_Files})
 add_library(${Enclave_Name} SHARED Enclave/Enclave_t.c ${Enclave_C_Files})
 
-target_include_directories(${App_Name} PUBLIC ${App_Include_Paths})
 target_include_directories(${Enclave_Name} PUBLIC ${Enclave_Include_Paths})
 
-set_target_properties(${App_Name} PROPERTIES COMPILE_FLAGS "${App_C_Flags} ${WOLFSSL_ROOT}")
+set_target_properties(${App_Name} PROPERTIES COMPILE_FLAGS "${App_C_Flags} ${WOLFSSL_C_FLAGS}")
 set_target_properties(${App_Name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(${Enclave_Name} PROPERTIES COMPILE_FLAGS "${Enclave_C_Flags} ${WOLFSSL_ROOT}")
+
+#set_target_properties(${Enclave_Name} PROPERTIES COMPILE_FLAGS "${Enclave_C_Flags}")
+target_compile_options(${Enclave_Name} PUBLIC ${Enclave_C_Flags})
 set_target_properties(${Enclave_Name} PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+
+
+target_include_directories(${App_Name} PUBLIC ${App_Include_Paths})
 
 target_link_directories(${App_Name} PRIVATE 
 ${SGX_LIBRARY_PATH}
@@ -182,6 +205,9 @@ ${BEARSSL_ROOT}/build
 ${WOLFSSL_ROOT}/IDE/LINUX-SGX
 )
 
+
+#libsguntrusted.a
+#libwolfssl.sgx.static.lib.a
 target_link_libraries(${App_Name} 
 ${Urts_Library_Name}    #.so 
 sgx_uae_service         #.so
@@ -189,9 +215,7 @@ curl                    #.so
 ${CMAKE_THREAD_LIBS_INIT} #pthread
 libsgx_ukey_exchange.a 
 libprotobuf-c.a 
-libsguntrusted.a
 libbearssl.a
-libwolfssl.sgx.static.lib.a
 )
 
 target_link_directories(${Enclave_Name} PUBLIC 
@@ -215,6 +239,6 @@ ${Enclave_Link_Flags}
 )
 
 # Run Edger8r before builds
-add_dependencies(${App_Name} UntrustedEdger8r)
-add_dependencies(${Enclave_Name} TrustedEdger8r)
+add_dependencies(${App_Name} UntrustedEdger8r TrustedEdger8r)
+add_dependencies(${Enclave_Name} ${App_Name}) #TrustedEdger8r)
 add_dependencies(SignEnclave ${Enclave_Name})

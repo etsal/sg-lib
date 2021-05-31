@@ -1,10 +1,9 @@
 enclave {
-    from "sg.edl" import *;
 
 trusted {
         /* define ECALLs here. */
         public int generate_random_number(void);
-        void initialize_sg([in, string]const char *filename);
+        void initialize_sg();
     };
 
     untrusted {

@@ -3,6 +3,10 @@
 #include "Enclave_u.h"
 #include "sgx_urts.h"
 
+//#include "sg_common.h" //eprintf
+
+#define DEBUG_SG 1
+
 /* Global EID shared by multiple threads */
 sgx_enclave_id_t global_eid = 0;
 
@@ -21,9 +25,21 @@ sgx_status_t initialize_enclave(void) {
 int main(int argc, char const *argv[]) {
 
     sgx_status_t status = initialize_enclave();
-    if (status) exit(1);
+    if (status) {
+  //      eprintf("Error %08x @ %d\n", status, __LINE__);
+        exit(1);
+    }
 
-    printf("Enclave initialized\n");
+    char test1[] = "hey";
+    char test[1012];
+    strncpy(test1, test, 4);
+
+    //status = initialize_sg(global_eid);
+    if (status) {
+//        eprintf("Error %08x @ %d\n", status, __LINE__);
+        exit(1);
+    }
+    printf("Sg initialized\n");
 
     int random_number = 0;
     status = generate_random_number(global_eid, &random_number);

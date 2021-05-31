@@ -3,14 +3,13 @@
 
 #include "ra_tls.h"
 #include "db.h"
-#include "sg_config.h"
 
 typedef struct {
     key_cert_t kc;      // RA-TLS Keys and Certs
     ratls_ctx_t ratls;  // RA-TLS Context (Wolfssl stuff)
     db_ctx_t db;        // Database Context
-    char statefilename[MAX_CONFIG_FILENAME_LEN+1];
-    char policyfilename[MAX_CONFIG_FILENAME_LEN+1];
+    char db_filename[1024];
+    char policy_filename[1024];
     
 } sg_ctx_t;
 
