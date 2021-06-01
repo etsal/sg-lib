@@ -32,19 +32,19 @@ int main(int argc, char const *argv[]) {
 
     sgx_status_t status = initialize_enclave();
     if (status) {
-        eprintf("Error %08x @ %d\n", status, __LINE__);
+        printf("Error %08x @ %d\n", status, __LINE__);
         exit(1);
     }
 
     status = initialize_sg(global_eid);
     if (status) {
-        eprintf("Error %08x @ %d\n", status, __LINE__);
+        printf("Error %08x @ %d\n", status, __LINE__);
         exit(1);
     }
 
-    status = connect_sg(global_eid);  
+//    status = connect_sg(global_eid);  
     if (status) {
-        eprintf("Error %08x @ %d\n", status, __LINE__);
+//        eprintf("Error %08x @ %d\n", status, __LINE__);
         exit(1);
     }
 

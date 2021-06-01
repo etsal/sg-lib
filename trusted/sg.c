@@ -11,17 +11,11 @@ extern ra_tls_options_t global_opts;
 
 #define DEBUG_SG 1
 
-// initConfig
-// initACL
-// loadConfig
-// loadACL
-// initServer
 static int serialize_and_seal_sg(sg_ctx_t *ctx);
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx);
 
-char db_filename[] = "/opt/instance/sg.db";
-char policy_filename[] = "/opt/instance/policy.txt";
-
+const char db_filename[] = "/opt/instance/sg.db";
+const char policy_filename[] = "/opt/instance/policy.txt";
 /* Ideally we call init_db to do the database initialization
 but we save the kv-store and the attestation information together
 so we call them here instead */
@@ -72,19 +66,11 @@ void init_new_sg(sg_ctx_t *ctx) {
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Initializing Key Value Store ...\n", __FUNCTION__);
 #endif
-  init_new_db(&ctx->db, db_filename);
+  init_new_db(&ctx->db, ctx->db.db_filename);
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
 #endif
-}
-
-int connect_cluster_sg(sg_ctx_t *ctx) 
-{
-  init_ratls_server(&ctx->ratls, &ctx->kc);
-
-  // Loop through the list of hosts and store connection information
-  // for each
 }
 
 /*

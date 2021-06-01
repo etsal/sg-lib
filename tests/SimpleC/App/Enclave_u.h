@@ -51,6 +51,7 @@ void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_remote_attestation, (sgx_report_t* repo
 
 sgx_status_t generate_random_number(sgx_enclave_id_t eid, int* retval);
 sgx_status_t initialize_sg(sgx_enclave_id_t eid);
+sgx_status_t connect_sg(sgx_enclave_id_t eid);
 
 #ifdef __cplusplus
 }

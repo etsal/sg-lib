@@ -451,3 +451,10 @@ sgx_status_t initialize_sg(sgx_enclave_id_t eid)
 	return status;
 }
 
+sgx_status_t connect_sg(sgx_enclave_id_t eid)
+{
+	sgx_status_t status;
+	status = sgx_ecall(eid, 2, &ocall_table_Enclave, NULL);
+	return status;
+}
+

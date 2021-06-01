@@ -21,6 +21,7 @@ extern "C" {
 
 int generate_random_number();
 void initialize_sg();
+void connect_sg();
 
 sgx_status_t SGX_CDECL ocall_print(const char* str);
 sgx_status_t SGX_CDECL create_session_ocall(sgx_status_t* retval, uint32_t* sid, uint8_t* dh_msg1, uint32_t dh_msg1_size, uint32_t timeout);
