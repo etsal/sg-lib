@@ -5,17 +5,15 @@
 sg_ctx_t sg_ctx;
 
 void initialize_sg() {
-    ocall_print("Running int_sg()\n");
-//    init_sg(&sg_ctx, "Hello");
+  init_sg(&sg_ctx);
+}
+
+void connect_sg() {
+  
 }
 
 int generate_random_number() {
     ocall_print("Processing random number generation...");
- 
-    char test2[] = "/opt/instance/sg.db";
-    
-    init_sg(&sg_ctx);
-    
     return 42;
 }
 

@@ -25,22 +25,23 @@ char policy_filename[] = "/opt/instance/policy.txt";
 /* Ideally we call init_db to do the database initialization
 but we save the kv-store and the attestation information together
 so we call them here instead */
-void init_sg(sg_ctx_t *ctx) { 
+void init_sg(sg_ctx_t *ctx) {
   strcpy(ctx->db.db_filename, db_filename);
   int ret = unseal_and_deserialize_sg(ctx);
   if (ret) {
 #ifdef DEBUG_SG
-		eprintf("\t+ (%s) Database failed to load from %s, db is not set\n", __FUNCTION__, ctx->db.db_filename);
+    eprintf("\t+ (%s) Database failed to load from %s, db is not set\n",
+            __FUNCTION__, ctx->db.db_filename);
 #endif
     init_new_sg(ctx);
-    
+
   } else {
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Database successfully loaded from %s\n", __FUNCTION__, ctx->db.db_filename);
+    eprintf("\t+ (%s) Database successfully loaded from %s\n", __FUNCTION__,
+            ctx->db.db_filename);
 #endif
 
-  // TODO: Load policy
-
+    // TODO: Load policy
   }
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
@@ -78,10 +79,19 @@ void init_new_sg(sg_ctx_t *ctx) {
 #endif
 }
 
+int connect_cluster_sg(sg_ctx_t *ctx) 
+{
+  init_ratls_server(&ctx->ratls, &ctx->kc);
+
+  // Loop through the list of hosts and store connection information
+  // for each
+}
+
+/*
 void start_server_sg(sg_ctx_t *ctx) {
   init_ratls_server(&ctx->ratls, &ctx->kc);
 }
-
+*/
 int add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len) {
   int ret = 0;
 //	int ret = put_u64_db(&ctx->db, key, value, len);
@@ -236,7 +246,6 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx) {
 
   return ret;
 }
-
 
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx) {
   eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);

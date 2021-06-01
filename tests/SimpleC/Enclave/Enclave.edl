@@ -4,6 +4,7 @@ trusted {
         /* define ECALLs here. */
         public int generate_random_number(void);
         void initialize_sg();
+        void connect_sg();
     };
 
     untrusted {

@@ -15,7 +15,7 @@ typedef struct {
 void init_sg(sg_ctx_t *ctx);
 void init_new_sg(sg_ctx_t *ctx);
 
-void start_server_sg(sg_ctx_t *ctx);
+int connect_cluster_sg(sg_ctx_t *ctx);
 
 int add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len);
 int find_sg(sg_ctx_t *ctx, uint64_t key, void *value, size_t len);
@@ -26,5 +26,9 @@ int load_sg(sg_ctx_t *ctx, const char *filename);
 void print_sg(sg_ctx_t *ctx, void(*format)(const void *data));
 int listen_updates_sg(sg_ctx_t *ctx);
 int send_update_sg(sg_ctx_t *ctx, const char *host);
+
+/* Where functions go to die ...
+void start_server_sg(sg_ctx_t *ctx);
+*/
 
 #endif
