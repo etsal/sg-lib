@@ -29,20 +29,20 @@ void init_sg(sg_ctx_t *ctx) {
   strcpy(ctx->db.db_filename, db_filename);
   int ret = unseal_and_deserialize_sg(ctx);
   if (ret) {
-#ifdef DEBUG_DB
-		eprintf("\t+ (%s) Database failed to load from %s, db is not set\n", __FUNCTION__, db->db_filename);
+#ifdef DEBUG_SG
+		eprintf("\t+ (%s) Database failed to load from %s, db is not set\n", __FUNCTION__, ctx->db.db_filename);
 #endif
     init_new_sg(ctx);
     
   } else {
-#ifdef DEBUG_DB
-  eprintf("\t+ (%s) Database successfully loaded from %s\n", __FUNCTION__, db->db_filename);
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) Database successfully loaded from %s\n", __FUNCTION__, ctx->db.db_filename);
 #endif
 
   // TODO: Load policy
 
   }
-#ifdef DEBUG_DB
+#ifdef DEBUG_SG
   eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
 #endif
 }
