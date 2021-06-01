@@ -105,7 +105,7 @@ set_target_properties(${UNTRUSTED_LIB} PROPERTIES COMPILE_FLAGS "-std=c99 -fPIC 
 target_include_directories(${TRUSTED_LIB} PUBLIC ${TRUSTED_INCLUDE})
 target_include_directories(${UNTRUSTED_LIB} PUBLIC ${UNTRUSTED_INCLUDE})
 
-#add_dependencies(${UNTRUSTED_LIB}  CopyHeaders UntrustedEdger8r)
+add_dependencies(${UNTRUSTED_LIB}  CopyHeaders UntrustedEdger8r)
 add_dependencies(${TRUSTED_LIB} CopyHeaders TrustedEdger8r)
 
 

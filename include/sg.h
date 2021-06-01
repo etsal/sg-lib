@@ -12,7 +12,7 @@ typedef struct {
     
 } sg_ctx_t;
 
-void init_sg(sg_ctx_t *ctx, const char *configfilename);
+void init_sg(sg_ctx_t *ctx);
 void init_new_sg(sg_ctx_t *ctx);
 
 void start_server_sg(sg_ctx_t *ctx);

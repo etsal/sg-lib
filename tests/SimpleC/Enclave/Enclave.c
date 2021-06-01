@@ -14,7 +14,7 @@ int generate_random_number() {
  
     char test2[] = "/opt/instance/sg.db";
     
-    init_sg(&sg_ctx, test2);
+    init_sg(&sg_ctx);
     
     return 42;
 }
