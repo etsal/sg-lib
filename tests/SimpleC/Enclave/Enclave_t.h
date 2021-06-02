@@ -46,6 +46,7 @@ sgx_status_t SGX_CDECL ocall_close(int* retval, int fd);
 sgx_status_t SGX_CDECL ocall_host_bind(int* retval, const char* host, const char* port);
 sgx_status_t SGX_CDECL ocall_host_connect(int* retval, const char* host, const char* port);
 sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd);
+sgx_status_t SGX_CDECL ocall_gethostname(char* host);
 sgx_status_t SGX_CDECL ocall_low_res_time(int* time);
 sgx_status_t SGX_CDECL ocall_recv(size_t* retval, int sockfd, void* buf, size_t len, int flags);
 sgx_status_t SGX_CDECL ocall_send(size_t* retval, int sockfd, const void* buf, size_t len, int flags);

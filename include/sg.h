@@ -31,4 +31,7 @@ int send_update_sg(sg_ctx_t *ctx, const char *host);
 void start_server_sg(sg_ctx_t *ctx);
 */
 
+// Private functions
+void init_connections_sg(sg_ctx_t *ctx);
+
 #endif

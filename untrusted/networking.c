@@ -30,6 +30,12 @@ ocall_accept_client(int sockfd)
 	return accept_client(sockfd);
 }
 
+void
+ocall_gethostname(char *hostname)
+{
+  gethostname(hostname, 128);
+}
+
 /* Defined in fileio.c
 int ocall_close(int fd) {
   return close(fd);
@@ -48,9 +54,10 @@ host_connect(const char *host, const char *port)
 	hints.ai_socktype = SOCK_STREAM;
 	err = getaddrinfo(host, port, &hints, &si);
 	if (err != 0) {
-		eprintf(
-		    "%s : getaddrinfo() %s\n", __FUNCTION__, gai_strerror(err));
-		return -1;
+		#ifdef SG_DEBUG
+    eprintf("\t\t + %s: getaddrinfo() %s\n", __FUNCTION__, gai_strerror(err));
+		#endif
+    return -1;
 	}
 	fd = -1;
 	for (p = si; p != NULL; p = p->ai_next) {
@@ -76,14 +83,18 @@ host_connect(const char *host, const char *port)
 		fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
 		if (fd < 0) {
 			// perror("socket()");
+	    #ifdef SG_DEBUG
 			eprintf(
-			    "%s: socket() %s\n", __FUNCTION__, strerror(errno));
+			    "\t\t + %s: socket() %s\n", __FUNCTION__, strerror(errno));
+      #endif
 			continue;
 		}
 		if (connect(fd, p->ai_addr, p->ai_addrlen) < 0) {
 			// perror("connect()");
-			eprintf("%s: connect() %s\n", __FUNCTION__,
+      #ifdef SG_DEBUG 
+			eprintf("\t\t + %s: connect() %s\n", __FUNCTION__,
 			    strerror(errno));
+      #endif
 			close(fd);
 			continue;
 		}

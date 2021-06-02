@@ -16,9 +16,15 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx);
 
 const char db_filename[] = "/opt/instance/sg.db";
 const char policy_filename[] = "/opt/instance/policy.txt";
-/* Ideally we call init_db to do the database initialization
-but we save the kv-store and the attestation information together
-so we call them here instead */
+
+
+/* 
+ * init_sg()
+ * Ideally we call init_db to do the database 
+ * initialization but we save the kv-store and 
+ * the attestation information together
+ * so we call them here instead
+ */
 void init_sg(sg_ctx_t *ctx) {
   strcpy(ctx->db.db_filename, db_filename);
   int ret = unseal_and_deserialize_sg(ctx);
@@ -38,13 +44,31 @@ void init_sg(sg_ctx_t *ctx) {
     // TODO: Load policy
   }
 #ifdef DEBUG_SG
+  eprintf("\t+ (%s) Finishing up initialization\n", __FUNCTION__);
+#endif
+  init_connections_sg(ctx);
+  init_ratls();
+  init_ratls_server(&ctx->ratls, &ctx->kc);
+
+#ifdef DEBUG_SG
   eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
 #endif
 }
 
+
+/* init_new_sg 
+ * Creates new keypair, attestation certificate and empty database
+ * optionally set wolfssl debugging
+ * @param ctx
+ */
 void init_new_sg(sg_ctx_t *ctx) {
   ctx->kc.der_key_len = DER_KEY_LEN;
   ctx->kc.der_cert_len = DER_CERT_LEN;
+
+#ifdef DEBUG_SG
+    eprintf("+ Turning on wolfssl debugging\n");
+    enc_wolfSSL_Debugging_ON();
+#endif
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n",
@@ -52,16 +76,6 @@ void init_new_sg(sg_ctx_t *ctx) {
 #endif
   create_key_and_x509(ctx->kc.der_key, &ctx->kc.der_key_len, ctx->kc.der_cert,
                       &ctx->kc.der_cert_len, &global_opts);
-
-#ifdef DEBUG_SG
-//    eprintf("+ Turning on wolfssl debugging\n");
-//    enc_wolfSSL_Debugging_ON();
-#endif
-
-#ifdef DEBUG_SG
-  eprintf("\t+ (%s) Initializing RA-TLS Server ...\n", __FUNCTION__);
-#endif
-  init_ratls_server(&ctx->ratls, &ctx->kc);
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Initializing Key Value Store ...\n", __FUNCTION__);
@@ -123,7 +137,7 @@ int listen_updates_sg(sg_ctx_t *ctx) {
 #ifdef DEBUG_SG
   eprintf("\t+ Listening for client connections ...\n", __FUNCTION__);
 #endif
-  int ret = listen_ratls_server(&ctx->ratls);
+  int ret = 1; //listen_ratls_server(&ctx->ratls);
   if (ret) {
     eprintf("\t+ %s : Error, listen_ratls_server returned %d\n", __FUNCTION__,
             ret);

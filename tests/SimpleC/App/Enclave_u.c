@@ -143,6 +143,10 @@ typedef struct ms_ocall_accept_client_t {
 	int ms_sock_fd;
 } ms_ocall_accept_client_t;
 
+typedef struct ms_ocall_gethostname_t {
+	char* ms_host;
+} ms_ocall_gethostname_t;
+
 typedef struct ms_ocall_low_res_time_t {
 	int* ms_time;
 } ms_ocall_low_res_time_t;
@@ -359,6 +363,14 @@ static sgx_status_t SGX_CDECL Enclave_ocall_accept_client(void* pms)
 	return SGX_SUCCESS;
 }
 
+static sgx_status_t SGX_CDECL Enclave_ocall_gethostname(void* pms)
+{
+	ms_ocall_gethostname_t* ms = SGX_CAST(ms_ocall_gethostname_t*, pms);
+	ocall_gethostname(ms->ms_host);
+
+	return SGX_SUCCESS;
+}
+
 static sgx_status_t SGX_CDECL Enclave_ocall_low_res_time(void* pms)
 {
 	ms_ocall_low_res_time_t* ms = SGX_CAST(ms_ocall_low_res_time_t*, pms);
@@ -401,9 +413,9 @@ static sgx_status_t SGX_CDECL Enclave_ocall_remote_attestation(void* pms)
 
 static const struct {
 	size_t nr_ocall;
-	void * table[28];
+	void * table[29];
 } ocall_table_Enclave = {
-	28,
+	29,
 	{
 		(void*)Enclave_ocall_print,
 		(void*)Enclave_create_session_ocall,
@@ -428,6 +440,7 @@ static const struct {
 		(void*)Enclave_ocall_host_bind,
 		(void*)Enclave_ocall_host_connect,
 		(void*)Enclave_ocall_accept_client,
+		(void*)Enclave_ocall_gethostname,
 		(void*)Enclave_ocall_low_res_time,
 		(void*)Enclave_ocall_recv,
 		(void*)Enclave_ocall_send,
