@@ -203,6 +203,7 @@ ${SG_ROOT}/build
 /usr/local/lib/gcc48
 ${BEARSSL_ROOT}/build
 ${WOLFSSL_ROOT}/IDE/LINUX-SGX
+${PROTOBUF_ROOT}/build
 )
 
 
