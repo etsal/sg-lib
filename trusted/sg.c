@@ -64,12 +64,12 @@ void init_sg(sg_ctx_t *ctx) {
 void init_new_sg(sg_ctx_t *ctx) {
   ctx->kc.der_key_len = DER_KEY_LEN;
   ctx->kc.der_cert_len = DER_CERT_LEN;
-
+/*
 #ifdef DEBUG_SG
     eprintf("+ Turning on wolfssl debugging\n");
     enc_wolfSSL_Debugging_ON();
 #endif
-
+*/
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n",
           __FUNCTION__);

@@ -141,6 +141,7 @@ typedef struct ms_ocall_host_connect_t {
 typedef struct ms_ocall_accept_client_t {
 	int ms_retval;
 	int ms_sock_fd;
+	char* ms_client_hostname;
 } ms_ocall_accept_client_t;
 
 typedef struct ms_ocall_gethostname_t {
@@ -358,7 +359,7 @@ static sgx_status_t SGX_CDECL Enclave_ocall_host_connect(void* pms)
 static sgx_status_t SGX_CDECL Enclave_ocall_accept_client(void* pms)
 {
 	ms_ocall_accept_client_t* ms = SGX_CAST(ms_ocall_accept_client_t*, pms);
-	ms->ms_retval = ocall_accept_client(ms->ms_sock_fd);
+	ms->ms_retval = ocall_accept_client(ms->ms_sock_fd, ms->ms_client_hostname);
 
 	return SGX_SUCCESS;
 }

@@ -25,9 +25,9 @@ ocall_host_connect(const char *host, const char *port)
 }
 
 int
-ocall_accept_client(int sockfd)
+ocall_accept_client(int sockfd, char *client_hostname)
 {
-	return accept_client(sockfd);
+	return accept_client(sockfd, client_hostname);
 }
 
 void
@@ -199,11 +199,11 @@ host_bind(const char *host, const char *port)
 }
 
 int
-accept_client(int server_fd)
+accept_client(int server_fd, char *client_hostname)
 {
 	int fd;
 	struct sockaddr sa;
-	socklen_t sa_len;
+	socklen_t sa_len; //client
 	char tmp[INET6_ADDRSTRLEN + 50];
 	const char *name;
 
@@ -233,5 +233,14 @@ accept_client(int server_fd)
 		name = tmp;
 	}
 	//eprintf("%s : accepting connection from: %s\n", __FUNCTION__, name);
-	return fd;
+
+  if (client_hostname != NULL && strlen(name) < 128) {
+    eprintf("%s : copying name\n", __FUNCTION__);
+    strcpy(client_hostname, name);
+  } else {
+    eprintf("%s : NOT copying name\n", __FUNCTION__);
+ 
+  }
+
+  return fd;
 }

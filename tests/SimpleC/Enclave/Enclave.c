@@ -4,7 +4,11 @@
 
 sg_ctx_t sg_ctx;
 
-void initialize_sg() { init_sg(&sg_ctx); }
+void initialize_sg() { 
+  init_sg(&sg_ctx); 
+  connect_cluster_sg(&sg_ctx);
+  leave_cluster_sg(&sg_ctx);
+}
 
 void connect_sg() {}
 

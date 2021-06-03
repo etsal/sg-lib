@@ -3,6 +3,6 @@
 
 int host_connect(const char *host, const char *port);
 int host_bind(const char *host, const char *port);
-int accept_client(int server_fd);
+int accept_client(int server_fd, char *hostname);
 
 #endif

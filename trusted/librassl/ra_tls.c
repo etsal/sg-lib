@@ -35,9 +35,9 @@ static int host_connect(const char *host, const char *port) {
   return ret;
 }
 
-static int accept_client(int sock_fd) {
+static int accept_client(int sock_fd, char *hostname) {
   int ret = -1;
-  sgx_status_t status = ocall_accept_client(&ret, sock_fd);
+  sgx_status_t status = ocall_accept_client(&ret, sock_fd, hostname);
   if (status != SGX_SUCCESS) {
     return -1;
   }
@@ -95,6 +95,19 @@ void init_ratls() {
   }
 }
 
+/* cleanup_ratls : Frees the wolfSSL object (ctx.ssl) and 
+ * the wolfSSL context object (ctx.ctx) and closes the socket
+ * (ctx.sockfd)
+ * @param ctx 
+ */
+void cleanup_ratls(ratls_ctx_t *ctx) {
+  enc_wolfSSL_free(ctx->ssl);
+  enc_wolfSSL_CTX_free(ctx->ctx); 
+  close(ctx->sockfd);
+}
+
+
+
 void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
   /* Key need to be generated with create_key_and_x509 */
   assert(kc->der_key_len > 0 && kc->der_cert_len > 0);
@@ -105,7 +118,9 @@ void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
    */
   server->sockfd = host_bind(NULL, PORT);
   if (!(server->sockfd > 0)) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) host bind failed\n", __FUNCTION__);
+#endif
     exit(1);
   }
 
@@ -113,7 +128,9 @@ void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
   server->method = enc_wolfTLSv1_2_server_method();
   server->ctx = enc_wolfSSL_CTX_new(server->method);
   if (server->ctx < 0) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_new\n", __FUNCTION__);
+#endif
     exit(1);
   }
 
@@ -150,15 +167,18 @@ void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
 }
 
 int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
+#ifdef DEBUG_RATLS
   eprintf("\t+ (%s) start\n", __FUNCTION__);
-
+#endif
   // eprintf("\t+ enc_wolfTLSv1_2_client_method\n");
   client->method = enc_wolfTLSv1_2_client_method();
 
   // eprintf("\t+ enc_wolfSSL_CTX_new\n");
   client->ctx = enc_wolfSSL_CTX_new(client->method);
   if (client->ctx < 0) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_new failed\n", __FUNCTION__);
+#endif
     return 1;
   }
 
@@ -167,8 +187,10 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   int ret = enc_wolfSSL_CTX_use_certificate_buffer(
       client->ctx, kc->der_cert, kc->der_cert_len, SSL_FILETYPE_ASN1);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_use_certificate_buffer failed with %d\n",
             __FUNCTION__, ret);
+#endif
     return 1;
   }
 
@@ -176,7 +198,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   ret = enc_wolfSSL_CTX_use_PrivateKey_buffer(
       client->ctx, kc->der_key, kc->der_key_len, SSL_FILETYPE_ASN1);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) wolfSSL_CTX_use_PrivateKey_buffer failed\n");
+#endif
     return 1;
   }
 
@@ -193,7 +217,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 
   client->sockfd = host_connect(host, PORT);
   if (!(client->sockfd > 0)) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) host_connect failed\n", __FUNCTION__);
+#endif
     return 1;
   }
 
@@ -202,7 +228,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   ret = enc_wolfSSL_CTX_set_verify(client->ctx, WOLFSSL_VERIFY_PEER,
                                    cert_verify_callback);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_set_verify failed\n", __FUNCTION__);
+#endif
     return 1;
   }
 
@@ -210,21 +238,27 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   //	eprintf("\t+ enc_wolfSSL_new\n");
   client->ssl = enc_wolfSSL_new(client->ctx);
   if (client->ssl < 0) {
+#ifdef DEBUG_RATLS
     eprintf("\t + %s : wolfSSL_new failed\n", __FUNCTION__);
+#endif
     return 1;
   }
 
   // Attach wolfSSL to the socket
   ret = enc_wolfSSL_set_fd(client->ssl, client->sockfd);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("\t (%s) wolfSSL_set_fd failed\n", __FUNCTION__);
+#endif
     return 1;
   }
 
   //    eprintf("\t+ enc_wolfSSL_connect\n");
   ret = enc_wolfSSL_connect(client->ssl);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_connect failed\n", __FUNCTION__);
+#endif
     return 1;
   }
 
@@ -241,11 +275,13 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 /* accept_cluster_connections_sg
  * to be called by with initialized "server" to accept incoming "client"
  * replaces: listen_ratls_server
- * @param ctx Initialized server RA TLS context
+ * @param server Initialized server RA TLS context
+ * @param client Empty TA TLS context, this function will populate it
  * @param sockfd Int pointer to be filled in with accepted connection
  * @return 0 on success, 1 on error
  */
-int accept_cluster_connections_sg(ratls_ctx_t *server, ratls_ctx_t *client) {
+int accept_cluster_connections_sg(ratls_ctx_t *server, ratls_ctx_t *client,
+                                  char *client_hostname) {
   int ret;
   WOLFSSL_X509 *client_cert;
   int derSz;
@@ -254,7 +290,7 @@ int accept_cluster_connections_sg(ratls_ctx_t *server, ratls_ctx_t *client) {
   sgx_report_body_t *body;
 
   /* Accept client connections */
-  client->sockfd = accept_client(server->sockfd);
+  client->sockfd = accept_client(server->sockfd, client_hostname);
   if (client->sockfd == 0 || client->sockfd < 0) {
     eprintf("\t +(%s) ocall_accept_client failed\n", __FUNCTION__);
     return 1;

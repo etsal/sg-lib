@@ -158,6 +158,7 @@ typedef struct ms_ocall_host_connect_t {
 typedef struct ms_ocall_accept_client_t {
 	int ms_retval;
 	int ms_sock_fd;
+	char* ms_client_hostname;
 } ms_ocall_accept_client_t;
 
 typedef struct ms_ocall_gethostname_t {
@@ -1234,14 +1235,17 @@ sgx_status_t SGX_CDECL ocall_host_connect(int* retval, const char* host, const c
 	return status;
 }
 
-sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd)
+sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd, char* client_hostname)
 {
 	sgx_status_t status = SGX_SUCCESS;
+	size_t _len_client_hostname = 128;
 
 	ms_ocall_accept_client_t* ms = NULL;
 	size_t ocalloc_size = sizeof(ms_ocall_accept_client_t);
 	void *__tmp = NULL;
 
+	void *__tmp_client_hostname = NULL;
+	ocalloc_size += (client_hostname != NULL && sgx_is_within_enclave(client_hostname, _len_client_hostname)) ? _len_client_hostname : 0;
 
 	__tmp = sgx_ocalloc(ocalloc_size);
 	if (__tmp == NULL) {
@@ -1252,10 +1256,23 @@ sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd)
 	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_accept_client_t));
 
 	ms->ms_sock_fd = sock_fd;
+	if (client_hostname != NULL && sgx_is_within_enclave(client_hostname, _len_client_hostname)) {
+		ms->ms_client_hostname = (char*)__tmp;
+		__tmp_client_hostname = __tmp;
+		memset(__tmp_client_hostname, 0, _len_client_hostname);
+		__tmp = (void *)((size_t)__tmp + _len_client_hostname);
+	} else if (client_hostname == NULL) {
+		ms->ms_client_hostname = NULL;
+	} else {
+		sgx_ocfree();
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
+	
 	status = sgx_ocall(22, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
+		if (client_hostname) memcpy((void*)client_hostname, __tmp_client_hostname, _len_client_hostname);
 	}
 	sgx_ocfree();
 	return status;

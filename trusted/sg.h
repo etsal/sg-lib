@@ -16,6 +16,8 @@ void init_sg(sg_ctx_t *ctx);
 void init_new_sg(sg_ctx_t *ctx);
 
 int connect_cluster_sg(sg_ctx_t *ctx);
+void leave_cluster_sg();
+
 
 int add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len);
 int find_sg(sg_ctx_t *ctx, uint64_t key, void *value, size_t len);
@@ -33,5 +35,6 @@ void start_server_sg(sg_ctx_t *ctx);
 
 // Private functions
 void init_connections_sg(sg_ctx_t *ctx);
+
 
 #endif

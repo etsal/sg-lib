@@ -6,7 +6,7 @@ enclave {
   untrusted {
     int ocall_host_bind([in, string] const char *host, [in, string] const char *port);
     int ocall_host_connect([in, string] const char *host, [in, string] const char *port);
-    int ocall_accept_client(int sock_fd);
+    int ocall_accept_client(int sock_fd, [out, size=128] char *client_hostname);
     void ocall_gethostname([out, size=128] char *host);
   };
 
