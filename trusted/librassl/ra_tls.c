@@ -297,7 +297,9 @@ int accept_cluster_connections_sg(ratls_ctx_t *server, ratls_ctx_t *client,
   }
 
   /* Create a WOLFSSL object */
-  client->ssl = enc_wolfSSL_new(client->ctx);
+  // Is this suppose to be server->ctx
+  //client->ssl = enc_wolfSSL_new(client->ctx);
+  client->ssl = enc_wolfSSL_new(server->ctx);
   if (client->ssl < 0) {
     eprintf("\t+ (%s) wolfSSL_new failed\n", __FUNCTION__);
     return 1;
