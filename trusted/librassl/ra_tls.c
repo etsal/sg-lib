@@ -35,9 +35,9 @@ static int host_connect(const char *host, const char *port) {
   return ret;
 }
 
-static int accept_client(int sock_fd, char *hostname) {
+static int accept_client(int sock_fd) {
   int ret = -1;
-  sgx_status_t status = ocall_accept_client(&ret, sock_fd, hostname);
+  sgx_status_t status = ocall_accept_client(&ret, sock_fd);
   if (status != SGX_SUCCESS) {
     return -1;
   }
@@ -272,7 +272,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   return ret;
 }
 
-/* accept_cluster_connections_sg
+/* accept_cluster_connections
  * to be called by with initialized "server" to accept incoming "client"
  * replaces: listen_ratls_server
  * @param server Initialized server RA TLS context
@@ -280,8 +280,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
  * @param sockfd Int pointer to be filled in with accepted connection
  * @return 0 on success, 1 on error
  */
-int accept_cluster_connections_sg(ratls_ctx_t *server, ratls_ctx_t *client,
-                                  char *client_hostname) {
+int accept_cluster_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
   int ret;
   WOLFSSL_X509 *client_cert;
   int derSz;
@@ -290,7 +289,7 @@ int accept_cluster_connections_sg(ratls_ctx_t *server, ratls_ctx_t *client,
   sgx_report_body_t *body;
 
   /* Accept client connections */
-  client->sockfd = accept_client(server->sockfd, client_hostname);
+  client->sockfd = accept_client(server->sockfd);
   if (client->sockfd == 0 || client->sockfd < 0) {
     eprintf("\t +(%s) ocall_accept_client failed\n", __FUNCTION__);
     return 1;

@@ -12,7 +12,7 @@ set(SGX_MODE "HW")
 set(SGX_ARCH "x64")
 set(SGX_DEBUG 1)
 
-set(SG_ROOT "${CMAKE_SOURCE_DIR}/../..")
+set(SG_ROOT "/net/charm/usr/home/smdukova/sg-lib")
 
 # WOLFSSL
 set(WOLFSSL_ROOT "${SG_ROOT}/deps/wolfssl")

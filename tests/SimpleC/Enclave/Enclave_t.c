@@ -22,6 +22,10 @@ typedef struct ms_generate_random_number_t {
 	int ms_retval;
 } ms_generate_random_number_t;
 
+typedef struct ms_verify_cluster_connections_t {
+	int ms_retval;
+} ms_verify_cluster_connections_t;
+
 typedef struct ms_ocall_print_t {
 	char* ms_str;
 } ms_ocall_print_t;
@@ -158,12 +162,17 @@ typedef struct ms_ocall_host_connect_t {
 typedef struct ms_ocall_accept_client_t {
 	int ms_retval;
 	int ms_sock_fd;
-	char* ms_client_hostname;
 } ms_ocall_accept_client_t;
 
 typedef struct ms_ocall_gethostname_t {
 	char* ms_host;
 } ms_ocall_gethostname_t;
+
+typedef struct ms_ocall_poll_and_process_updates_t {
+	int ms_retval;
+	int* ms_active_fds;
+	size_t ms_len;
+} ms_ocall_poll_and_process_updates_t;
 
 typedef struct ms_ocall_low_res_time_t {
 	int* ms_time;
@@ -215,69 +224,107 @@ static sgx_status_t SGX_CDECL sgx_generate_random_number(void* pms)
 	return status;
 }
 
-static sgx_status_t SGX_CDECL sgx_initialize_sg(void* pms)
+static sgx_status_t SGX_CDECL sgx_init(void* pms)
 {
 	sgx_status_t status = SGX_SUCCESS;
 	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
-	initialize_sg();
+	init();
 	return status;
 }
 
-static sgx_status_t SGX_CDECL sgx_connect_sg(void* pms)
+static sgx_status_t SGX_CDECL sgx_connect_cluster(void* pms)
 {
 	sgx_status_t status = SGX_SUCCESS;
 	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
-	connect_sg();
+	connect_cluster();
+	return status;
+}
+
+static sgx_status_t SGX_CDECL sgx_recieve_cluster_connections(void* pms)
+{
+	sgx_status_t status = SGX_SUCCESS;
+	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
+	recieve_cluster_connections();
+	return status;
+}
+
+static sgx_status_t SGX_CDECL sgx_poll_and_process_updates(void* pms)
+{
+	sgx_status_t status = SGX_SUCCESS;
+	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
+	poll_and_process_updates();
+	return status;
+}
+
+static sgx_status_t SGX_CDECL sgx_verify_cluster_connections(void* pms)
+{
+	CHECK_REF_POINTER(pms, sizeof(ms_verify_cluster_connections_t));
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+	ms_verify_cluster_connections_t* ms = SGX_CAST(ms_verify_cluster_connections_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+
+
+
+	ms->ms_retval = verify_cluster_connections();
+
+
 	return status;
 }
 
 SGX_EXTERNC const struct {
 	size_t nr_ecall;
-	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[3];
+	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[6];
 } g_ecall_table = {
-	3,
+	6,
 	{
 		{(void*)(uintptr_t)sgx_generate_random_number, 0},
-		{(void*)(uintptr_t)sgx_initialize_sg, 0},
-		{(void*)(uintptr_t)sgx_connect_sg, 0},
+		{(void*)(uintptr_t)sgx_init, 0},
+		{(void*)(uintptr_t)sgx_connect_cluster, 0},
+		{(void*)(uintptr_t)sgx_recieve_cluster_connections, 0},
+		{(void*)(uintptr_t)sgx_poll_and_process_updates, 0},
+		{(void*)(uintptr_t)sgx_verify_cluster_connections, 0},
 	}
 };
 
 SGX_EXTERNC const struct {
 	size_t nr_ocall;
-	uint8_t entry_table[29][3];
+	uint8_t entry_table[30][6];
 } g_dyn_entry_table = {
-	29,
+	30,
 	{
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
-		{0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, },
 	}
 };
 
@@ -1235,17 +1282,14 @@ sgx_status_t SGX_CDECL ocall_host_connect(int* retval, const char* host, const c
 	return status;
 }
 
-sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd, char* client_hostname)
+sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd)
 {
 	sgx_status_t status = SGX_SUCCESS;
-	size_t _len_client_hostname = 128;
 
 	ms_ocall_accept_client_t* ms = NULL;
 	size_t ocalloc_size = sizeof(ms_ocall_accept_client_t);
 	void *__tmp = NULL;
 
-	void *__tmp_client_hostname = NULL;
-	ocalloc_size += (client_hostname != NULL && sgx_is_within_enclave(client_hostname, _len_client_hostname)) ? _len_client_hostname : 0;
 
 	__tmp = sgx_ocalloc(ocalloc_size);
 	if (__tmp == NULL) {
@@ -1256,23 +1300,10 @@ sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd, char* clien
 	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_accept_client_t));
 
 	ms->ms_sock_fd = sock_fd;
-	if (client_hostname != NULL && sgx_is_within_enclave(client_hostname, _len_client_hostname)) {
-		ms->ms_client_hostname = (char*)__tmp;
-		__tmp_client_hostname = __tmp;
-		memset(__tmp_client_hostname, 0, _len_client_hostname);
-		__tmp = (void *)((size_t)__tmp + _len_client_hostname);
-	} else if (client_hostname == NULL) {
-		ms->ms_client_hostname = NULL;
-	} else {
-		sgx_ocfree();
-		return SGX_ERROR_INVALID_PARAMETER;
-	}
-	
 	status = sgx_ocall(22, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
-		if (client_hostname) memcpy((void*)client_hostname, __tmp_client_hostname, _len_client_hostname);
 	}
 	sgx_ocfree();
 	return status;
@@ -1319,6 +1350,46 @@ sgx_status_t SGX_CDECL ocall_gethostname(char* host)
 	return status;
 }
 
+sgx_status_t SGX_CDECL ocall_poll_and_process_updates(int* retval, int active_fds[5], size_t len)
+{
+	sgx_status_t status = SGX_SUCCESS;
+	size_t _len_active_fds = 5 * sizeof(int);
+
+	ms_ocall_poll_and_process_updates_t* ms = NULL;
+	size_t ocalloc_size = sizeof(ms_ocall_poll_and_process_updates_t);
+	void *__tmp = NULL;
+
+	ocalloc_size += (active_fds != NULL && sgx_is_within_enclave(active_fds, _len_active_fds)) ? _len_active_fds : 0;
+
+	__tmp = sgx_ocalloc(ocalloc_size);
+	if (__tmp == NULL) {
+		sgx_ocfree();
+		return SGX_ERROR_UNEXPECTED;
+	}
+	ms = (ms_ocall_poll_and_process_updates_t*)__tmp;
+	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_poll_and_process_updates_t));
+
+	if (active_fds != NULL && sgx_is_within_enclave(active_fds, _len_active_fds)) {
+		ms->ms_active_fds = (int*)__tmp;
+		memcpy(__tmp, active_fds, _len_active_fds);
+		__tmp = (void *)((size_t)__tmp + _len_active_fds);
+	} else if (active_fds == NULL) {
+		ms->ms_active_fds = NULL;
+	} else {
+		sgx_ocfree();
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
+	
+	ms->ms_len = len;
+	status = sgx_ocall(24, ms);
+
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
+	sgx_ocfree();
+	return status;
+}
+
 sgx_status_t SGX_CDECL ocall_low_res_time(int* time)
 {
 	sgx_status_t status = SGX_SUCCESS;
@@ -1351,7 +1422,7 @@ sgx_status_t SGX_CDECL ocall_low_res_time(int* time)
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(24, ms);
+	status = sgx_ocall(25, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (time) memcpy((void*)time, __tmp_time, _len_time);
@@ -1395,7 +1466,7 @@ sgx_status_t SGX_CDECL ocall_recv(size_t* retval, int sockfd, void* buf, size_t 
 	
 	ms->ms_len = len;
 	ms->ms_flags = flags;
-	status = sgx_ocall(25, ms);
+	status = sgx_ocall(26, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1439,7 +1510,7 @@ sgx_status_t SGX_CDECL ocall_send(size_t* retval, int sockfd, const void* buf, s
 	
 	ms->ms_len = len;
 	ms->ms_flags = flags;
-	status = sgx_ocall(26, ms);
+	status = sgx_ocall(27, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1481,7 +1552,7 @@ sgx_status_t SGX_CDECL ocall_sgx_init_quote(sgx_target_info_t* target_info)
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(27, ms);
+	status = sgx_ocall(28, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (target_info) memcpy((void*)target_info, __tmp_target_info, _len_target_info);
@@ -1548,7 +1619,7 @@ sgx_status_t SGX_CDECL ocall_remote_attestation(sgx_report_t* report, const ra_t
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(28, ms);
+	status = sgx_ocall(29, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (attn_report) memcpy((void*)attn_report, __tmp_attn_report, _len_attn_report);

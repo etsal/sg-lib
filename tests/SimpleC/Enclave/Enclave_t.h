@@ -20,8 +20,11 @@ extern "C" {
 #endif
 
 int generate_random_number();
-void initialize_sg();
-void connect_sg();
+void init();
+void connect_cluster();
+void recieve_cluster_connections();
+void poll_and_process_updates();
+int verify_cluster_connections();
 
 sgx_status_t SGX_CDECL ocall_print(const char* str);
 sgx_status_t SGX_CDECL create_session_ocall(sgx_status_t* retval, uint32_t* sid, uint8_t* dh_msg1, uint32_t dh_msg1_size, uint32_t timeout);
@@ -45,8 +48,9 @@ sgx_status_t SGX_CDECL ocall_read(int* retval, const int* fd, unsigned char* buf
 sgx_status_t SGX_CDECL ocall_close(int* retval, int fd);
 sgx_status_t SGX_CDECL ocall_host_bind(int* retval, const char* host, const char* port);
 sgx_status_t SGX_CDECL ocall_host_connect(int* retval, const char* host, const char* port);
-sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd, char* client_hostname);
+sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd);
 sgx_status_t SGX_CDECL ocall_gethostname(char* host);
+sgx_status_t SGX_CDECL ocall_poll_and_process_updates(int* retval, int active_fds[5], size_t len);
 sgx_status_t SGX_CDECL ocall_low_res_time(int* time);
 sgx_status_t SGX_CDECL ocall_recv(size_t* retval, int sockfd, void* buf, size_t len, int flags);
 sgx_status_t SGX_CDECL ocall_send(size_t* retval, int sockfd, const void* buf, size_t len, int flags);

@@ -132,6 +132,7 @@ int load_sg(sg_ctx_t *ctx, const char *filename) {
   return ret;
 }
 
+/*
 int listen_updates_sg(sg_ctx_t *ctx) {
 //    eprintf("\t+ %s : start\n", __FUNCTION__);
 #ifdef DEBUG_SG
@@ -169,7 +170,7 @@ int listen_updates_sg(sg_ctx_t *ctx) {
 
   return 0;
 }
-
+*/
 /*
  * Returns 0 on success, 1 on error
  */

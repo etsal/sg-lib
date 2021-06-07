@@ -3,8 +3,11 @@ enclave {
 trusted {
         /* define ECALLs here. */
         public int generate_random_number(void);
-        public void initialize_sg();
-        public void connect_sg();
+        public void init();
+        public void connect_cluster();
+        public void recieve_cluster_connections();
+        public void poll_and_process_updates();
+        public int verify_cluster_connections();
     };
 
     untrusted {

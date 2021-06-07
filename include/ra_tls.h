@@ -29,7 +29,7 @@ typedef struct {
 
 
 //NEW
-int accept_cluster_connections_sg(ratls_ctx_t *server, ratls_ctx_t *client, char *client_hostname);
+int accept_cluster_connections(ratls_ctx_t *server, ratls_ctx_t *client);
 void cleanup_ratls(ratls_ctx_t *ctx);
 
 

@@ -42,8 +42,9 @@ int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_read, (const int* fd, unsigned char* buf
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_close, (int fd));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_host_bind, (const char* host, const char* port));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_host_connect, (const char* host, const char* port));
-int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_accept_client, (int sock_fd, char* client_hostname));
+int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_accept_client, (int sock_fd));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_gethostname, (char* host));
+int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_poll_and_process_updates, (int active_fds[5], size_t len));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_low_res_time, (int* time));
 size_t SGX_UBRIDGE(SGX_NOCONVENTION, ocall_recv, (int sockfd, void* buf, size_t len, int flags));
 size_t SGX_UBRIDGE(SGX_NOCONVENTION, ocall_send, (int sockfd, const void* buf, size_t len, int flags));
@@ -51,8 +52,11 @@ void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_sgx_init_quote, (sgx_target_info_t* tar
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_remote_attestation, (sgx_report_t* report, const ra_tls_options_t* opts, attestation_verification_report_t* attn_report));
 
 sgx_status_t generate_random_number(sgx_enclave_id_t eid, int* retval);
-sgx_status_t initialize_sg(sgx_enclave_id_t eid);
-sgx_status_t connect_sg(sgx_enclave_id_t eid);
+sgx_status_t init(sgx_enclave_id_t eid);
+sgx_status_t connect_cluster(sgx_enclave_id_t eid);
+sgx_status_t recieve_cluster_connections(sgx_enclave_id_t eid);
+sgx_status_t poll_and_process_updates(sgx_enclave_id_t eid);
+sgx_status_t verify_cluster_connections(sgx_enclave_id_t eid, int* retval);
 
 #ifdef __cplusplus
 }

@@ -5,6 +5,10 @@ typedef struct ms_generate_random_number_t {
 	int ms_retval;
 } ms_generate_random_number_t;
 
+typedef struct ms_verify_cluster_connections_t {
+	int ms_retval;
+} ms_verify_cluster_connections_t;
+
 typedef struct ms_ocall_print_t {
 	char* ms_str;
 } ms_ocall_print_t;
@@ -141,12 +145,17 @@ typedef struct ms_ocall_host_connect_t {
 typedef struct ms_ocall_accept_client_t {
 	int ms_retval;
 	int ms_sock_fd;
-	char* ms_client_hostname;
 } ms_ocall_accept_client_t;
 
 typedef struct ms_ocall_gethostname_t {
 	char* ms_host;
 } ms_ocall_gethostname_t;
+
+typedef struct ms_ocall_poll_and_process_updates_t {
+	int ms_retval;
+	int* ms_active_fds;
+	size_t ms_len;
+} ms_ocall_poll_and_process_updates_t;
 
 typedef struct ms_ocall_low_res_time_t {
 	int* ms_time;
@@ -359,7 +368,7 @@ static sgx_status_t SGX_CDECL Enclave_ocall_host_connect(void* pms)
 static sgx_status_t SGX_CDECL Enclave_ocall_accept_client(void* pms)
 {
 	ms_ocall_accept_client_t* ms = SGX_CAST(ms_ocall_accept_client_t*, pms);
-	ms->ms_retval = ocall_accept_client(ms->ms_sock_fd, ms->ms_client_hostname);
+	ms->ms_retval = ocall_accept_client(ms->ms_sock_fd);
 
 	return SGX_SUCCESS;
 }
@@ -368,6 +377,14 @@ static sgx_status_t SGX_CDECL Enclave_ocall_gethostname(void* pms)
 {
 	ms_ocall_gethostname_t* ms = SGX_CAST(ms_ocall_gethostname_t*, pms);
 	ocall_gethostname(ms->ms_host);
+
+	return SGX_SUCCESS;
+}
+
+static sgx_status_t SGX_CDECL Enclave_ocall_poll_and_process_updates(void* pms)
+{
+	ms_ocall_poll_and_process_updates_t* ms = SGX_CAST(ms_ocall_poll_and_process_updates_t*, pms);
+	ms->ms_retval = ocall_poll_and_process_updates(ms->ms_active_fds, ms->ms_len);
 
 	return SGX_SUCCESS;
 }
@@ -414,9 +431,9 @@ static sgx_status_t SGX_CDECL Enclave_ocall_remote_attestation(void* pms)
 
 static const struct {
 	size_t nr_ocall;
-	void * table[29];
+	void * table[30];
 } ocall_table_Enclave = {
-	29,
+	30,
 	{
 		(void*)Enclave_ocall_print,
 		(void*)Enclave_create_session_ocall,
@@ -442,6 +459,7 @@ static const struct {
 		(void*)Enclave_ocall_host_connect,
 		(void*)Enclave_ocall_accept_client,
 		(void*)Enclave_ocall_gethostname,
+		(void*)Enclave_ocall_poll_and_process_updates,
 		(void*)Enclave_ocall_low_res_time,
 		(void*)Enclave_ocall_recv,
 		(void*)Enclave_ocall_send,
@@ -458,17 +476,40 @@ sgx_status_t generate_random_number(sgx_enclave_id_t eid, int* retval)
 	return status;
 }
 
-sgx_status_t initialize_sg(sgx_enclave_id_t eid)
+sgx_status_t init(sgx_enclave_id_t eid)
 {
 	sgx_status_t status;
 	status = sgx_ecall(eid, 1, &ocall_table_Enclave, NULL);
 	return status;
 }
 
-sgx_status_t connect_sg(sgx_enclave_id_t eid)
+sgx_status_t connect_cluster(sgx_enclave_id_t eid)
 {
 	sgx_status_t status;
 	status = sgx_ecall(eid, 2, &ocall_table_Enclave, NULL);
+	return status;
+}
+
+sgx_status_t recieve_cluster_connections(sgx_enclave_id_t eid)
+{
+	sgx_status_t status;
+	status = sgx_ecall(eid, 3, &ocall_table_Enclave, NULL);
+	return status;
+}
+
+sgx_status_t poll_and_process_updates(sgx_enclave_id_t eid)
+{
+	sgx_status_t status;
+	status = sgx_ecall(eid, 4, &ocall_table_Enclave, NULL);
+	return status;
+}
+
+sgx_status_t verify_cluster_connections(sgx_enclave_id_t eid, int* retval)
+{
+	sgx_status_t status;
+	ms_verify_cluster_connections_t ms;
+	status = sgx_ecall(eid, 5, &ocall_table_Enclave, &ms);
+	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
 

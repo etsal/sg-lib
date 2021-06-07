@@ -4,18 +4,34 @@
 
 sg_ctx_t sg_ctx;
 
-void initialize_sg() { 
+void init() { 
   init_sg(&sg_ctx); 
-  connect_cluster_sg(&sg_ctx);
-  leave_cluster_sg(&sg_ctx);
 }
 
-void connect_sg() {}
+void connect_cluster() {
+  connect_cluster_sg(&sg_ctx);
+}
+
+void recieve_cluster_connections() {
+  recieve_cluster_connections_sg(&sg_ctx);
+}
+
+void poll_and_process_updates() {
+  poll_and_process_updates_sg(&sg_ctx);
+}
+
+int verify_cluster_connections() {
+  int ret = 0;
+  ret = verify_cluster_connections_sg(&sg_ctx);
+  return ret;
+}
 
 int generate_random_number() {
   ocall_print("Processing random number generation...");
   return 42;
 }
+
+
 
 /*
 int generate_random_number() {
