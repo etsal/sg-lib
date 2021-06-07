@@ -24,7 +24,6 @@ strcpy(char *dest, const char *src)
 {
 	size_t i, n;
 	n = strlen(src);
-eprintf("IN MY DEFITION OF STRCPY\n");
 	for (i = 0; i <= n && src[i] != '\0'; i++)
 		dest[i] = src[i];
 	dest[i] = '\0';

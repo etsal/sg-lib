@@ -86,6 +86,10 @@ typedef struct ms_ocall_lprintf_t {
 	char* ms_str;
 } ms_ocall_lprintf_t;
 
+typedef struct ms_ocall_sleep_t {
+	int ms_time;
+} ms_ocall_sleep_t;
+
 typedef struct ms_ocall_access_t {
 	int ms_retval;
 	char* ms_filename;
@@ -293,6 +297,14 @@ static sgx_status_t SGX_CDECL Enclave_ocall_lprintf(void* pms)
 	return SGX_SUCCESS;
 }
 
+static sgx_status_t SGX_CDECL Enclave_ocall_sleep(void* pms)
+{
+	ms_ocall_sleep_t* ms = SGX_CAST(ms_ocall_sleep_t*, pms);
+	ocall_sleep(ms->ms_time);
+
+	return SGX_SUCCESS;
+}
+
 static sgx_status_t SGX_CDECL Enclave_ocall_access(void* pms)
 {
 	ms_ocall_access_t* ms = SGX_CAST(ms_ocall_access_t*, pms);
@@ -431,9 +443,9 @@ static sgx_status_t SGX_CDECL Enclave_ocall_remote_attestation(void* pms)
 
 static const struct {
 	size_t nr_ocall;
-	void * table[30];
+	void * table[31];
 } ocall_table_Enclave = {
-	30,
+	31,
 	{
 		(void*)Enclave_ocall_print,
 		(void*)Enclave_create_session_ocall,
@@ -448,6 +460,7 @@ static const struct {
 		(void*)Enclave_ocall_exit,
 		(void*)Enclave_ocall_eprintf,
 		(void*)Enclave_ocall_lprintf,
+		(void*)Enclave_ocall_sleep,
 		(void*)Enclave_ocall_access,
 		(void*)Enclave_ocall_store,
 		(void*)Enclave_ocall_load_len,

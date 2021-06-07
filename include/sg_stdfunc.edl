@@ -7,5 +7,6 @@ enclave {
     void ocall_exit(int s);
     void ocall_eprintf([ in, string ] const char *str);
     void ocall_lprintf([ in, string ] const char *str);
-  };
+    void ocall_sleep(int time);
+};
 };

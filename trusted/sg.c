@@ -46,7 +46,7 @@ void init_sg(sg_ctx_t *ctx) {
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Finishing up initialization\n", __FUNCTION__);
 #endif
-  init_connections_sg(ctx);
+  init_connections(ctx);
   init_ratls();
   init_ratls_server(&ctx->ratls, &ctx->kc);
 

@@ -1,4 +1,6 @@
 #include <assert.h>
+#include "sgx_thread.h"
+
 
 #include "attester.h"   // key_and_x509
 #include "challenger.h" // get_quote_from_cert(), verify_sgx_cert_extensions()
@@ -16,6 +18,7 @@
 //#define DEBUG_RATLS 1
 
 extern ra_tls_options_t global_opts;
+sgx_thread_mutex_t ratls_lock;
 
 static int host_bind(const char *host, const char *port) {
   int ret = -1;
@@ -89,6 +92,7 @@ static int verify_connection(ratls_ctx_t *ctx) {
 
 void init_ratls() {
   int ret = enc_wolfSSL_Init();
+  sgx_thread_mutex_init(&ratls_lock, NULL);
   if (ret != SSL_SUCCESS) {
     eprintf("\t + (%s) enc_wolfSSL_Init failed\n", __FUNCTION__);
     exit(1);
@@ -223,6 +227,8 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
     return 1;
   }
 
+  sgx_thread_mutex_lock(&ratls_lock);
+
   // Enable client authentication
   //    eprintf("\t+ enc_wolfSSL_CTX_set_verify\n");
   ret = enc_wolfSSL_CTX_set_verify(client->ctx, WOLFSSL_VERIFY_PEER,
@@ -231,6 +237,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_set_verify failed\n", __FUNCTION__);
 #endif
+    sgx_thread_mutex_unlock(&ratls_lock);
     return 1;
   }
 
@@ -241,6 +248,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + %s : wolfSSL_new failed\n", __FUNCTION__);
 #endif
+    sgx_thread_mutex_unlock(&ratls_lock);
     return 1;
   }
 
@@ -250,6 +258,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t (%s) wolfSSL_set_fd failed\n", __FUNCTION__);
 #endif
+    sgx_thread_mutex_unlock(&ratls_lock);
     return 1;
   }
 
@@ -259,8 +268,11 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_connect failed\n", __FUNCTION__);
 #endif
+    sgx_thread_mutex_unlock(&ratls_lock);
     return 1;
   }
+
+  sgx_thread_mutex_unlock(&ratls_lock);
 
   ret = verify_connection(client);
   if (ret) {
@@ -272,7 +284,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   return ret;
 }
 
-/* accept_cluster_connections
+/* accept_connections
  * to be called by with initialized "server" to accept incoming "client"
  * replaces: listen_ratls_server
  * @param server Initialized server RA TLS context
@@ -280,7 +292,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
  * @param sockfd Int pointer to be filled in with accepted connection
  * @return 0 on success, 1 on error
  */
-int accept_cluster_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
+int accept_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
   int ret;
   WOLFSSL_X509 *client_cert;
   int derSz;
@@ -295,12 +307,15 @@ int accept_cluster_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
     return 1;
   }
 
+  sgx_thread_mutex_lock(&ratls_lock);
+
   /* Create a WOLFSSL object */
   // Is this suppose to be server->ctx
   //client->ssl = enc_wolfSSL_new(client->ctx);
   client->ssl = enc_wolfSSL_new(server->ctx);
   if (client->ssl < 0) {
     eprintf("\t+ (%s) wolfSSL_new failed\n", __FUNCTION__);
+    sgx_thread_mutex_unlock(&ratls_lock);
     return 1;
   }
 
@@ -308,18 +323,22 @@ int accept_cluster_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
   ret = enc_wolfSSL_set_fd(client->ssl, client->sockfd);
   if (ret != SSL_SUCCESS) {
     eprintf("\t+ (%s) wolfSSL_set_fd failed\n", __FUNCTION__);
+    sgx_thread_mutex_unlock(&ratls_lock);
     return 1;
   }
 
   ret = enc_wolfSSL_negotiate(client->ssl);
   if (ret != SSL_SUCCESS) {
     eprintf("\t+ (%s) wolfSSL_negotiate failed\n", __FUNCTION__);
+    sgx_thread_mutex_unlock(&ratls_lock);
     return 1;
   }
 
 #ifdef DEBUG_RATLS
   eprintf("\t+ (%s) Client connected successfully\n", __FUNCTION__);
 #endif
+
+  sgx_thread_mutex_unlock(&ratls_lock);
 
   ret = verify_connection(client);
   if (ret) {
@@ -332,7 +351,9 @@ int accept_cluster_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
 }
 
 int read_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
+  sgx_thread_mutex_lock(&ratls_lock);
   int ret = enc_wolfSSL_read(ctx->ssl, data, len);
+  sgx_thread_mutex_unlock(&ratls_lock);
   if (ret == -1) {
     eprintf("%s : Server read failed\n", __FUNCTION__);
     exit(1);
@@ -341,7 +362,9 @@ int read_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
 }
 
 int write_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
+  sgx_thread_mutex_lock(&ratls_lock);
   int ret = enc_wolfSSL_write(ctx->ssl, data, len);
+  sgx_thread_mutex_unlock(&ratls_lock);
   if (ret != len) {
     eprintf("%s : Server write failed\n", __FUNCTION__);
     exit(1);

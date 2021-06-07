@@ -15,11 +15,15 @@ typedef struct {
 void init_sg(sg_ctx_t *ctx);
 void init_new_sg(sg_ctx_t *ctx);
 
-int connect_cluster_sg(sg_ctx_t *ctx);
-void leave_cluster_sg();
-int recieve_cluster_connections_sg(sg_ctx_t *ctx);
+int verify_connections_sg(sg_ctx_t *ctx);
+int recieve_connections_sg(sg_ctx_t *ctx);
+int initiate_connections_sg(sg_ctx_t *ctx);
+void cleanup_connections_sg();
+
+
+
+
 int poll_and_process_updates_sg(sg_ctx_t *ctx);
-int verify_cluster_connections_sg(sg_ctx_t *ctx);
 
 
 int add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len);
@@ -37,7 +41,7 @@ void start_server_sg(sg_ctx_t *ctx);
 */
 
 // Private functions
-void init_connections_sg(sg_ctx_t *ctx);
+void init_connections(sg_ctx_t *ctx);
 
 
 #endif

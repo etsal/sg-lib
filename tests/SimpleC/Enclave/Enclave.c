@@ -9,11 +9,11 @@ void init() {
 }
 
 void connect_cluster() {
-  connect_cluster_sg(&sg_ctx);
+  initiate_connections_sg(&sg_ctx);
 }
 
 void recieve_cluster_connections() {
-  recieve_cluster_connections_sg(&sg_ctx);
+  recieve_connections_sg(&sg_ctx);
 }
 
 void poll_and_process_updates() {
@@ -22,7 +22,7 @@ void poll_and_process_updates() {
 
 int verify_cluster_connections() {
   int ret = 0;
-  ret = verify_cluster_connections_sg(&sg_ctx);
+  ret = verify_connections_sg(&sg_ctx);
   return ret;
 }
 

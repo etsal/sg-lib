@@ -1,10 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h> // sleep
+
 
 #include "assert.h"
 #include "sg_u.h" //fprint()
 
 extern FILE *log_fp;
+void
+ocall_sleep(int time)
+{
+  sleep(time);
+}
 
 void
 ocall_eprintf(const char *str)

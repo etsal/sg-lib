@@ -64,10 +64,11 @@ int ocall_poll_and_process_updates(int active_fds[5], size_t len) {
       eprintf("Before select\n");
 #endif
   ret = select(max_fd, &read_fd_set, NULL, NULL, NULL);
-  if (ret >= 0) {
-#ifdef NETWORKING
-    printf("\t+ (%s) Select returned with %d\n", __FUNCTION__, ret);
+  #ifdef NETWORKING
+    printf("\t+ (%s) Select returned with %d (errno %d)\n", __FUNCTION__, ret, errno);
 #endif
+  if (ret >= 0) {
+
     // Check for incoming data from desired sockets
     for (int i = 0; i < len; ++i) {
       if (active_fds[i] > 0 && FD_ISSET(active_fds[i], &read_fd_set)) {
@@ -75,6 +76,7 @@ int ocall_poll_and_process_updates(int active_fds[5], size_t len) {
       }
     } // for active_fds
   } // if (ret >= 0)
+  exit(1);
 }
 
 int host_connect(const char *host, const char *port) {
@@ -232,8 +234,8 @@ int accept_client(int server_fd) {
 
   sa_len = sizeof sa;
 
-  // eprintf("\t+ %s : Calling accept on server sock %d\n", __FUNCTION__,
-  // server_fd);
+   //eprintf("\t+ %s : Calling accept on server sock %d\n", __FUNCTION__,
+   //server_fd);
 
   fd = accept(server_fd, &sa, &sa_len);
   if (fd < 0) {
@@ -241,6 +243,9 @@ int accept_client(int server_fd) {
     eprintf("%s : accept() %s\n", __FUNCTION__, strerror(errno));
     return -1;
   }
+   //eprintf("\t+ %s : after %d\n", __FUNCTION__,
+   //server_fd);
+
   name = NULL;
   switch (sa.sa_family) {
   case AF_INET:

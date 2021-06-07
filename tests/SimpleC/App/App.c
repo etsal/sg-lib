@@ -32,8 +32,16 @@ void *listen_connections() {
   }
 }
 
+void *make_connections() {
+  sgx_status_t status = connect_cluster(global_eid);
+  if (status) {
+  
+  }
+}
+
 int main(int argc, char const *argv[]) {
-  pthread_t tid;
+  pthread_t tid1, tid2;
+  int ret1, ret2;
   int ret = 0;
   sgx_status_t status = initialize_enclave();
   if (status) {
@@ -47,29 +55,17 @@ int main(int argc, char const *argv[]) {
     exit(1);
   }
 
-  pthread_create(&tid, NULL, listen_connections,
-                 (void *)&ret); // Listen for sg connections
+  pthread_create(&tid1, NULL, listen_connections,
+                 (void *)&ret1); // Listen for sg connections
+  pthread_create(&tid2, NULL, make_connections, (void *)&ret2);
 
-  status = connect_cluster(global_eid);
-  if (status) {
-    printf("Error %08x @ %d\n", status, __LINE__);
-    goto cleanup;
-  }
+  sleep(10);
 
-/*
-  int random_number = 0;
-  status = generate_random_number(global_eid, &random_number);
-  if (status)
-    goto cleanup;
+  pthread_cancel(tid1);
+  pthread_join(tid1, NULL);
 
-  printf("Random Number from Enclave %d\n", random_number);
-*/
-
-cleanup: 
-  printf("Joining server thread ...\n");
-  sleep(5);
-  pthread_cancel(tid);
-  pthread_join(tid, NULL);
+  pthread_cancel(tid2);
+  pthread_join(tid2, NULL);
 
   status = verify_cluster_connections(global_eid, &ret);
   if (status || !ret) {
