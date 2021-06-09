@@ -76,7 +76,9 @@ int ocall_poll_and_process_updates(int active_fds[5], size_t len) {
       }
     } // for active_fds
   } // if (ret >= 0)
-  exit(1);
+  else {
+    exit(1);
+  }
 }
 
 int host_connect(const char *host, const char *port) {

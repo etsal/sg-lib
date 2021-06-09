@@ -225,7 +225,7 @@ void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
 }
 
 static int serialize_and_seal_sg(sg_ctx_t *ctx) {
-  eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+ // eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   StateSg state = STATE_SG__INIT;
   state.kc = malloc(sizeof(Keycert));
   state.t = malloc(sizeof(Table));
@@ -249,7 +249,7 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx) {
 }
 
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx) {
-  eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+  //eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   size_t len = 0;
   uint8_t *buf = NULL;
   int ret = unseal(ctx->db.db_filename, &buf, &len);

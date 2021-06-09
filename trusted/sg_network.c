@@ -146,8 +146,9 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
       // This connection is set (flag) and not to ourselves (ignore)
       if (!(!server_connections[i].ignore && server_connections[i].flag)) {
 #ifdef DEBUG_SG
-        eprintf("\t+ (%s) Error, assert(!server_connections[i].ignore && server_connections[i].flag)\n", __FUNCTION__);
+        eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n", __FUNCTION__);
 #endif
+        // return 1;
       }
 
       active_fds[i] = server_connections[i].ratls.sockfd;
