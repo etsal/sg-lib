@@ -46,6 +46,7 @@ int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_host_connect, (const char* host, const c
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_accept_client, (int sock_fd));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_gethostname, (char* host));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_poll_and_process_updates, (int active_fds[5], size_t len));
+void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_init_networking, ());
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_low_res_time, (int* time));
 size_t SGX_UBRIDGE(SGX_NOCONVENTION, ocall_recv, (int sockfd, void* buf, size_t len, int flags));
 size_t SGX_UBRIDGE(SGX_NOCONVENTION, ocall_send, (int sockfd, const void* buf, size_t len, int flags));

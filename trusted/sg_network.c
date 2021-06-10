@@ -1,6 +1,6 @@
+#include "sgx_thread.h"
 #include <assert.h>
 #include <sys/limits.h>
-#include "sgx_thread.h"
 
 #include "librassl/attester.h"
 #include "ra_tls.h"
@@ -20,14 +20,13 @@ struct connection {
   char hostname[128];
 };
 
-//struct connection cluster_connections[3];
+// struct connection cluster_connections[3];
 
 /* client_connections Used to send updates
  * server_connections Used to select and listen for updates
  */
-struct connection client_connections[3];  
+struct connection client_connections[3];
 struct connection server_connections[3];
-
 
 int num_hosts = 3;
 int pollUpdatesFlag = 1;
@@ -45,14 +44,14 @@ static void gethostname(char *hostname) {
   exit(1);
 }
 
-static struct connection *find_connection(const char *hostname, struct connection c[]) {
+static struct connection *find_connection(const char *hostname,
+                                          struct connection c[]) {
   for (int i = 0; i < num_hosts; ++i) {
     if (strcmp(c[i].hostname, hostname) == 0)
       return &c[i];
   }
   return NULL;
 }
-
 
 static void init_connection(struct connection *c, const char *hostname) {
   c->retries = 0;
@@ -88,18 +87,19 @@ void init_connections(sg_ctx_t *ctx) {
   init_connections_(ctx, server_connections);
 }
 
-/* verify_cluster_connections_sg 
+/* verify_cluster_connections_sg
  * Verifies that we have an active connection with each node
  * in the cluster
  */
 int verify_connections_sg(sg_ctx_t *ctx) {
   int max_ignore = 0;
 
-  for (int i=0; i<num_hosts; ++i) {
+  for (int i = 0; i < num_hosts; ++i) {
     if (!((!client_connections[i].ignore && client_connections[i].flag))) {
       if (max_ignore++ > 1) {
 #ifdef DEBUG_SG
-        eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__, client_connections[i].hostname);
+        eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
+                client_connections[i].hostname);
 #endif
         return 0;
       }
@@ -107,11 +107,12 @@ int verify_connections_sg(sg_ctx_t *ctx) {
   }
 
   max_ignore = 0;
-  for (int i=0; i<num_hosts; ++i) {
+  for (int i = 0; i < num_hosts; ++i) {
     if (!((!server_connections[i].ignore && server_connections[i].flag))) {
       if (max_ignore++ > 1) {
 #ifdef DEBUG_SG
-        eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__, server_connections[i].hostname);
+        eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
+                server_connections[i].hostname);
 #endif
         return 0;
       }
@@ -140,13 +141,14 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
   for (int i = 0; i < num_hosts; ++i) {
     if (server_connections[i].ignore) {
       // continue;
-      active_fds[i] = 0; //SGX will not copy  INT_MAX / -1 properly
+      active_fds[i] = 0; // SGX will not copy  INT_MAX / -1 properly
     } else {
 
       // This connection is set (flag) and not to ourselves (ignore)
       if (!(!server_connections[i].ignore && server_connections[i].flag)) {
 #ifdef DEBUG_SG
-        eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n", __FUNCTION__);
+        eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n",
+                __FUNCTION__);
 #endif
         // return 1;
       }
@@ -180,7 +182,7 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
 int recieve_connections_sg(sg_ctx_t *ctx) {
   int ret;
   int connections_sofar = 0;
-  //char hostname[128];
+  // char hostname[128];
   char client_hostname[128];
   struct connection *c;
   ratls_ctx_t client;
@@ -188,13 +190,16 @@ int recieve_connections_sg(sg_ctx_t *ctx) {
   // Get hostname
   //  gethostname(hostname);
 
-  while (connections_sofar < num_hosts-1) {
+  while (connections_sofar < num_hosts - 1) {
     int sockfd = 0;
 
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Listening for connections from cluster\n", __FUNCTION__);
-#endif    
+    eprintf("\t+ (%s) Listening for connections from cluster\n", __FUNCTION__);
+#endif
     ret = accept_connections(&ctx->ratls, &client);
+    if (ret) {
+      continue;
+    }
 
     // Read client_hostname
     read_ratls(&client, client_hostname, 128);
@@ -226,16 +231,16 @@ int recieve_connections_sg(sg_ctx_t *ctx) {
     c = find_connection(client_hostname, server_connections);
     if (c == NULL) {
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) Connection struct for %s not initialized\n", __FUNCTION__,
-            client_hostname);
+      eprintf("\t+ (%s) Connection struct for %s not initialized\n",
+              __FUNCTION__, client_hostname);
 #endif
       exit(1);
     }
 
-    memcpy(&c->ratls, &client, sizeof(ratls_ctx_t)); // Non-nested structure so we are ok
+    memcpy(&c->ratls, &client,
+           sizeof(ratls_ctx_t)); // Non-nested structure so we are ok
     c->flag = 1;
     ++connections_sofar;
-
   }
 
   return 0;
@@ -258,7 +263,7 @@ int initiate_connections_sg(sg_ctx_t *ctx) {
   eprintf("\t+ (%s) Establishing connection to cluster\n", __FUNCTION__);
 #endif
 
-  while (connections_sofar != num_hosts-1) {
+  while (connections_sofar != num_hosts - 1) {
 
     ocall_sleep(1);
 
@@ -282,19 +287,19 @@ int initiate_connections_sg(sg_ctx_t *ctx) {
 #endif
           write_ratls(&client_connections[i].ratls, hostname, 128);
         }
-      } //if 
-    } //for
-  } // while
+      } // if
+    }   // for
+  }     // while
 
-/*
-  if (retries_exhausted) {
-#ifdef DEBUG_SG
-    eprintf("\t+ (%s) FAILED ... Exiting\n", __FUNCTION__);
-#endif
-    //cleanup_connections_sg();
-    return 1;
-  }
-*/
+  /*
+    if (retries_exhausted) {
+  #ifdef DEBUG_SG
+      eprintf("\t+ (%s) FAILED ... Exiting\n", __FUNCTION__);
+  #endif
+      //cleanup_connections_sg();
+      return 1;
+    }
+  */
 
   return 0;
 }
@@ -312,7 +317,7 @@ static void close_connections(struct connection c[]) {
   }
 }
 
-void cleanup_connections_sg() { 
-  close_connections(client_connections); 
+void cleanup_connections_sg() {
+  close_connections(client_connections);
   close_connections(server_connections);
 }

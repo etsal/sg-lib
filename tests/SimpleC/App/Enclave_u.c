@@ -401,6 +401,13 @@ static sgx_status_t SGX_CDECL Enclave_ocall_poll_and_process_updates(void* pms)
 	return SGX_SUCCESS;
 }
 
+static sgx_status_t SGX_CDECL Enclave_ocall_init_networking(void* pms)
+{
+	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
+	ocall_init_networking();
+	return SGX_SUCCESS;
+}
+
 static sgx_status_t SGX_CDECL Enclave_ocall_low_res_time(void* pms)
 {
 	ms_ocall_low_res_time_t* ms = SGX_CAST(ms_ocall_low_res_time_t*, pms);
@@ -443,9 +450,9 @@ static sgx_status_t SGX_CDECL Enclave_ocall_remote_attestation(void* pms)
 
 static const struct {
 	size_t nr_ocall;
-	void * table[31];
+	void * table[32];
 } ocall_table_Enclave = {
-	31,
+	32,
 	{
 		(void*)Enclave_ocall_print,
 		(void*)Enclave_create_session_ocall,
@@ -473,6 +480,7 @@ static const struct {
 		(void*)Enclave_ocall_accept_client,
 		(void*)Enclave_ocall_gethostname,
 		(void*)Enclave_ocall_poll_and_process_updates,
+		(void*)Enclave_ocall_init_networking,
 		(void*)Enclave_ocall_low_res_time,
 		(void*)Enclave_ocall_recv,
 		(void*)Enclave_ocall_send,

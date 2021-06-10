@@ -1,10 +1,11 @@
-#include <sys/socket.h>
-#include <sys/limits.h>
 #include <netinet/in.h>
+#include <sys/limits.h>
+#include <sys/socket.h>
 
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
+#include <pthread.h>
 #include <stdio.h> // snprintf
 #include <string.h>
 #include <unistd.h>
@@ -12,7 +13,13 @@
 #include "networking.h"
 #include "sg_common.h"
 
-#define NETWORKING
+// static pthread_mutex_t lock; //NOT USED
+
+static int select_accept_client(int server_fd);
+
+void ocall_init_networking() {
+  // lock = PTHREAD_MUTEX_INITIALIZER;
+}
 
 int ocall_host_bind(const char *host, const char *port) {
   return host_bind(host, port);
@@ -32,8 +39,6 @@ int ocall_close(int fd) {
 }
 */
 
-
-
 /* ocall_poll_and_process_updates() To be called in a loop by the enclave
  * SGX is weird with passing an array of ints
  * @param fds List of sockfds to listen on, needed to typedef it for sgx
@@ -52,30 +57,30 @@ int ocall_poll_and_process_updates(int active_fds[5], size_t len) {
     if (max_fd < active_fds[i])
       max_fd = active_fds[i];
     if (active_fds[i] > 0)
-#ifdef NETWORKING
+#ifdef SG_DEBUG
       eprintf("Adding % to read set\n", active_fds[i]);
 #endif
-      FD_SET(active_fds[i], &read_fd_set);
+    FD_SET(active_fds[i], &read_fd_set);
   }
   max_fd += 1;
 
-
-#ifdef NETWORKING
-      eprintf("Before select\n");
+#ifdef SG_DEBUG
+  eprintf("Before select\n");
 #endif
   ret = select(max_fd, &read_fd_set, NULL, NULL, NULL);
-  #ifdef NETWORKING
-    printf("\t+ (%s) Select returned with %d (errno %d)\n", __FUNCTION__, ret, errno);
+#ifdef SG_DEBUG
+  printf("\t+ (%s) Select returned with %d (errno %d)\n", __FUNCTION__, ret,
+         errno);
 #endif
   if (ret >= 0) {
 
     // Check for incoming data from desired sockets
     for (int i = 0; i < len; ++i) {
       if (active_fds[i] > 0 && FD_ISSET(active_fds[i], &read_fd_set)) {
-        //ecall_wolfSSL_handle_update(global_eid, active_fds[i]);
+        // ecall_wolfSSL_handle_update(global_eid, active_fds[i]);
       }
     } // for active_fds
-  } // if (ret >= 0)
+  }   // if (ret >= 0)
   else {
     exit(1);
   }
@@ -192,11 +197,13 @@ int host_bind(const char *host, const char *port) {
     } else {
       sprintf(tmp, "<unknown family: %d>", (int)sa->sa_family);
     }
-    // eprintf("\t+ %s : binding to: %s\n", __FUNCTION__, tmp);
+    eprintf("\t++ (%s) binding to: %s\n", __FUNCTION__, tmp);
     fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
     if (fd < 0 || fd == 0) {
       // perror("socket()");
-      eprintf("%s: socket() %s\n", __FUNCTION__, strerror(errno));
+#ifdef SG_DEBUG
+      eprintf("\t ++ (%s) socket() %s\n", __FUNCTION__, strerror(errno));
+#endif
       continue;
     }
     opt = 1;
@@ -204,14 +211,20 @@ int host_bind(const char *host, const char *port) {
     opt = 0;
     setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof opt);
     if (bind(fd, sa, sa_len) < 0) {
-      // perror("bind()");
-      eprintf("%s: bind() %s\n", __FUNCTION__, strerror(errno));
+// perror("bind()");
+#ifdef SG_DEBUG
+      eprintf("\t ++ (%s) bind() %s\n", __FUNCTION__, strerror(errno));
+#endif
       close(fd);
       continue;
     }
     break;
   }
   if (p == NULL) {
+#ifdef SG_DEBUG
+    eprintf("\t ++ (%s) for loop exhausted %s\n", __FUNCTION__,
+            strerror(errno));
+#endif
     freeaddrinfo(si);
     return -1;
   }
@@ -219,11 +232,16 @@ int host_bind(const char *host, const char *port) {
 
   if (listen(fd, 5) < 0) {
     // perror("listen()");
-    eprintf("%s: listen() %s\n", __FUNCTION__, strerror(errno));
+#ifdef SG_DEBUG
+    eprintf("\t ++ (%s) listen() %s\n", __FUNCTION__, strerror(errno));
+#endif
     close(fd);
     return -1;
   }
 
+#ifdef SG_DEBUG
+  eprintf("\t ++ (%s) Exiting with fd = %d\n", __FUNCTION__, fd);
+#endif
   return fd;
 }
 
@@ -236,8 +254,10 @@ int accept_client(int server_fd) {
 
   sa_len = sizeof sa;
 
-   //eprintf("\t+ %s : Calling accept on server sock %d\n", __FUNCTION__,
-   //server_fd);
+#ifdef SG_DEBUG
+  eprintf("\t+ %s : Calling accept on server sock %d\n", __FUNCTION__,
+          server_fd);
+#endif
 
   fd = accept(server_fd, &sa, &sa_len);
   if (fd < 0) {
@@ -245,8 +265,11 @@ int accept_client(int server_fd) {
     eprintf("%s : accept() %s\n", __FUNCTION__, strerror(errno));
     return -1;
   }
-   //eprintf("\t+ %s : after %d\n", __FUNCTION__,
-   //server_fd);
+
+#ifdef SG_DEBUG
+  eprintf("\t+ %s : After calling accept on server sock %d\n", __FUNCTION__,
+          server_fd);
+#endif
 
   name = NULL;
   switch (sa.sa_family) {
@@ -265,4 +288,58 @@ int accept_client(int server_fd) {
   }
   // eprintf("%s : accepting connection from: %s\n", __FUNCTION__, name);
   return fd;
+}
+
+/*
+ * Returns -1 on error, 0 when select timesout, >0 on successful accept
+ */
+int select_accept_client(int server_fd) {
+  fd_set read_fd_set;
+  int fd, max_fd, ret;
+  struct timeval tv = {2, 0};
+  struct sockaddr sa;
+  socklen_t sa_len; // client
+  char tmp[INET6_ADDRSTRLEN + 50];
+  const char *name = NULL;
+
+  sa_len = sizeof sa;
+
+  FD_ZERO(&read_fd_set);
+  FD_SET(server_fd, &read_fd_set);
+  max_fd = server_fd + 1;
+#ifdef SG_DEBUG
+  printf("\t+ (%s) Calling select() on server_fd %d\n", __FUNCTION__,
+         server_fd);
+#endif
+
+  ret = select(max_fd, &read_fd_set, NULL, NULL, &tv);
+#ifdef SG_DEBUG
+  printf("\t+ (%s) Select returned with %d (errno %d)\n", __FUNCTION__, ret,
+         errno);
+#endif
+  if (ret < 0) {
+    ret = -1;
+    goto cleanup;
+  }
+  if (ret == 0) {
+    ret = 0;
+    goto cleanup;
+  }
+  if (FD_ISSET(server_fd, &read_fd_set)) {
+#ifdef SG_DEBUG
+    printf("\t+ (%s) Calling accept()\n", __FUNCTION__);
+#endif
+    fd = accept(server_fd, &sa, &sa_len);
+#ifdef SG_DEBUG
+    printf("\t+ (%s) accept() returned with %d\n", __FUNCTION__, fd);
+#endif
+    if (fd < 0) {
+      eprintf("%s : accept() %s\n", __FUNCTION__, strerror(errno));
+      ret = -1;
+      goto cleanup;
+    }
+    return fd;
+  }
+cleanup:
+  return ret;
 }

@@ -1,6 +1,5 @@
-#include <assert.h>
 #include "sgx_thread.h"
-
+#include <assert.h>
 
 #include "attester.h"   // key_and_x509
 #include "challenger.h" // get_quote_from_cert(), verify_sgx_cert_extensions()
@@ -92,25 +91,24 @@ static int verify_connection(ratls_ctx_t *ctx) {
 
 void init_ratls() {
   int ret = enc_wolfSSL_Init();
-  sgx_thread_mutex_init(&ratls_lock, NULL);
   if (ret != SSL_SUCCESS) {
     eprintf("\t + (%s) enc_wolfSSL_Init failed\n", __FUNCTION__);
     exit(1);
   }
+  sgx_thread_mutex_init(&ratls_lock, NULL);
+  // ocall_init_networking();  // initialized a networking lock
 }
 
-/* cleanup_ratls : Frees the wolfSSL object (ctx.ssl) and 
+/* cleanup_ratls : Frees the wolfSSL object (ctx.ssl) and
  * the wolfSSL context object (ctx.ctx) and closes the socket
  * (ctx.sockfd)
- * @param ctx 
+ * @param ctx
  */
 void cleanup_ratls(ratls_ctx_t *ctx) {
   enc_wolfSSL_free(ctx->ssl);
-  enc_wolfSSL_CTX_free(ctx->ctx); 
+  enc_wolfSSL_CTX_free(ctx->ctx);
   close(ctx->sockfd);
 }
-
-
 
 void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
   /* Key need to be generated with create_key_and_x509 */
@@ -142,9 +140,11 @@ void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
   int ret = enc_wolfSSL_CTX_use_certificate_buffer(
       server->ctx, kc->der_cert, kc->der_cert_len, SSL_FILETYPE_ASN1);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_use_certificate_chain_buffer_format "
             "failed\n",
             __FUNCTION__);
+#endif
     exit(1);
   }
 
@@ -152,7 +152,9 @@ void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
   ret = enc_wolfSSL_CTX_use_PrivateKey_buffer(
       server->ctx, kc->der_key, kc->der_key_len, SSL_FILETYPE_ASN1);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("%s : wolfSSL_CTX_use_PrivateKey_buffer failed\n", __FUNCTION__);
+#endif
     exit(1);
   }
 
@@ -160,7 +162,9 @@ void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
   ret = enc_wolfSSL_CTX_load_verify_buffer(server->ctx, kc->der_cert,
                                            kc->der_cert_len, SSL_FILETYPE_ASN1);
   if (ret != SSL_SUCCESS) {
+#ifdef DEBUG_RATLS
     eprintf("%s : wolfSSL_CTX_load_verify_buffer failed\n", __FUNCTION__);
+#endif
     exit(1);
   }
 
@@ -171,31 +175,36 @@ void init_ratls_server(ratls_ctx_t *server, key_cert_t *kc) {
 }
 
 int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
+  int ret;
+
 #ifdef DEBUG_RATLS
   eprintf("\t+ (%s) start\n", __FUNCTION__);
 #endif
-  // eprintf("\t+ enc_wolfTLSv1_2_client_method\n");
-  client->method = enc_wolfTLSv1_2_client_method();
 
-  // eprintf("\t+ enc_wolfSSL_CTX_new\n");
+  sgx_thread_mutex_lock(&ratls_lock);
+
+  client->method = enc_wolfTLSv1_2_client_method();
   client->ctx = enc_wolfSSL_CTX_new(client->method);
   if (client->ctx < 0) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_new failed\n", __FUNCTION__);
 #endif
-    return 1;
+    ret = 1;
+    goto cleanup;
   }
 
   // eprintf("\t+ enc_wolfSSL_CTX_use_certificate_buffer\n");
   // I think this the chain isnt needed here
-  int ret = enc_wolfSSL_CTX_use_certificate_buffer(
+  ret = enc_wolfSSL_CTX_use_certificate_buffer(
       client->ctx, kc->der_cert, kc->der_cert_len, SSL_FILETYPE_ASN1);
   if (ret != SSL_SUCCESS) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_use_certificate_buffer failed with %d\n",
             __FUNCTION__, ret);
 #endif
-    return 1;
+
+    ret = 1;
+    goto cleanup;
   }
 
   // eprintf("\t+ enc_wolfSSL_CTX_use_PrivateKey_buffer\n");
@@ -205,7 +214,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) wolfSSL_CTX_use_PrivateKey_buffer failed\n");
 #endif
-    return 1;
+
+    ret = 1;
+    goto cleanup;
   }
 
   /*
@@ -215,6 +226,8 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
         exit(1);
     }
   */
+  sgx_thread_mutex_unlock(&ratls_lock);
+
 #ifdef DEBUG_RATLS
   eprintf("\t + (%s) Calling host_connect\n", __FUNCTION__);
 #endif
@@ -237,8 +250,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_CTX_set_verify failed\n", __FUNCTION__);
 #endif
-    sgx_thread_mutex_unlock(&ratls_lock);
-    return 1;
+
+    ret = 1;
+    goto cleanup;
   }
 
   // Create new SSL session
@@ -248,8 +262,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + %s : wolfSSL_new failed\n", __FUNCTION__);
 #endif
-    sgx_thread_mutex_unlock(&ratls_lock);
-    return 1;
+
+    ret = 1;
+    goto cleanup;
   }
 
   // Attach wolfSSL to the socket
@@ -258,8 +273,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t (%s) wolfSSL_set_fd failed\n", __FUNCTION__);
 #endif
-    sgx_thread_mutex_unlock(&ratls_lock);
-    return 1;
+
+    ret = 1;
+    goto cleanup;
   }
 
   //    eprintf("\t+ enc_wolfSSL_connect\n");
@@ -268,11 +284,10 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) enc_wolfSSL_connect failed\n", __FUNCTION__);
 #endif
-    sgx_thread_mutex_unlock(&ratls_lock);
-    return 1;
-  }
 
-  sgx_thread_mutex_unlock(&ratls_lock);
+    ret = 1;
+    goto cleanup;
+  }
 
   ret = verify_connection(client);
   if (ret) {
@@ -281,6 +296,8 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
     ret = 1;
   }
 
+cleanup:
+  sgx_thread_mutex_unlock(&ratls_lock);
   return ret;
 }
 
@@ -303,7 +320,8 @@ int accept_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
   /* Accept client connections */
   client->sockfd = accept_client(server->sockfd);
   if (client->sockfd == 0 || client->sockfd < 0) {
-    eprintf("\t +(%s) ocall_accept_client failed\n", __FUNCTION__);
+    eprintf("\t + (%s) ocall_accept_client failed with %d\n", __FUNCTION__,
+            client->sockfd);
     return 1;
   }
 
@@ -311,34 +329,32 @@ int accept_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
 
   /* Create a WOLFSSL object */
   // Is this suppose to be server->ctx
-  //client->ssl = enc_wolfSSL_new(client->ctx);
+  // client->ssl = enc_wolfSSL_new(client->ctx);
   client->ssl = enc_wolfSSL_new(server->ctx);
   if (client->ssl < 0) {
     eprintf("\t+ (%s) wolfSSL_new failed\n", __FUNCTION__);
-    sgx_thread_mutex_unlock(&ratls_lock);
-    return 1;
+    ret = 1;
+    goto cleanup;
   }
 
   /* Attach wolfSSL to the socket */
   ret = enc_wolfSSL_set_fd(client->ssl, client->sockfd);
   if (ret != SSL_SUCCESS) {
     eprintf("\t+ (%s) wolfSSL_set_fd failed\n", __FUNCTION__);
-    sgx_thread_mutex_unlock(&ratls_lock);
-    return 1;
+    ret = 1;
+    goto cleanup;
   }
 
   ret = enc_wolfSSL_negotiate(client->ssl);
   if (ret != SSL_SUCCESS) {
     eprintf("\t+ (%s) wolfSSL_negotiate failed\n", __FUNCTION__);
-    sgx_thread_mutex_unlock(&ratls_lock);
-    return 1;
+    ret = 1;
+    goto cleanup;
   }
 
 #ifdef DEBUG_RATLS
   eprintf("\t+ (%s) Client connected successfully\n", __FUNCTION__);
 #endif
-
-  sgx_thread_mutex_unlock(&ratls_lock);
 
   ret = verify_connection(client);
   if (ret) {
@@ -347,13 +363,13 @@ int accept_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
     ret = 1;
   }
 
+cleanup:
+  sgx_thread_mutex_unlock(&ratls_lock);
   return ret;
 }
 
 int read_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
-  sgx_thread_mutex_lock(&ratls_lock);
   int ret = enc_wolfSSL_read(ctx->ssl, data, len);
-  sgx_thread_mutex_unlock(&ratls_lock);
   if (ret == -1) {
     eprintf("%s : Server read failed\n", __FUNCTION__);
     exit(1);
@@ -362,9 +378,7 @@ int read_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
 }
 
 int write_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
-  sgx_thread_mutex_lock(&ratls_lock);
   int ret = enc_wolfSSL_write(ctx->ssl, data, len);
-  sgx_thread_mutex_unlock(&ratls_lock);
   if (ret != len) {
     eprintf("%s : Server write failed\n", __FUNCTION__);
     exit(1);
