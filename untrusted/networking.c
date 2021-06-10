@@ -67,6 +67,8 @@ int ocall_poll_and_process_updates(int active_fds[5], size_t len) {
 #ifdef SG_DEBUG
   eprintf("Before select\n");
 #endif
+  eprintf("\t+ (%s) Listening for updates from cluster\n", __FUNCTION__);
+
   ret = select(max_fd, &read_fd_set, NULL, NULL, NULL);
 #ifdef SG_DEBUG
   printf("\t+ (%s) Select returned with %d (errno %d)\n", __FUNCTION__, ret,
@@ -197,7 +199,9 @@ int host_bind(const char *host, const char *port) {
     } else {
       sprintf(tmp, "<unknown family: %d>", (int)sa->sa_family);
     }
-    eprintf("\t++ (%s) binding to: %s\n", __FUNCTION__, tmp);
+#ifdef SG_DEBUG
+    eprintf("\t+ (%s) binding to: %s\n", __FUNCTION__, tmp);
+#endif    
     fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
     if (fd < 0 || fd == 0) {
       // perror("socket()");

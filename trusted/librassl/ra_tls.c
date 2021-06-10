@@ -181,7 +181,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   eprintf("\t+ (%s) start\n", __FUNCTION__);
 #endif
 
-  sgx_thread_mutex_lock(&ratls_lock);
+  //sgx_thread_mutex_lock(&ratls_lock);
 
   client->method = enc_wolfTLSv1_2_client_method();
   client->ctx = enc_wolfSSL_CTX_new(client->method);
@@ -226,7 +226,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
         exit(1);
     }
   */
-  sgx_thread_mutex_unlock(&ratls_lock);
+  //sgx_thread_mutex_unlock(&ratls_lock);
 
 #ifdef DEBUG_RATLS
   eprintf("\t + (%s) Calling host_connect\n", __FUNCTION__);
@@ -240,7 +240,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
     return 1;
   }
 
-  sgx_thread_mutex_lock(&ratls_lock);
+  //sgx_thread_mutex_lock(&ratls_lock);
 
   // Enable client authentication
   //    eprintf("\t+ enc_wolfSSL_CTX_set_verify\n");
@@ -297,7 +297,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   }
 
 cleanup:
-  sgx_thread_mutex_unlock(&ratls_lock);
+  //sgx_thread_mutex_unlock(&ratls_lock);
   return ret;
 }
 
@@ -325,7 +325,7 @@ int accept_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
     return 1;
   }
 
-  sgx_thread_mutex_lock(&ratls_lock);
+  //sgx_thread_mutex_lock(&ratls_lock);
 
   /* Create a WOLFSSL object */
   // Is this suppose to be server->ctx
@@ -364,7 +364,7 @@ int accept_connections(ratls_ctx_t *server, ratls_ctx_t *client) {
   }
 
 cleanup:
-  sgx_thread_mutex_unlock(&ratls_lock);
+  //sgx_thread_mutex_unlock(&ratls_lock);
   return ret;
 }
 
