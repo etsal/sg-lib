@@ -121,6 +121,75 @@ int verify_connections_sg(sg_ctx_t *ctx) {
   return 1;
 }
 
+/* process_update_sg()
+ * Called by ocall_poll_and_process_updates() to read from the socket
+ * Calls read_ratls() -calls-> enc_wolfSSL_read() which uses a ocall callback to
+ * read from the socket Locks db and applies update
+ */
+int process_update_sg(ratls_ctx_t *ctx) {
+
+  uint8_t *buf, *data;
+  size_t buf_len, data_len;
+
+  // Read in size
+  //  enc_wolfSSL_read(*ctx->ssl);
+
+  // Read in data
+  //  enc_wolfSSL_read(*ctx->ssl);
+}
+
+/* push_updates_sg
+ * Sends the size of the updates and then the update itself
+ * Recieiving end must follow this order
+ */
+int push_updates_sg(sg_ctx_t *ctx) {
+  uint8_t *update;
+  size_t update_len = 0;
+  int ret;
+  uint32_t len;
+
+  for (int i = 0; i < num_hosts; ++i) {
+    if (client_connections[i].ignore)
+      continue;
+
+    db_get_update_len(&ctx->db, &update_len);
+    if (!update_len) {
+#ifdef DEBUG_SG
+      eprintf("\t+ (%s) ERROR : Update is of length %d\n", __FUNCTION__,
+              update_len);
+#endif
+      return 1;
+    }
+
+    len = htonl(update_len);
+    update = malloc(update_len);
+    db_get_update(&ctx->db, update, update_len);
+
+#ifdef DEBUG_SG
+    eprintf("\t+ (%s) Sending update of size %d\n", __FUNCTION__, update_len);
+#endif
+
+    // Write the size of the update
+    ret =
+        write_ratls(&client_connections[i].ratls, (uint8_t *)&len, sizeof(len));
+    if (ret != update_len) {
+      return 1;
+    }
+
+    // Write the update
+    ret = write_ratls(&client_connections[i].ratls, update, update_len);
+    if (ret != update_len) {
+      return 1;
+    }
+
+#ifdef DEBUG_SG
+    eprintf("\t+ (%s) Update sent to %s\n", __FUNCTION__,
+            client_connections[i].hostname);
+#endif
+  }
+  return 0;
+}
+
 /* poll_for_updates()
  * Loops calling ocall_select to recieve and process messages
  */
@@ -134,6 +203,8 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
 
   struct fd_connection_map m[2];
   int active_fds[num_hosts];
+  int check_fds[num_hosts];
+  
   int ret;
 
   // Gather sockfds and initialize select
@@ -150,7 +221,7 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
         eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n",
                 __FUNCTION__, server_connections[i].hostname);
 #endif
-       return 1;
+        //return 1;
       }
 
       active_fds[i] = server_connections[i].ratls.sockfd;
@@ -169,8 +240,25 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
   eprintf("\n");
 #endif
 
+
   while (pollUpdatesFlag) {
-    ocall_poll_and_process_updates(&ret, active_fds, num_hosts);
+    //ocall_poll_and_process_updates(&ret, active_fds, num_hosts);
+    ocall_test(&ret, active_fds, check_fds, num_hosts);
+
+    for (int i=0; i<num_hosts; ++i) {
+      if (check_fds[i] == 0) continue;
+#ifdef DEBUG_SG
+    eprintf("\t+ (%s) incoming message from host %s\n", __FUNCTION__, server_connections[i].hostname);
+#endif
+
+      uint8_t buf[1024];
+      size_t buf_len = 1023;
+
+      memset(buf, 0, sizeof(buf));
+      read_ratls(&server_connections[i].ratls, buf, buf_len);
+      eprintf("Read: -->%s<--\n", hexstring(buf, buf_len));
+    }
+    exit(1);
   }
 }
 
@@ -260,7 +348,7 @@ int initiate_connections_sg(sg_ctx_t *ctx) {
   gethostname(hostname);
 
 #ifdef DEBUG_SG
-  //eprintf("\t+ (%s) Establishing connection to cluster\n", __FUNCTION__);
+  // eprintf("\t+ (%s) Establishing connection to cluster\n", __FUNCTION__);
 #endif
 
   while (connections_sofar != num_hosts - 1) {

@@ -187,10 +187,9 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
   client->ctx = enc_wolfSSL_CTX_new(client->method);
   if (client->ctx < 0) {
 #ifdef DEBUG_RATLS
-    eprintf("\t + (%s) enc_wolfSSL_CTX_new failed\n", __FUNCTION__);
+    eprintf("\t\t+ (%s) enc_wolfSSL_CTX_new failed\n", __FUNCTION__);
 #endif
-    ret = 1;
-    goto cleanup;
+    return 1;
   }
 
   // eprintf("\t+ enc_wolfSSL_CTX_use_certificate_buffer\n");
@@ -199,12 +198,12 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
       client->ctx, kc->der_cert, kc->der_cert_len, SSL_FILETYPE_ASN1);
   if (ret != SSL_SUCCESS) {
 #ifdef DEBUG_RATLS
-    eprintf("\t + (%s) enc_wolfSSL_CTX_use_certificate_buffer failed with %d\n",
+    eprintf("\t\t+ (%s) enc_wolfSSL_CTX_use_certificate_buffer failed with %d\n",
             __FUNCTION__, ret);
 #endif
 
     ret = 1;
-    goto cleanup;
+    goto cleanup_ctx;
   }
 
   // eprintf("\t+ enc_wolfSSL_CTX_use_PrivateKey_buffer\n");
@@ -216,7 +215,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #endif
 
     ret = 1;
-    goto cleanup;
+    goto cleanup_ctx;
   }
 
   /*
@@ -237,7 +236,8 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #ifdef DEBUG_RATLS
     eprintf("\t + (%s) host_connect failed\n", __FUNCTION__);
 #endif
-    return 1;
+    ret = 1;
+    goto cleanup_ctx;
   }
 
   //sgx_thread_mutex_lock(&ratls_lock);
@@ -252,7 +252,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #endif
 
     ret = 1;
-    goto cleanup;
+    goto cleanup_ssl;
   }
 
   // Create new SSL session
@@ -264,7 +264,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #endif
 
     ret = 1;
-    goto cleanup;
+    goto cleanup_ssl;
   }
 
   // Attach wolfSSL to the socket
@@ -275,7 +275,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #endif
 
     ret = 1;
-    goto cleanup;
+    goto cleanup_ssl;
   }
 
   //    eprintf("\t+ enc_wolfSSL_connect\n");
@@ -286,7 +286,7 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 #endif
 
     ret = 1;
-    goto cleanup;
+    goto cleanup_ssl;
   }
 
   ret = verify_connection(client);
@@ -299,6 +299,14 @@ int init_ratls_client(ratls_ctx_t *client, key_cert_t *kc, const char *host) {
 cleanup:
   //sgx_thread_mutex_unlock(&ratls_lock);
   return ret;
+
+cleanup_ctx:
+  enc_wolfSSL_CTX_free(client->ctx);
+  goto cleanup;
+
+cleanup_ssl:
+  enc_wolfSSL_free(client->ssl);
+  goto cleanup_ctx;
 }
 
 /* accept_connections

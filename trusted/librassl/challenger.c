@@ -249,7 +249,7 @@ int verify_enclave_quote_status(const char* ias_report, int ias_report_len) {
 //#ifdef SGX_GROUP_OUT_OF_DATE
     const char* status_outdated = "GROUP_OUT_OF_DATE\"";
     if (0 == strncmp(p_begin, status_outdated, strlen(status_outdated))) {
-        eprintf("\t + (%s) Verified Attestation - WARNING: GROUP_OUT_OF_DATE\n", __FUNCTION__);
+        eprintf("\t\t+ (%s) Verified Attestation - WARNING: GROUP_OUT_OF_DATE\n", __FUNCTION__);
         return 0;
     }
 //#endif

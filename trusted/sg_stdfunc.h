@@ -2,10 +2,13 @@
 #define __STD_FUNCTIONS_H__
 
 #include <stdlib.h>
+#include <stdint.h>
 
 void exit(int s);
 
 void perror(const char *s);
+
+uint32_t htonl(uint32_t hostlong);
 
 char *strcpy(char *dest, const char *src);
 

@@ -161,6 +161,13 @@ typedef struct ms_ocall_poll_and_process_updates_t {
 	size_t ms_len;
 } ms_ocall_poll_and_process_updates_t;
 
+typedef struct ms_ocall_test_t {
+	int ms_retval;
+	int* ms_active_fds;
+	int* ms_check_fds;
+	size_t ms_len;
+} ms_ocall_test_t;
+
 typedef struct ms_ocall_low_res_time_t {
 	int* ms_time;
 } ms_ocall_low_res_time_t;
@@ -408,6 +415,14 @@ static sgx_status_t SGX_CDECL Enclave_ocall_init_networking(void* pms)
 	return SGX_SUCCESS;
 }
 
+static sgx_status_t SGX_CDECL Enclave_ocall_test(void* pms)
+{
+	ms_ocall_test_t* ms = SGX_CAST(ms_ocall_test_t*, pms);
+	ms->ms_retval = ocall_test(ms->ms_active_fds, ms->ms_check_fds, ms->ms_len);
+
+	return SGX_SUCCESS;
+}
+
 static sgx_status_t SGX_CDECL Enclave_ocall_low_res_time(void* pms)
 {
 	ms_ocall_low_res_time_t* ms = SGX_CAST(ms_ocall_low_res_time_t*, pms);
@@ -450,9 +465,9 @@ static sgx_status_t SGX_CDECL Enclave_ocall_remote_attestation(void* pms)
 
 static const struct {
 	size_t nr_ocall;
-	void * table[32];
+	void * table[33];
 } ocall_table_Enclave = {
-	32,
+	33,
 	{
 		(void*)Enclave_ocall_print,
 		(void*)Enclave_create_session_ocall,
@@ -481,6 +496,7 @@ static const struct {
 		(void*)Enclave_ocall_gethostname,
 		(void*)Enclave_ocall_poll_and_process_updates,
 		(void*)Enclave_ocall_init_networking,
+		(void*)Enclave_ocall_test,
 		(void*)Enclave_ocall_low_res_time,
 		(void*)Enclave_ocall_recv,
 		(void*)Enclave_ocall_send,

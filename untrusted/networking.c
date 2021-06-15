@@ -39,6 +39,53 @@ int ocall_close(int fd) {
 }
 */
 
+int ocall_test(int *active_fds, int *check_fds, size_t len)
+{
+  fd_set read_fd_set;
+  int max_fd;
+  int ret;
+
+  memset(check_fds, 0, len * sizeof(int));
+  FD_ZERO(&read_fd_set);
+  max_fd = 0;
+
+  // Set the fds to be watched for reading and max fd
+  for (int i = 0; i < len; ++i) {
+    if (max_fd < active_fds[i])
+      max_fd = active_fds[i];
+    if (active_fds[i] > 0)
+#ifdef SG_DEBUG
+      eprintf("Adding % to read set\n", active_fds[i]);
+#endif
+    FD_SET(active_fds[i], &read_fd_set);
+  }
+  max_fd += 1;
+
+#ifdef SG_DEBUG
+  eprintf("Before select\n");
+#endif
+  eprintf("\t+ (%s) Listening for updates from cluster\n", __FUNCTION__);
+
+  ret = select(max_fd, &read_fd_set, NULL, NULL, NULL);
+#ifdef SG_DEBUG
+  printf("\t+ (%s) Select returned with %d (errno %d)\n", __FUNCTION__, ret,
+         errno);
+#endif
+  if (ret >= 0) {
+
+    // Check for incoming data from desired sockets
+    for (int i = 0; i < len; ++i) {
+      if (active_fds[i] > 0 && FD_ISSET(active_fds[i], &read_fd_set)) {
+        check_fds[i] = 1;
+      }
+    } // for active_fds
+  }   // if (ret >= 0)
+  else {
+    exit(1);
+  }
+  return 0;
+}
+
 /* ocall_poll_and_process_updates() To be called in a loop by the enclave
  * SGX is weird with passing an array of ints
  * @param fds List of sockfds to listen on, needed to typedef it for sgx
@@ -86,6 +133,7 @@ int ocall_poll_and_process_updates(int active_fds[5], size_t len) {
   else {
     exit(1);
   }
+  return 0;
 }
 
 int host_connect(const char *host, const char *port) {
