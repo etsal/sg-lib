@@ -39,7 +39,14 @@ int ocall_close(int fd) {
 }
 */
 
-int ocall_test(int *active_fds, int *check_fds, size_t len)
+
+/* ocall_poll_and_process_updates() To be called in a loop by the enclave
+ * @param fds List of sockfds to listen on, needed to typedef it for sgx
+ * @param len Length of active_fds
+ * @return Populates check_fds that should be read for incoming messages,
+ * easier this way, dont need to define an ecall to process each fd individually
+ */
+int ocall_poll_and_process_updates(int *active_fds, int *check_fds, size_t len)
 {
   fd_set read_fd_set;
   int max_fd;
@@ -77,56 +84,6 @@ int ocall_test(int *active_fds, int *check_fds, size_t len)
     for (int i = 0; i < len; ++i) {
       if (active_fds[i] > 0 && FD_ISSET(active_fds[i], &read_fd_set)) {
         check_fds[i] = 1;
-      }
-    } // for active_fds
-  }   // if (ret >= 0)
-  else {
-    exit(1);
-  }
-  return 0;
-}
-
-/* ocall_poll_and_process_updates() To be called in a loop by the enclave
- * SGX is weird with passing an array of ints
- * @param fds List of sockfds to listen on, needed to typedef it for sgx
- * @param len Length of active_fds
- */
-int ocall_poll_and_process_updates(int active_fds[5], size_t len) {
-  fd_set read_fd_set;
-  int max_fd;
-  int ret;
-
-  FD_ZERO(&read_fd_set);
-  max_fd = 0;
-
-  // Set the fds to be watched for reading and max fd
-  for (int i = 0; i < len; ++i) {
-    if (max_fd < active_fds[i])
-      max_fd = active_fds[i];
-    if (active_fds[i] > 0)
-#ifdef SG_DEBUG
-      eprintf("Adding % to read set\n", active_fds[i]);
-#endif
-    FD_SET(active_fds[i], &read_fd_set);
-  }
-  max_fd += 1;
-
-#ifdef SG_DEBUG
-  eprintf("Before select\n");
-#endif
-  eprintf("\t+ (%s) Listening for updates from cluster\n", __FUNCTION__);
-
-  ret = select(max_fd, &read_fd_set, NULL, NULL, NULL);
-#ifdef SG_DEBUG
-  printf("\t+ (%s) Select returned with %d (errno %d)\n", __FUNCTION__, ret,
-         errno);
-#endif
-  if (ret >= 0) {
-
-    // Check for incoming data from desired sockets
-    for (int i = 0; i < len; ++i) {
-      if (active_fds[i] > 0 && FD_ISSET(active_fds[i], &read_fd_set)) {
-        // ecall_wolfSSL_handle_update(global_eid, active_fds[i]);
       }
     } // for active_fds
   }   // if (ret >= 0)

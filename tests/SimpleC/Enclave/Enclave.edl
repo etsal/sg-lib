@@ -8,6 +8,7 @@ trusted {
         public void recieve_cluster_connections();
         public void poll_and_process_updates();
         public int verify_cluster_connections();
+        public void send_message([in, string] const char *msg);
     };
 
     untrusted {

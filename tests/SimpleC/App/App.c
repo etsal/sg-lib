@@ -39,6 +39,13 @@ void *make_connections() {
   }
 }
 
+
+void *send_messages() {
+  for (int i=0; i<3; ++i)
+    send_message(global_eid, "HELLO");
+
+}
+
 int main(int argc, char const *argv[]) {
   pthread_t tid1, tid2;
   int ret1, ret2;
@@ -59,7 +66,7 @@ int main(int argc, char const *argv[]) {
                  (void *)&ret1); // Listen for sg connections
   pthread_create(&tid2, NULL, make_connections, (void *)&ret2);
 
-  sleep(10);
+  sleep(6);
 
   pthread_cancel(tid1);
   pthread_join(tid1, NULL);
@@ -72,6 +79,9 @@ int main(int argc, char const *argv[]) {
     printf("Failed to connect to cluster ... Exiting status = %08x ret = %d\n", status, ret);
     return 0;
   }
+
+
+  pthread_create(&tid1, NULL, send_messages, (void *)&ret1); 
 
   status = poll_and_process_updates(global_eid);
   if (status) {

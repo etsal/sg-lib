@@ -382,6 +382,9 @@ int read_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
     eprintf("%s : Server read failed\n", __FUNCTION__);
     exit(1);
   }
+//#ifdef DEBUG_RATLS
+  eprintf("\t+ (%s) Read %d bytes\n", __FUNCTION__, ret);
+//#endif
   return ret;
 }
 

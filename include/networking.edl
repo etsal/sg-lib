@@ -10,9 +10,8 @@ enclave {
     int ocall_host_connect([in, string] const char *host, [in, string] const char *port);
     int ocall_accept_client(int sock_fd);
     void ocall_gethostname([out, size=128] char *host);
-    int ocall_poll_and_process_updates([in] int active_fds[5], size_t len);
     void ocall_init_networking();
-    int ocall_test([in, count=len] int *active_fds, [out, count=len] int *check_fds, size_t len);
+    int ocall_poll_and_process_updates([in, count=len] int *active_fds, [out, count=len] int *check_fds, size_t len);
 };
 
 };

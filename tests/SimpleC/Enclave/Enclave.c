@@ -31,7 +31,9 @@ int generate_random_number() {
   return 42;
 }
 
-
+void send_message(const char *msg) {
+  send_msg_sg(&sg_ctx, msg); 
+}
 
 /*
 int generate_random_number() {
