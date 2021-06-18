@@ -380,11 +380,12 @@ int read_ratls(ratls_ctx_t *ctx, uint8_t *data, size_t len) {
   int ret = enc_wolfSSL_read(ctx->ssl, data, len);
   if (ret == -1) {
     eprintf("%s : Server read failed\n", __FUNCTION__);
-    exit(1);
+    return 0;
+    //exit(1);
   }
-//#ifdef DEBUG_RATLS
+#ifdef DEBUG_RATLS
   eprintf("\t+ (%s) Read %d bytes\n", __FUNCTION__, ret);
-//#endif
+#endif
   return ret;
 }
 
