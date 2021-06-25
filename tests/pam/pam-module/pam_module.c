@@ -128,7 +128,6 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
   /*Auth user reads a file with usernames and passwords and returns true if
    * username
    * and password are correct. Obviously, you must not save clear text passwords
-   */
   if (auth_user(username, password)) {
     printf("Welcome, user");
     return PAM_SUCCESS;
@@ -136,6 +135,14 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
     fprintf(stderr, "Wrong username or password");
     return PAM_PERM_DENIED;
   }
+  */
+
+  /* Auth user by calling auth_user provided by sg_daemon 
+   * must preform IPC with sg_daemon to pass and recieve requests 
+  */
+
+
+  
 }
 
 PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
@@ -144,7 +151,7 @@ PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
   struct tm expiry_date;
   expiry_date.tm_mday = 31;
   expiry_date.tm_mon = 12;
-  expiry_date.tm_year = 2020;
+  expiry_date.tm_year = 2023;
   expiry_date.tm_sec = 0;
   expiry_date.tm_min = 0;
   expiry_date.tm_hour = 0;

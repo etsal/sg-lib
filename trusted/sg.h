@@ -22,6 +22,7 @@ void cleanup_connections_sg();
 
 // Network functions. See sg_network.c
 int poll_and_process_updates_sg(sg_ctx_t *ctx);
+
 // Testing purposes
 int send_msg_sg(sg_ctx_t *ctx, const char *msg);
 
@@ -32,12 +33,20 @@ int count_sg(sg_ctx_t *ctx);
 int save_sg(sg_ctx_t *ctx, const char *filename);
 int load_sg(sg_ctx_t *ctx, const char *filename);
 void print_sg(sg_ctx_t *ctx, void(*format)(const void *data));
-//int listen_updates_sg(sg_ctx_t *ctx);
-int send_update_sg(sg_ctx_t *ctx, const char *host);
+
+// Admin
+int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
+int modify_password_sg(sg_ctx_t *ctx, const char *username, const char *password);
+
+// Anyone
+int auth_user_sg(sg_ctx *ctx, const char *username, const char *password); //Verify identitdy by checking pw
+int account_user_sg(sg_ctx *ctx); // Check that the specified account is a valid authentication target
+
+
 
 
 
 // Private functions
-void init_connections(sg_ctx_t *ctx);
+void init_connections(sg_ctx_t *ctx); // Initializes connection structures
 
 #endif

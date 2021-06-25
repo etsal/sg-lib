@@ -18,18 +18,25 @@
 } while (0)
 
 
-typedef struct ms_generate_random_number_t {
+typedef struct ms_ecall_init_sg_t {
 	int ms_retval;
-} ms_generate_random_number_t;
+} ms_ecall_init_sg_t;
 
-typedef struct ms_verify_cluster_connections_t {
+typedef struct ms_ecall_recieve_connections_sg_t {
 	int ms_retval;
-} ms_verify_cluster_connections_t;
+} ms_ecall_recieve_connections_sg_t;
 
-typedef struct ms_send_message_t {
-	char* ms_msg;
-	size_t ms_msg_len;
-} ms_send_message_t;
+typedef struct ms_ecall_initiate_connections_sg_t {
+	int ms_retval;
+} ms_ecall_initiate_connections_sg_t;
+
+typedef struct ms_ecall_verify_connections_sg_t {
+	int ms_retval;
+} ms_ecall_verify_connections_sg_t;
+
+typedef struct ms_ecall_poll_and_process_updates_t {
+	int ms_retval;
+} ms_ecall_poll_and_process_updates_t;
 
 typedef struct ms_ocall_print_t {
 	char* ms_str;
@@ -216,171 +223,148 @@ typedef struct ms_ocall_remote_attestation_t {
 	attestation_verification_report_t* ms_attn_report;
 } ms_ocall_remote_attestation_t;
 
-static sgx_status_t SGX_CDECL sgx_generate_random_number(void* pms)
+static sgx_status_t SGX_CDECL sgx_ecall_init_sg(void* pms)
 {
-	CHECK_REF_POINTER(pms, sizeof(ms_generate_random_number_t));
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_init_sg_t));
 	//
 	// fence after pointer checks
 	//
 	sgx_lfence();
-	ms_generate_random_number_t* ms = SGX_CAST(ms_generate_random_number_t*, pms);
+	ms_ecall_init_sg_t* ms = SGX_CAST(ms_ecall_init_sg_t*, pms);
 	sgx_status_t status = SGX_SUCCESS;
 
 
 
-	ms->ms_retval = generate_random_number();
+	ms->ms_retval = ecall_init_sg();
 
 
 	return status;
 }
 
-static sgx_status_t SGX_CDECL sgx_init(void* pms)
+static sgx_status_t SGX_CDECL sgx_ecall_recieve_connections_sg(void* pms)
 {
-	sgx_status_t status = SGX_SUCCESS;
-	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
-	init();
-	return status;
-}
-
-static sgx_status_t SGX_CDECL sgx_connect_cluster(void* pms)
-{
-	sgx_status_t status = SGX_SUCCESS;
-	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
-	connect_cluster();
-	return status;
-}
-
-static sgx_status_t SGX_CDECL sgx_recieve_cluster_connections(void* pms)
-{
-	sgx_status_t status = SGX_SUCCESS;
-	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
-	recieve_cluster_connections();
-	return status;
-}
-
-static sgx_status_t SGX_CDECL sgx_poll_and_process_updates(void* pms)
-{
-	sgx_status_t status = SGX_SUCCESS;
-	if (pms != NULL) return SGX_ERROR_INVALID_PARAMETER;
-	poll_and_process_updates();
-	return status;
-}
-
-static sgx_status_t SGX_CDECL sgx_verify_cluster_connections(void* pms)
-{
-	CHECK_REF_POINTER(pms, sizeof(ms_verify_cluster_connections_t));
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_recieve_connections_sg_t));
 	//
 	// fence after pointer checks
 	//
 	sgx_lfence();
-	ms_verify_cluster_connections_t* ms = SGX_CAST(ms_verify_cluster_connections_t*, pms);
+	ms_ecall_recieve_connections_sg_t* ms = SGX_CAST(ms_ecall_recieve_connections_sg_t*, pms);
 	sgx_status_t status = SGX_SUCCESS;
 
 
 
-	ms->ms_retval = verify_cluster_connections();
+	ms->ms_retval = ecall_recieve_connections_sg();
 
 
 	return status;
 }
 
-static sgx_status_t SGX_CDECL sgx_send_message(void* pms)
+static sgx_status_t SGX_CDECL sgx_ecall_initiate_connections_sg(void* pms)
 {
-	CHECK_REF_POINTER(pms, sizeof(ms_send_message_t));
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_initiate_connections_sg_t));
 	//
 	// fence after pointer checks
 	//
 	sgx_lfence();
-	ms_send_message_t* ms = SGX_CAST(ms_send_message_t*, pms);
+	ms_ecall_initiate_connections_sg_t* ms = SGX_CAST(ms_ecall_initiate_connections_sg_t*, pms);
 	sgx_status_t status = SGX_SUCCESS;
-	char* _tmp_msg = ms->ms_msg;
-	size_t _len_msg = ms->ms_msg_len ;
-	char* _in_msg = NULL;
 
-	CHECK_UNIQUE_POINTER(_tmp_msg, _len_msg);
 
+
+	ms->ms_retval = ecall_initiate_connections_sg();
+
+
+	return status;
+}
+
+static sgx_status_t SGX_CDECL sgx_ecall_verify_connections_sg(void* pms)
+{
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_verify_connections_sg_t));
 	//
 	// fence after pointer checks
 	//
 	sgx_lfence();
+	ms_ecall_verify_connections_sg_t* ms = SGX_CAST(ms_ecall_verify_connections_sg_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
 
-	if (_tmp_msg != NULL && _len_msg != 0) {
-		_in_msg = (char*)malloc(_len_msg);
-		if (_in_msg == NULL) {
-			status = SGX_ERROR_OUT_OF_MEMORY;
-			goto err;
-		}
 
-		memcpy((void*)_in_msg, _tmp_msg, _len_msg);
-		_in_msg[_len_msg - 1] = '\0';
-		if (_len_msg != strlen(_in_msg) + 1)
-		{
-			status = SGX_ERROR_UNEXPECTED;
-			goto err;
-		}
-	}
 
-	send_message((const char*)_in_msg);
-err:
-	if (_in_msg) free((void*)_in_msg);
+	ms->ms_retval = ecall_verify_connections_sg();
+
+
+	return status;
+}
+
+static sgx_status_t SGX_CDECL sgx_ecall_poll_and_process_updates(void* pms)
+{
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_poll_and_process_updates_t));
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+	ms_ecall_poll_and_process_updates_t* ms = SGX_CAST(ms_ecall_poll_and_process_updates_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+
+
+
+	ms->ms_retval = ecall_poll_and_process_updates();
+
 
 	return status;
 }
 
 SGX_EXTERNC const struct {
 	size_t nr_ecall;
-	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[7];
+	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[5];
 } g_ecall_table = {
-	7,
+	5,
 	{
-		{(void*)(uintptr_t)sgx_generate_random_number, 0},
-		{(void*)(uintptr_t)sgx_init, 0},
-		{(void*)(uintptr_t)sgx_connect_cluster, 0},
-		{(void*)(uintptr_t)sgx_recieve_cluster_connections, 0},
-		{(void*)(uintptr_t)sgx_poll_and_process_updates, 0},
-		{(void*)(uintptr_t)sgx_verify_cluster_connections, 0},
-		{(void*)(uintptr_t)sgx_send_message, 0},
+		{(void*)(uintptr_t)sgx_ecall_init_sg, 0},
+		{(void*)(uintptr_t)sgx_ecall_recieve_connections_sg, 0},
+		{(void*)(uintptr_t)sgx_ecall_initiate_connections_sg, 0},
+		{(void*)(uintptr_t)sgx_ecall_verify_connections_sg, 0},
+		{(void*)(uintptr_t)sgx_ecall_poll_and_process_updates, 0},
 	}
 };
 
 SGX_EXTERNC const struct {
 	size_t nr_ocall;
-	uint8_t entry_table[32][7];
+	uint8_t entry_table[32][5];
 } g_dyn_entry_table = {
 	32,
 	{
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, },
 	}
 };
 

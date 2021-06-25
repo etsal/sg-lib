@@ -6,10 +6,10 @@
 #include "ra_tls.h"
 #include "sg.h"
 #include "sg_common.h"
+#include "sg_messages.h"
 #include "sg_t.h" //ocalls
 #include "sg_util.h"
 #include "wolfssl_enclave.h"
-#include "sg_messages.h"
 #define DEBUG_SG 1
 
 struct connection {
@@ -75,35 +75,46 @@ static void init_connections_(sg_ctx_t *ctx, struct connection c[]) {
   }
 }
 
+/* init_connections_sg()
+ * Initializes connection structures
+ * Remember to set retry count and flags for all connections
+ * @param ctx Unused
+ */
+void init_connections(sg_ctx_t *ctx) {
+  init_connections_(ctx, client_connections);
+  init_connections_(ctx, server_connections);
+}
+
 static int push_msg_sg(sg_ctx_t *ctx, const char *msg) {
   uint8_t *update;
   size_t update_len = 0;
   int ret;
   uint32_t len;
-/*
-  db_get_update_len(&ctx->db, &update_len);
-  if (!update_len) {
-#ifdef DEBUG_SG
-    eprintf("\t+ (%s) ERROR : Update is of length %d\n", __FUNCTION__,
-            update_len);
-#endif
-    return 1;
-  }
-  update = malloc(update_len);
-  db_get_update(&ctx->db, update, update_len);
-*/
+  /*
+    db_get_update_len(&ctx->db, &update_len);
+    if (!update_len) {
+  #ifdef DEBUG_SG
+      eprintf("\t+ (%s) ERROR : Update is of length %d\n", __FUNCTION__,
+              update_len);
+  #endif
+      return 1;
+    }
+    update = malloc(update_len);
+    db_get_update(&ctx->db, update, update_len);
+  */
 
-  update = malloc(strlen(msg)+1);
-  for (int i=0; i<strlen(msg); ++i) update[i] = msg[i];
+  update = malloc(strlen(msg) + 1);
+  for (int i = 0; i < strlen(msg); ++i)
+    update[i] = msg[i];
   update[strlen(msg)] = '\0';
-  update_len = strlen(msg)+1;
+  update_len = strlen(msg) + 1;
 
   for (int i = 0; i < num_hosts; ++i) {
     if (client_connections[i].ignore)
       continue;
 
-    ret =
-        prepare_and_send_updates(&client_connections[i].ratls, update, update_len);
+    ret = prepare_and_send_updates(&client_connections[i].ratls, update,
+                                   update_len);
     if (ret) {
 #ifdef DEBUG_SG
       eprintf("\t+ (%s) ERROR : Failed to send update to %s\n", __FUNCTION__,
@@ -122,23 +133,13 @@ int send_msg_sg(sg_ctx_t *ctx, const char *msg) {
   return push_msg_sg(ctx, msg);
 }
 
-
 /* process_update_sg()
  * Called by poll_and_process_updates() to read from the socket
  * Calls read_ratls() -calls-> enc_wolfSSL_read() which uses a ocall callback to
  * read from the socket locks db and applies update
  */
 
-
-/* init_connections_sg : set retry count and flags for all connections
- * @param ctx Unused
- */
-void init_connections(sg_ctx_t *ctx) {
-  init_connections_(ctx, client_connections);
-  init_connections_(ctx, server_connections);
-}
-
-/* verify_cluster_connections_sg
+/* verify_cluster_connections_sg()
  * Verifies that we have an active connection with each node
  * in the cluster
  */
@@ -197,8 +198,8 @@ int push_updates_sg(sg_ctx_t *ctx) {
     if (client_connections[i].ignore)
       continue;
 
-    ret =
-        prepare_and_send_updates(&client_connections[i].ratls, update, update_len);
+    ret = prepare_and_send_updates(&client_connections[i].ratls, update,
+                                   update_len);
     if (ret) {
 #ifdef DEBUG_SG
       eprintf("\t+ (%s) ERROR : Failed to send update to %s\n", __FUNCTION__,

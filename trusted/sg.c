@@ -26,6 +26,7 @@ const char policy_filename[] = "/opt/instance/policy.txt";
  * so we call them here instead
  */
 void init_sg(sg_ctx_t *ctx) {
+
   strcpy(ctx->db.db_filename, db_filename);
   int ret = unseal_and_deserialize_sg(ctx);
   if (ret) {
@@ -49,7 +50,6 @@ void init_sg(sg_ctx_t *ctx) {
   init_connections(ctx);
   init_ratls();
   init_ratls_server(&ctx->ratls, &ctx->kc);
-
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
 #endif
@@ -87,11 +87,6 @@ void init_new_sg(sg_ctx_t *ctx) {
 #endif
 }
 
-/*
-void start_server_sg(sg_ctx_t *ctx) {
-  init_ratls_server(&ctx->ratls, &ctx->kc);
-}
-*/
 int add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len) {
   int ret = 0;
 //	int ret = put_u64_db(&ctx->db, key, value, len);
@@ -130,97 +125,6 @@ int save_sg(sg_ctx_t *ctx, const char *filename) {
 int load_sg(sg_ctx_t *ctx, const char *filename) {
   int ret = db_load(&ctx->db);
   return ret;
-}
-
-/*
-int listen_updates_sg(sg_ctx_t *ctx) {
-//    eprintf("\t+ %s : start\n", __FUNCTION__);
-#ifdef DEBUG_SG
-  eprintf("\t+ Listening for client connections ...\n", __FUNCTION__);
-#endif
-  int ret = 1; //listen_ratls_server(&ctx->ratls);
-  if (ret) {
-    eprintf("\t+ %s : Error, listen_ratls_server returned %d\n", __FUNCTION__,
-            ret);
-    return ret;
-  }
-
-  uint32_t update_len = 16348;
-  uint8_t *update = malloc(update_len);
-
-#ifdef DEBUG_SG
-  eprintf("\t+ RA-TLS Connection successful, reading update ...\n",
-          __FUNCTION__);
-#endif
-  ret = read_ratls(&ctx->ratls, update, update_len);
-  if (ret < 0) {
-    eprintf("\t+ %s : Error, read_ratls returned %d\n", __FUNCTION__, ret);
-  }
-
-#ifdef DEBUG_SG
-  eprintf("\t+ Recieved update of len %d\nTODO: Merge update\n", __FUNCTION__,
-          ret);
-  edividerWithText("Recieved Update");
-  eprintf("len %d\n%s\n", ret, hexstring(update, ret));
-  edivider();
-#endif
-
-  free(update);
-  close_ratls_server(&ctx->ratls);
-
-  return 0;
-}
-*/
-
-
-
-/*
- * Returns 0 on success, 1 on error
- */
-int send_update_sg(sg_ctx_t *ctx, const char *host) {
-#ifdef DEBUG_SG
-  eprintf("\t+ Initializing RA-TLS Client ...\n", __FUNCTION__);
-#endif
-  ratls_ctx_t cli_ctx;
-  int ret = init_ratls_client(&cli_ctx, &ctx->kc, host);
-  if (ret) {
-    eprintf("\t+ %s : Failed to connect to %s\n", __FUNCTION__, host);
-    return 1;
-  }
-
-  uint8_t *update;
-  size_t update_len = 0;
-
-#ifdef DEBUG_SG
-  eprintf("\t+ Preparing update\n", __FUNCTION__);
-#endif
-  db_get_update_len(&ctx->db, &update_len);
-  if (!update_len) {
-    eprintf("\t+ %s : Update is of length %d\n", __FUNCTION__, update_len);
-    return 1;
-  }
-
-  update = malloc(update_len);
-  db_get_update(&ctx->db, update, update_len);
-
-#ifdef DEBUG_SG
-  edividerWithText("Prepared Update");
-  eprintf("len %d\n%s\n", update_len, hexstring(update, update_len));
-  edivider();
-  eprintf("\t+ Sending update\n", __FUNCTION__);
-#endif
-
-  ret = write_ratls(&cli_ctx, update, update_len);
-
-#ifdef DEBUG_SG
-  eprintf("\t+ Finished sending update\n", __FUNCTION__);
-#endif
-
-  destroy_ratls(&cli_ctx);
-  if (ret != update_len) {
-    return 1;
-  }
-  return 0;
 }
 
 void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {

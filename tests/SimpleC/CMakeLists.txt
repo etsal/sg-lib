@@ -160,13 +160,13 @@ set(Enclave_Link_Flags
 
 ### Start
 add_custom_target(UntrustedEdger8r
-COMMAND ${SGX_EDGER8R} --untrusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${SG_ROOT}/include --search-path ${SGX_SDK}/include
+COMMAND ${SGX_EDGER8R} --untrusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR} --search-path ${SG_ROOT}/include --search-path ${SGX_SDK}/include
 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/App
 COMMENT "GEN => Enclave_u.h"
 )
 
 add_custom_target(TrustedEdger8r
-COMMAND  ${SGX_EDGER8R} --trusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${SG_ROOT}/include --search-path ${SGX_SDK}/include
+COMMAND  ${SGX_EDGER8R} --trusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR} --search-path ${SG_ROOT}/include --search-path ${SGX_SDK}/include
 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/Enclave
 COMMENT "GEN => Enclave_t.h"
 )

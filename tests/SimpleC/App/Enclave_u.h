@@ -53,13 +53,11 @@ size_t SGX_UBRIDGE(SGX_NOCONVENTION, ocall_send, (int sockfd, const void* buf, s
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_sgx_init_quote, (sgx_target_info_t* target_info));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_remote_attestation, (sgx_report_t* report, const ra_tls_options_t* opts, attestation_verification_report_t* attn_report));
 
-sgx_status_t generate_random_number(sgx_enclave_id_t eid, int* retval);
-sgx_status_t init(sgx_enclave_id_t eid);
-sgx_status_t connect_cluster(sgx_enclave_id_t eid);
-sgx_status_t recieve_cluster_connections(sgx_enclave_id_t eid);
-sgx_status_t poll_and_process_updates(sgx_enclave_id_t eid);
-sgx_status_t verify_cluster_connections(sgx_enclave_id_t eid, int* retval);
-sgx_status_t send_message(sgx_enclave_id_t eid, const char* msg);
+sgx_status_t ecall_init_sg(sgx_enclave_id_t eid, int* retval);
+sgx_status_t ecall_recieve_connections_sg(sgx_enclave_id_t eid, int* retval);
+sgx_status_t ecall_initiate_connections_sg(sgx_enclave_id_t eid, int* retval);
+sgx_status_t ecall_verify_connections_sg(sgx_enclave_id_t eid, int* retval);
+sgx_status_t ecall_poll_and_process_updates(sgx_enclave_id_t eid, int* retval);
 
 #ifdef __cplusplus
 }
