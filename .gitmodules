@@ -10,3 +10,6 @@
 [submodule "deps/uthash"]
 	path = deps/uthash
 	url = https://github.com/troydhanson/uthash.git
+[submodule "deps/libdb"]
+	path = deps/libdb
+	url = https://github.com/berkeleydb/libdb.git

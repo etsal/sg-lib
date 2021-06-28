@@ -35,23 +35,4 @@ void send_message(const char *msg) {
   send_msg_sg(&sg_ctx, msg); 
 }
 
-/*
-int generate_random_number() {
-    ocall_print("Processing random number generation...");
 
-    char test2[] = "/opt/instance/sg.db";
-
-    int x = strlen(test2);
-    ocall_print("Test\n");
-
-   char test[1023];
-   memcpy(test2, test, 10);
-   test[10] = '\0';
-
-    ocall_print("Here\n");
-
- //   init_sg(&sg_ctx, "test.txt");
-
-    return 42;
-}
-*/

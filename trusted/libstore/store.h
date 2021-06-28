@@ -26,6 +26,8 @@ typedef struct table {
 void init_store(table_t *table, uint64_t uid);
 int put_store(table_t *table, const char *key, const void *value, size_t value_len);
 int get_store(table_t *table, const char *key, void *value, size_t *value_len);
+int get_store_ptr(table_t *table, const char *key, void **value);
+
 void free_store(table_t *table);
 int is_empty_store(table_t *table);
 

@@ -39,8 +39,8 @@ int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
 int modify_password_sg(sg_ctx_t *ctx, const char *username, const char *password);
 
 // Anyone
-int auth_user_sg(sg_ctx *ctx, const char *username, const char *password); //Verify identitdy by checking pw
-int account_user_sg(sg_ctx *ctx); // Check that the specified account is a valid authentication target
+int auth_user_sg(sg_ctx_t *ctx, const char *username, const char *password); //Verify identitdy by checking pw
+int account_user_sg(sg_ctx_t *ctx); // Check that the specified account is a valid authentication target
 
 
 
