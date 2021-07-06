@@ -11,6 +11,9 @@
 int
 seal(const char *filename, uint8_t *buf, size_t len)
 {
+
+#ifdef __ENCLAVE__
+
 #ifdef DEBUG_SG_UTIL
     edividerWithText("Data to be Sealed");
     eprintf("len %d\n%s\n", len, hexstring(buf, len));
@@ -64,6 +67,8 @@ edivider();
     // Propagate error
 	xfree(sbuf);
 	return ret;
+#endif // __ENCLAVE__
+
 }
 
 /*
@@ -73,6 +78,7 @@ edivider();
 int
 unseal(const char *filename, uint8_t **buf, size_t *len)
 {
+#ifdef __ENCLAVE__
 	sgx_sealed_data_t *sbuf;
 	uint8_t *tmp;
 	size_t tmp_len;
@@ -135,5 +141,6 @@ unseal(const char *filename, uint8_t **buf, size_t *len)
 
 	free(tmp);
 	return ret;
+  #endif //__ENCLAVE__
 }
 

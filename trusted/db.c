@@ -144,7 +144,13 @@ int db_get_update_len(db_ctx_t *db, size_t *len) {
   if (is_empty_store(&db->table)) {
     db->serial_buf_len = 0;
   } else {
+
+#ifdef __ENCLAVE__
     xfree(db->serial_buf);
+#else
+    free(db->serial_buf);
+#endif
+
     serialize_store(&db->table, &db->serial_buf, &db->serial_buf_len);
   }
   *len = db->serial_buf_len;

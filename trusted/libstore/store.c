@@ -148,7 +148,7 @@ int get_store(table_t *table, const char *key, void *value, size_t *value_len) {
 int get_store(table_t *table, const char *key, void **value, size_t *len) {
   entry_t *entry = NULL;
   uint64_t ts = 0;
-
+  
   if (strlen(key) > MAX_KEY_LEN)
     return 0;
 
