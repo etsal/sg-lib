@@ -28,6 +28,7 @@ int put_store(table_t *table, const char *key, const void *value, size_t value_l
 int get_store(table_t *table, const char *key, void **value, size_t *len);
 void free_store(table_t *table);
 int is_empty_store(table_t *table);
+int compare_store(table_t *t1, table_t *t2); // Compares keys not values/vv, returns 0 if t1 == t2
 
 /* CRDT Functions */
 void merge_store(table_t *local_set, table_t *remote_set);

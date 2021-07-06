@@ -54,6 +54,8 @@ dkms.conf
 # NFS files
 .nfs*
 
+app
+app.core
 build
 CMakeFiles
 

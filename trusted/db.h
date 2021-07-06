@@ -32,9 +32,13 @@ int init_new_db(db_ctx_t *db, const char *filename);
 int put_db(db_ctx_t *db, const char *key, const void *value, size_t len);
 int get_db(db_ctx_t *db, const char *key, void **value, size_t *len);
 
-int db_save(db_ctx_t *db);
-int db_load(db_ctx_t *db);
-int db_serial(db_ctx_t *db, uint8_t **buf, size_t *len);
+int save_db(db_ctx_t *db);
+int load_db(db_ctx_t *db);
+
+// Testing purposes
+int serialize_db(db_ctx_t *db, uint8_t **buf, size_t *len);
+int deserialize_db(db_ctx_t *db, uint8_t *buf, size_t len);
+int compare_db(db_ctx_t *db1, db_ctx_t *db2);
 
 void db_print(db_ctx_t *db, void (*format)(const void *data));
 

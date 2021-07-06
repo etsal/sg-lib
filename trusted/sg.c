@@ -156,12 +156,12 @@ int remove_sg(sg_ctx_t *ctx, uint64_t key) { return 0; }
 int count_sg(sg_ctx_t *ctx) { return 0; }
 
 int save_sg(sg_ctx_t *ctx, const char *filename) {
-  int ret = db_save(&ctx->db);
+  int ret = save_db(&ctx->db);
   return ret;
 }
 
 int load_sg(sg_ctx_t *ctx, const char *filename) {
-  int ret = db_load(&ctx->db);
+  int ret = load_db(&ctx->db);
   return ret;
 }
 

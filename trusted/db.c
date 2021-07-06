@@ -21,7 +21,7 @@ void db_print(db_ctx_t *db, void (*format)(const void *data)) {
 int init_new_db(db_ctx_t *db, const char *filename)
 {
   if (filename == NULL || strlen(filename) > MAX_FILENAME) {
-    eprintf("ERROR: Db filename too large/NULL");
+    eprintf("%s ERROR: Db filename too large/NULL\n", __FUNCTION__);
     return 1;
   }
   strcpy(db->db_filename, filename);
@@ -41,10 +41,14 @@ int get_db(db_ctx_t *db, const char *key, void **value, size_t *len) {
   return get_store(&db->table, key, value, len);
 }
 
+int compare_db(db_ctx_t *db1, db_ctx_t *db2) {
+  return compare_store(&db1->table, &db2->table);
+}
+
 /*
  * @return : 0 on success, >0 else
  */
-int db_load(db_ctx_t *db) {
+int load_db(db_ctx_t *db) {
   eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   uint8_t *buf = NULL;
   size_t len = 0;
@@ -85,7 +89,7 @@ int db_load(db_ctx_t *db) {
 /* TODO: add password protection
  * @return : 0 on success, >0 else
  */
-int db_save(db_ctx_t *db) {
+int save_db(db_ctx_t *db) {
   eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   uint8_t *buf;
   size_t len;
@@ -185,5 +189,17 @@ void apply_update_db(db_ctx_t *db, uint8_t *buf, size_t len) {
   print_store(&db->table); // prints to log
 #endif
   free_store(&table);
+}
+
+
+int serialize_db(db_ctx_t *db, uint8_t **buf, size_t *len) {
+  serialize_store(&db->table, buf, len);
+  return 0;
+}
+
+
+int deserialize_db(db_ctx_t *db, uint8_t *buf, size_t len) {
+  deserialize_store(&db->table, buf, len);
+  return 0;
 }
 

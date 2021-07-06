@@ -17,6 +17,52 @@ static void create_entry(entry_t **entry, const char *key, const void *value,
                          size_t value_len);
 static void put_entry_store(table_t *table, entry_t *entry);
 static void print_entry(entry_t *entry);
+static void exists_entry(table_t *table, entry_t *entry);
+
+int compare_store(table_t *t1, table_t *t2) {
+  entry_t *e, *tmp;
+
+  if (t1->entries == NULL && t2->entries == NULL)
+    return 0;
+
+  if (t1->entries == NULL || t2->entries == NULL) 
+    return 1;
+
+  HASH_ITER(hh, t1->entries, e, tmp) {
+    entry_t *found = NULL;
+    HASH_FIND_STR(t2->entries, e->key, found);
+    if (found == NULL) 
+      return 1;
+  }
+
+  HASH_ITER(hh, t2->entries, e, tmp) {
+    entry_t *found = NULL;
+    HASH_FIND_STR(t1->entries, e->key, found);
+    if (found == NULL) 
+      return 1;
+  }
+
+  return 0;
+}
+
+
+/*
+ if (!table->entries)
+    return 0;
+
+  HASH_FIND_STR(table->entries, key, entry);
+  if (!entry)
+    return 0;
+
+  if (*value_len < entry->value_len)
+    return 0;
+
+  memcpy(value, entry->value, entry->value_len);
+  *value_len = entry->value_len;
+
+
+*/
+
 
 /*
  * If uid == 0, initialize an empty table
