@@ -68,6 +68,10 @@ static void create_entry(entry_t **entry, const char *key, const void *value,
   (*entry)->versions = NULL;
 }
 
+/* put_store
+ * The store allocates memory and copies value into it
+ *
+ */
 int put_store(table_t *table, const char *key, const void *value,
               size_t value_len) {
   entry_t *entry = NULL;
@@ -107,11 +111,11 @@ int put_store(table_t *table, const char *key, const void *value,
   return 0;
 }
 
-/*
+/* get_store()
+ * COPIES value
  * @param *value : buffer for the value
  * @param *value_len : buffer length
  * @ret 1 on success, 0 on error
- */
 int get_store(table_t *table, const char *key, void *value, size_t *value_len) {
   entry_t *entry = NULL;
   uint64_t ts = 0;
@@ -134,12 +138,14 @@ int get_store(table_t *table, const char *key, void *value, size_t *value_len) {
 
   return 1;
 }
+*/
 
-/*
+/* get_store()
+ * RETURNS ADDRESS OF value 
  * @param **value : a void ptr that will point to value
  * @ret 1 on success, 0 on error
  */
-int get_store_ptr(table_t *table, const char *key, void **value) {
+int get_store(table_t *table, const char *key, void **value, size_t *len) {
   entry_t *entry = NULL;
   uint64_t ts = 0;
 
@@ -153,7 +159,14 @@ int get_store_ptr(table_t *table, const char *key, void **value) {
   if (!entry)
     return 0;
 
+  if (value == NULL)
+    return 1;
+
   *value = entry->value;
+
+  if (len != NULL)
+    *len = entry->value_len;
+
   return 1;
 }
 

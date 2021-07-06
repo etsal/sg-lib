@@ -8,42 +8,11 @@
 #include "xmem.h"
 
 #define DEBUG_DB 1
-static void int_to_str(uint64_t x, int type, char *str);
 static int load_account(db_ctx_t *db, const char *username,
                         const char *password);
 static int get_update_len_db(db_ctx_t *db, size_t *len);
 static int get_update_db(db_ctx_t *db, uint8_t *buf, size_t len);
 static void apply_update_db(db_ctx_t *db, uint8_t *buf, size_t len);
-
-static void int_to_str(uint64_t x, int type, char *str) {
-  char buf[20] = {0};
-  int len = 0;
-
-  switch (type) {
-  case 8:
-    len = 3;
-    break;
-  case 16:
-    len = 5;
-    break;
-  case 32:
-    len = 10;
-    break;
-  case 64:
-    len = 19;
-    break;
-  default:
-    len = 3;
-  }
-
-  buf[len--] = '\0';
-  while (len) {
-    buf[len--] = x % 10 + '0';
-    x = x / 10;
-  }
-
-  memcpy(str, buf, strlen(str));
-}
 
 void db_print(db_ctx_t *db, void (*format)(const void *data)) {
   print_fmt_store(&db->table, format);
@@ -64,29 +33,14 @@ int init_new_db(db_ctx_t *db, const char *filename)
   return 0;
 }
 
-int put_str_db(db_ctx_t *db, char *key, const void *value, size_t len) {
+int put_db(db_ctx_t *db, const char *key, const void *value, size_t len) {
   return put_store(&db->table, key, value, len);
 }
 
-int get_str_db(db_ctx_t *db, char *key, void *value, size_t len) {
-  size_t new_len = len;
-  int ret = get_store(&db->table, key, value, &new_len);
-  return ret ? new_len : ret;
+int get_db(db_ctx_t *db, const char *key, void **value, size_t *len) {
+  return get_store(&db->table, key, value, len);
 }
 
-int put_U64_db(db_ctx_t *db, uint64_t key, const void *value, size_t len) {
-  char key_str[20] = {0};
-  int_to_str(key, 64, key_str);
-  return put_store(&db->table, key_str, value, len);
-}
-
-int get_U64_db(db_ctx_t *db, uint64_t key, void *value, size_t len) {
-  size_t new_len = len;
-  char key_str[20] = {0};
-  int_to_str(key, 64, key_str);
-  int ret = get_store(&db->table, key_str, value, &new_len);
-  return ret ? new_len : ret;
-}
 /*
  * @return : 0 on success, >0 else
  */

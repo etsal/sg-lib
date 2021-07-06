@@ -13,15 +13,39 @@ extern ra_tls_options_t global_opts;
 
 static int serialize_and_seal_sg(sg_ctx_t *ctx);
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx);
+static char *iota_u64(uint64_t value, char *str, size_t len);
 
 const char db_filename[] = "/opt/instance/sg.db";
 const char policy_filename[] = "/opt/instance/policy.txt";
 
+static char *iota_u64(uint64_t value, char *str, size_t len) {
+  uint64_t tmp = value;
+  int count = 0;
 
-/* 
+  while (1) {
+    count++;
+    tmp = tmp / 10;
+    if (!tmp)
+      break;
+  }
+
+  if (count > len)
+    return NULL;
+  str[count] = '\0';
+
+  tmp = value;
+  for (int i = 0; i < count; ++i) {
+    int leftover = tmp % 10;
+    tmp = tmp / 10;
+    str[count - (i + 1)] = (char)leftover + 48;
+  }
+  return str;
+}
+
+/*
  * init_sg()
- * Ideally we call init_db to do the database 
- * initialization but we save the kv-store and 
+ * Ideally we call init_db to do the database
+ * initialization but we save the kv-store and
  * the attestation information together
  * so we call them here instead
  */
@@ -55,8 +79,7 @@ void init_sg(sg_ctx_t *ctx) {
 #endif
 }
 
-
-/* init_new_sg 
+/* init_new_sg
  * Creates new keypair, attestation certificate and empty database
  * optionally set wolfssl debugging
  * @param ctx
@@ -87,17 +110,32 @@ void init_new_sg(sg_ctx_t *ctx) {
 #endif
 }
 
-int add_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len) {
-  int ret = 0;
-//	int ret = put_u64_db(&ctx->db, key, value, len);
-#ifdef DEBUG_SG
-  if (!ret) {
-    eprintf("\t+ Successfully added key %lu!\n", key);
-  } else {
-    eprintf("\t+ Failed to add key %lu!\n", key);
-  }
-#endif
+/* 1 on error, 0 on success */
+int put_u64_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len) {
+  char key_buf[22];
+  int ret;
+  if (iota_u64(key, key_buf, 22) == NULL)
+    return 1;
+  ret = put_db(&ctx->db, key_buf, value, len);
   return ret;
+}
+
+int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len) {
+  char key_buf[22];
+  int ret;
+  if (iota_u64(key, key_buf, 22) == NULL)
+    return 1;
+  ret = get_db(&ctx->db, key_buf, value, len);
+  return ret;
+}
+
+/* 1 on error, 0 on success */
+int put_sg(sg_ctx_t *ctx, const char *key, const void *value, size_t len) {
+  return put_db(&ctx->db, key, value, len);
+}
+
+int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len) {
+  int ret = get_db(&ctx->db, key, value, len);
 }
 
 int find_sg(sg_ctx_t *ctx, uint64_t key, void *value, size_t len) {
@@ -132,7 +170,7 @@ void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
 }
 
 static int serialize_and_seal_sg(sg_ctx_t *ctx) {
- // eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+  // eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   StateSg state = STATE_SG__INIT;
   state.kc = malloc(sizeof(Keycert));
   state.t = malloc(sizeof(Table));
@@ -156,7 +194,7 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx) {
 }
 
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx) {
-  //eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+  // eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   size_t len = 0;
   uint8_t *buf = NULL;
   int ret = unseal(ctx->db.db_filename, &buf, &len);

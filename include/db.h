@@ -29,10 +29,8 @@ typedef struct {
 // Note: init_db() is handled by sg
 int init_new_db(db_ctx_t *db, const char *filename);
 
-int put_str_db(db_ctx_t *db, char *key, const void *value, size_t len);
-int get_str_db(db_ctx_t *db, char *key, void *value, size_t len);
-int put_u64_db(db_ctx_t *db, uint64_t key, const void *value, size_t len);
-int get_u64_db(db_ctx_t *db, uint64_t key, void *value, size_t len);
+int put_db(db_ctx_t *db, const char *key, const void *value, size_t len);
+int get_db(db_ctx_t *db, const char *key, void **value, size_t *len);
 
 int db_save(db_ctx_t *db);
 int db_load(db_ctx_t *db);
