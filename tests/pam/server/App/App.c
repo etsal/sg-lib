@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "ipc_util.h"
+
 // char *socket_path = "./socket";
 char *socket_path = "/tmp/sg";
 
@@ -13,9 +15,10 @@ char *socket_path = "/tmp/sg";
 and make the correct corresponding enclave call to handle the request using sg
 */
 
-int main(int argc, char *argv[]) {
+int process() {
   struct sockaddr_un addr;
-  char buf[100];
+  //char buf[100];
+  sg_frame_t frame;
   int fd, cl, rc;
 
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -46,8 +49,9 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    while ((rc = read(cl, buf, sizeof(buf))) > 0) {
-      printf("read %u bytes: %.*s\n", rc, rc, buf);
+    while ((rc = read(cl, &frame, sizeof(sg_frame_t))) > 0) {
+      //printf("read %u bytes: %.*s\n", rc, rc, buf);
+      process_frame(&frame);
     }
     if (rc == -1) {
       perror("read");
@@ -59,4 +63,12 @@ int main(int argc, char *argv[]) {
   }
 
   return 0;
+}
+
+int main(int argc, char *argv[]) {
+
+  int ret = process();
+
+  return ret;
+
 }
