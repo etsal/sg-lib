@@ -4,6 +4,10 @@
 
 sg_ctx_t sg_ctx;
 
+void ecall_test() {
+
+}
+
 void init() { 
   init_sg(&sg_ctx); 
 }

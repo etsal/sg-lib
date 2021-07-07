@@ -27,12 +27,12 @@ ocall_lprintf(const char *str)
 //	fprintf(log_fp, str, strlen(str));
 	return;
 }
-/*
+
 void
 ocall_exit(int s)
 {
 	exit(s);
 	return;
 }
-*/
+
 /* OCall functions */

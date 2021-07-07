@@ -15,7 +15,7 @@ sgx_enclave_id_t global_eid = 0;
 
 void ocall_print(const char *str) { printf("%s\n", str); }
 
-void ocall_exit(int s) { exit(s); }
+//void ocall_exit(int s) { exit(s); }
 
 sgx_status_t initialize_enclave(void) {
   sgx_launch_token_t token = {0};

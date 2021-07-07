@@ -9,7 +9,7 @@
 char *socket_path = "/tmp/sg";
 
 
-/* This is the sg daemon interfact that will listen for UNIX domain socket connections
+/* This is the sg daemon interact that will listen for UNIX domain socket connections
 and make the correct corresponding enclave call to handle the request using sg
 */
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
   unlink(socket_path);
 
-printf("socket path '%s'\n", addr.sun_path);
+  // TODO: restrict permissions to socket_path
 
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
     perror("bind error");

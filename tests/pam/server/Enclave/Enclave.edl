@@ -1,5 +1,6 @@
 enclave {
-  
+  from "sg_interface.edl" import *;
+
   trusted {
     public void ecall_test();
   };
