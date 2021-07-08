@@ -4,12 +4,15 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+#include "ipc_util.h"
+
 // char *socket_path = "./socket";
 char *socket_path = "/tmp/sg";
 
 int main(int argc, char *argv[]) {
   struct sockaddr_un addr;
-  char buf[100];
+  char buf[500];
   int fd, rc;
 
   if (argc > 1)
@@ -34,15 +37,37 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
+  size_t num_frames = 0;
+  sg_frame_t **frames;
+
   while ((rc = read(STDIN_FILENO, buf, sizeof(buf))) > 0) {
-    if (write(fd, buf, rc) != rc) {
-      if (rc > 0)
-        fprintf(stderr, "partial write");
-      else {
+    if (buf[0] == EOF) {
+      write(fd, buf, rc);
+      exit(1);
+    } 
+    prepare_frames(0, GET_SG, buf, strlen(buf) + 1, &frames, &num_frames);
+    for (int i = 0; i < num_frames; ++i) {
+      print_sg_frame(frames[i]);
+      printf("\n");
+      
+      if (write(fd, frames[i], sizeof(sg_frame_t)) != sizeof(sg_frame_t)) {
         perror("write error");
-        exit(-1);
+        exit(1);
       }
     }
+
+    memset(buf, 0, sizeof(buf));
+
+    /*
+        if (write(fd, buf, rc) != rc) {
+          if (rc > 0)
+            fprintf(stderr, "partial write");
+          else {
+            perror("write error");
+            exit(-1);
+          }
+        }
+    */
   }
 
   return 0;

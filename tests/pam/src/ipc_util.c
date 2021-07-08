@@ -1,17 +1,18 @@
 #include "ipc_util.h"
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #define HI_BYTE(x) ((x & 0xff00) >> 8)
-#define LO_BYTE(x) (x & 0xff)
+#define LO_BYTE(x) (x & 0xff) 
 
 sg_frame_ctx_t *frame_ctx;
 
 static size_t needed_frames(size_t len) {
-  size_t count = 1;
-  int sofar = len - SG_INIT_PAYLOAD_SZ;
+  size_t count = 0;
+  size_t sofar = len - SG_INIT_PAYLOAD_SZ;
+  ++count;
   while (sofar > 0) {
     sofar -= SG_CONT_PAYLOAD_SZ;
     ++count;
@@ -21,23 +22,12 @@ static size_t needed_frames(size_t len) {
 
 void print_sg_frame(sg_frame_t *frame) {
   // edivider();
-  char init[] = "INIT";
-  char cont[] = "CONT";
-  char buf[512];
-
-  memset(buf, '-', sizeof(buf));
-  snprintf(buf, sizeof(buf), "--- %s ",
-           (frame->type == INIT_FRAME) ? init : cont);
-  buf[strlen(buf)] = '-';
-  buf[30] = '\0';
-
-  printf("%s\n", buf);
   printf("cid \t%d\n", frame->cid);
   printf("type \t%x\n", frame->type);
   switch (frame->type) {
   case (INIT_FRAME):
     printf("cmd \t%x\n", frame->init.cmd);
-    printf("bc \t%d\n", (frame->init.bclo) | (frame->init.bchi << 8));
+    printf("bc \t%d\n", (frame->init.bclo | 0x1100) | (frame->init.bchi << 8));
     // printf("data \t%s\n", hexstring(frame->init.data));
     break;
   case (CONT_FRAME):
@@ -47,11 +37,6 @@ void print_sg_frame(sg_frame_t *frame) {
   default:
     printf("unknown frame type\n");
   }
-  
-  memset(buf, '-', sizeof(buf));
-  buf[30] = '\0';
-
-  printf("%s\n", buf);
   // edivider();
 }
 
@@ -77,16 +62,15 @@ void init_sg_frame_ctx(sg_frame_ctx_t *ctx) {
   ctx->next_cont = 0;
 }
 
-/* Returns 0 if we are waiting for more data, 1 if we have all frames, -1 on
- * error
- */
+/* Returns 0 if we are waiting for more data, 1 if we have all frames, -1 on error
+*/
 int process_frame(sg_frame_t *frame) {
   int data_len, recv;
   switch (frame->type) {
 
   case INIT_FRAME:
     frame_ctx->cid = frame->cid;
-    data_len = (frame->init.bclo) | (frame->init.bchi << 8);
+    data_len = (frame->init.bclo | 0x1100) | (frame->init.bchi << 8);
     if (frame_ctx->data_size < data_len) {
       // Resize
       free(frame_ctx->data);
@@ -119,7 +103,7 @@ int process_frame(sg_frame_t *frame) {
       ++frame_ctx->next_cont;
     }
     memcpy(frame_ctx->data + frame_ctx->sofar, frame->cont.data, recv);
-
+  
     break;
 
   default:
@@ -130,14 +114,14 @@ int process_frame(sg_frame_t *frame) {
 }
 
 int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
-                   sg_frame_t **frames[], size_t *num_frames) {
+                   sg_frame_t ***frames, size_t *num_frames) {
   int tmp, sofar, send;
   sg_frame_t *frame;
 
-  // assert(cmd == GET_SG || cmd == PUT_SG || cmd == EXISTS_SG);
+  assert(cmd == GET_SG || cmd == PUT_SG || cmd == EXISTS_SG);
 
   tmp = needed_frames(data_len);
-  *frames = malloc(tmp * (sizeof(sg_frame_t *)));
+  *frames = malloc(tmp * (sizeof(sg_frame_t*)));
   *num_frames = 0;
 
   // Prepare init frame
@@ -147,17 +131,13 @@ int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
   frame->init.bchi = HI_BYTE(data_len);
   frame->init.bclo = LO_BYTE(data_len);
   memcpy(frame->init.data, data, SG_INIT_PAYLOAD_SZ);
-  *frames[*num_frames] = frame; // Save frame to frames
-  *num_frames += 1;
+  *frames[*num_frames++] = frame; // Save frame to frames
 
   // Prepare continuation frame
   sofar = SG_INIT_PAYLOAD_SZ;
 
-  while (sofar < data_len) {
-    //printf("%s : data_len %d, sofar %d\n", __FUNCTION__, data_len, sofar);
-    frame = (sg_frame_t *)malloc(sizeof(sg_frame_t));
-    memset(frame, 0, sizeof(sg_frame_t));
-
+  while (sofar > 0) {
+    frame = malloc(sizeof(sg_frame_t));
     frame->cid = cid;
     frame->type = CONT_FRAME;
     frame->cont.seq = *num_frames;
@@ -165,15 +145,10 @@ int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
                                                    : (data_len - sofar);
     memcpy(frame->cont.data, data + sofar, send);
     sofar += send;
-    (*frames)[(*num_frames)] = frame; // Save frame
-    *num_frames += 1;
+    *frames[*num_frames++] = frame; // Save frame to frames
   }
-
-  // printf("%s : data_len %d, sofar %d\n", __FUNCTION__, data_len, sofar);
-  // printf("%s : tmp %d num_frames %d\n", __FUNCTION__, tmp, *num_frames);
-
+ 
   assert(tmp == *num_frames);
-
   return 0;
 }
 

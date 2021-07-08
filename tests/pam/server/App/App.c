@@ -49,11 +49,11 @@ int process() {
       continue;
     }
 
-    while ((rc = read(cl, buf, sizeof(buf))) > 0) {
-      printf("read %u bytes: %.*s\n", rc, rc, buf);
+    while ((rc = read(cl, &frame, sizeof(sg_frame_t))) > 0) {
+      //printf("read %u bytes: %.*s\n", rc, rc, buf);
       //if (process_frame(&frame) > 0) 
       //  printf("All frames recieved\n");
-
+      print_sg_frame(&frame);
     }
     if (rc == -1) {
       perror("read");
