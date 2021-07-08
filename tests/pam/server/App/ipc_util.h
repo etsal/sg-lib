@@ -35,13 +35,18 @@ typedef struct sg_frame_ctx {
   size_t data_len;
   size_t sofar;
   int total_cont;
-  int next_cont;
+  int recv_cont;
 
 } sg_frame_ctx_t;
 
 void print_sg_frame(sg_frame_t *frame);
 void init_sg_frame_ctx(sg_frame_ctx_t *ctx);
-int process_frame(sg_frame_t *frame);
+void free_sg_frame_ctx(sg_frame_ctx_t *ctx);
+void clear_sg_frame_ctx(sg_frame_ctx_t *ctx);
+
+
+int process_frame(sg_frame_t *frame, sg_frame_ctx_t *frame_ctx);
+ 
 int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
                    sg_frame_t ***frames, size_t *num_frames);
 

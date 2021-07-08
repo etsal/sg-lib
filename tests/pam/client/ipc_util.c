@@ -7,8 +7,6 @@
 #define HI_BYTE(x) ((x & 0xff00) >> 8)
 #define LO_BYTE(x) (x & 0xff)
 
-sg_frame_ctx_t *frame_ctx;
-
 static size_t needed_frames(size_t len) {
   size_t count = 1;
   int sofar = len - SG_INIT_PAYLOAD_SZ;
@@ -47,7 +45,7 @@ void print_sg_frame(sg_frame_t *frame) {
   default:
     printf("unknown frame type\n");
   }
-  
+
   memset(buf, '-', sizeof(buf));
   buf[30] = '\0';
 
@@ -74,13 +72,28 @@ void init_sg_frame_ctx(sg_frame_ctx_t *ctx) {
   ctx->sofar = 0;
 
   ctx->total_cont = 0;
-  ctx->next_cont = 0;
+  ctx->recv_cont = 0;
 }
+
+void clear_sg_frame_ctx(sg_frame_ctx_t *ctx) {
+  ctx->cid = 0;
+
+  // ctx->data_size = 256;
+  memset(ctx->data, 0, ctx->data_size);
+  ctx->data_len = 0;
+
+  ctx->sofar = 0;
+
+  ctx->total_cont = 0;
+  ctx->recv_cont = 0;
+}
+
+void free_sg_frame_ctx(sg_frame_ctx_t *ctx) { free(ctx->data); }
 
 /* Returns 0 if we are waiting for more data, 1 if we have all frames, -1 on
  * error
  */
-int process_frame(sg_frame_t *frame) {
+int process_frame(sg_frame_t *frame, sg_frame_ctx_t *frame_ctx) {
   int data_len, recv;
   switch (frame->type) {
 
@@ -97,7 +110,7 @@ int process_frame(sg_frame_t *frame) {
     memcpy(frame_ctx->data, frame->init.data, SG_INIT_PAYLOAD_SZ);
     // Number of continuation frames
     frame_ctx->total_cont = needed_frames(data_len) - 1;
-    frame_ctx->next_cont = (frame_ctx->total_cont == 0) ? 0 : 1;
+    frame_ctx->recv_cont = 0; //(frame_ctx->total_cont == 0) ? 0 : 1;
     // Number of bytes of data we are expecting
     frame_ctx->data_len = data_len;
     // Number of bytes of data we have
@@ -106,9 +119,10 @@ int process_frame(sg_frame_t *frame) {
     break;
 
   case CONT_FRAME:
-    if (frame->cont.seq != frame_ctx->next_cont) {
+    // Sequence number should be +1 of the cont frames recieved
+    if (frame->cont.seq != (frame_ctx->recv_cont + 1)) {
       printf("%s : Error, expecting sequence number %d recieved %d\n",
-             frame->cont.seq, frame_ctx->next_cont);
+             __FUNCTION__, frame->cont.seq, frame_ctx->recv_cont);
       return -1;
     }
 
@@ -116,17 +130,21 @@ int process_frame(sg_frame_t *frame) {
     recv = frame_ctx->data_len - frame_ctx->sofar;
     if (recv > SG_CONT_PAYLOAD_SZ) {
       recv = SG_CONT_PAYLOAD_SZ;
-      ++frame_ctx->next_cont;
+      //++frame_ctx->recv_cont;
     }
     memcpy(frame_ctx->data + frame_ctx->sofar, frame->cont.data, recv);
-
+    frame_ctx->recv_cont += 1;
     break;
 
   default:
     printf("%s : Unknown frame\n");
     return -1;
   }
-  return (frame_ctx->total_cont == frame_ctx->next_cont);
+
+  printf("%s : frame_ctx->total_cont %d frame_ctx->recv_cont %d\n",
+         __FUNCTION__, frame_ctx->total_cont, frame_ctx->recv_cont);
+
+  return (frame_ctx->total_cont == frame_ctx->recv_cont);
 }
 
 int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
@@ -154,7 +172,7 @@ int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
   sofar = SG_INIT_PAYLOAD_SZ;
 
   while (sofar < data_len) {
-    //printf("%s : data_len %d, sofar %d\n", __FUNCTION__, data_len, sofar);
+    // printf("%s : data_len %d, sofar %d\n", __FUNCTION__, data_len, sofar);
     frame = (sg_frame_t *)malloc(sizeof(sg_frame_t));
     memset(frame, 0, sizeof(sg_frame_t));
 
