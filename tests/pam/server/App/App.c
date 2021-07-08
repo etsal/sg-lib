@@ -17,9 +17,9 @@ and make the correct corresponding enclave call to handle the request using sg
 
 int process() {
   struct sockaddr_un addr;
-  //char buf[100];
+  char buf[100];
   sg_frame_t frame;
-  int fd, cl, rc;
+  int ret, fd, cl, rc;
 
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
     perror("socket error");
@@ -49,9 +49,11 @@ int process() {
       continue;
     }
 
-    while ((rc = read(cl, &frame, sizeof(sg_frame_t))) > 0) {
-      //printf("read %u bytes: %.*s\n", rc, rc, buf);
-      process_frame(&frame);
+    while ((rc = read(cl, buf, sizeof(buf))) > 0) {
+      printf("read %u bytes: %.*s\n", rc, rc, buf);
+      //if (process_frame(&frame) > 0) 
+      //  printf("All frames recieved\n");
+
     }
     if (rc == -1) {
       perror("read");

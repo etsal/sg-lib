@@ -62,6 +62,8 @@ void init_sg_frame_ctx(sg_frame_ctx_t *ctx) {
   ctx->next_cont = 0;
 }
 
+/* Returns 0 if we are waiting for more data, 1 if we have all frames, -1 on error
+*/
 int process_frame(sg_frame_t *frame) {
   int data_len, recv;
   switch (frame->type) {
@@ -79,7 +81,7 @@ int process_frame(sg_frame_t *frame) {
     memcpy(frame_ctx->data, frame->init.data, SG_INIT_PAYLOAD_SZ);
     // Number of continuation frames
     frame_ctx->total_cont = needed_frames(data_len) - 1;
-    frame_ctx->next_cont = 1;
+    frame_ctx->next_cont = (frame_ctx->total_cont == 0) ? 0 : 1;
     // Number of bytes of data we are expecting
     frame_ctx->data_len = data_len;
     // Number of bytes of data we have
@@ -91,20 +93,24 @@ int process_frame(sg_frame_t *frame) {
     if (frame->cont.seq != frame_ctx->next_cont) {
       printf("%s : Error, expecting sequence number %d recieved %d\n",
              frame->cont.seq, frame_ctx->next_cont);
-      return 1;
+      return -1;
     }
 
     // Calculate how much data to read
     recv = frame_ctx->data_len - frame_ctx->sofar;
-    recv = (recv > SG_CONT_PAYLOAD_SZ) ? SG_CONT_PAYLOAD_SZ : recv;
+    if (recv > SG_CONT_PAYLOAD_SZ) {
+      recv = SG_CONT_PAYLOAD_SZ;
+      ++frame_ctx->next_cont;
+    }
     memcpy(frame_ctx->data + frame_ctx->sofar, frame->cont.data, recv);
+  
     break;
 
   default:
     printf("%s : Unknown frame\n");
-    return 1;
+    return -1;
   }
-  return 0;
+  return (frame_ctx->total_cont == frame_ctx->next_cont);
 }
 
 int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
