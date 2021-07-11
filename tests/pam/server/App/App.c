@@ -27,9 +27,23 @@ sgx_status_t initialize_enclave(void) {
 
 static void process_request(uint8_t *data, size_t data_len) {
   struct ipc_msg *msg;
-  assert(data_len == sizeof(struct ipc_msg));
+  //assert(data_len == sizeof(struct ipc_msg));
 
   msg = (struct ipc_msg *)data;
+  print_ipc_msg(msg);
+/*
+  switch(msg->cmd) {
+    case ADD_CMD:
+      printf("add ");
+    break;
+    case AUTH_CMD:
+      printf("auth ");
+    break;
+  }
+*/
+ // printf("%s %s\n", msg->key, msg->value);
+  
+
 }
 
 int process() {
@@ -70,8 +84,7 @@ int process() {
     }
   loop:
     while ((rc = read(cl, &frame, sizeof(sg_frame_t))) > 0) {
-      // printf("read %u bytes: %.*s\n", rc, rc, buf);
-      // print_sg_frame(&frame);
+      //print_sg_frame(&frame);
       if (process_frame(&frame, &frame_ctx)) {
         printf("All frames recieved\n");
         break;
@@ -84,12 +97,14 @@ int process() {
     } else if (rc == 0) {
       printf("EOF\n");
       close(cl);
+      exit(-1);
     }
     // printf("TODO: process frame_ctx-> data, and write result back to
     // client\n");
-    printf("Processing request ...\n");
+    printf("request recieved (len %d) : ", frame_ctx.data_len);
+    for(int i=0; i<frame_ctx.data_len; ++i) printf("%c", frame_ctx.data[i]);
+
     process_request(frame_ctx.data, frame_ctx.data_len);
-    printf("Recieved: %s\n", (char *)frame_ctx.data);
 
     clear_sg_frame_ctx(&frame_ctx);
     goto loop;

@@ -6,14 +6,12 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "ipc_util.h"
 #include "ipc_msg.h"
+#include "ipc_util.h"
 // char *socket_path = "./socket";
 char *socket_path = "/tmp/sg";
 
-static void usage() {
-  printf("Usage: add/auth <user> <password>\n");
-}
+static void usage() { printf("Usage: add/auth <user> <password>\n"); }
 
 /* Implements gen_ipc_msg() easier to do it here b.c
  * we are using strtok, which mangles the string and
@@ -26,20 +24,22 @@ static uint8_t *prepare_request(char *tokens, size_t *ret) {
   assert(tokens != NULL);
   memset(msg, 0, sizeof(struct ipc_msg));
   if (strcmp(tokens, "add") == 0) {
-    msg->cmd = 0;
+    msg->cmd = ADD_CMD;
   } else if (strcmp(tokens, "auth") == 0) {
-    msg->cmd = 1;
+    msg->cmd = AUTH_CMD;
   } else {
     usage();
+    memset(msg, 0, sizeof(struct ipc_msg));
+    free(msg);
     return NULL;
   }
 
   i = 0;
   while (tokens && (i < 2)) {
-    printf("token: %s\n", tokens);
+    // printf("token: %s\n", tokens);
     tokens = strtok(NULL, " ");
     if (i == 0) {
-      assert(strlen(tokens)+1 < MAX_KEY_LEN);
+      assert(strlen(tokens) + 1 < MAX_KEY_LEN);
       memcpy(msg->key, tokens, strlen(tokens) + 1);
     } else {
       msg->value_len = strlen(tokens);
@@ -49,6 +49,8 @@ static uint8_t *prepare_request(char *tokens, size_t *ret) {
     ++i;
   }
   assert(i == 2); // ensures client supplies a command +2 args
+
+  print_ipc_msg(msg);
 
   *ret = sizeof(struct ipc_msg);
   return (uint8_t *)msg;
@@ -88,10 +90,6 @@ int main(int argc, char *argv[]) {
     sg_frame_t **frames;
     size_t request_len = 0, num_frames = 0;
 
-    if (buf[0] == EOF) {
-      write(fd, buf, rc);
-      exit(1);
-    }
     tokens = strtok(buf, " ");
 
     request = prepare_request(tokens, &request_len);
@@ -99,11 +97,17 @@ int main(int argc, char *argv[]) {
       memset(buf, 0, sizeof(buf));
       continue;
     }
-    printf("Request prepared\n");
+
+    /* DEBUG
+
+      printf("request (len %d) : ", request_len);
+      for (int i=0; i<request_len; ++i) printf("%02x", request[i]);
+      printf("\n");
+  */
     prepare_frames(0, request, request_len, &frames, &num_frames);
     for (int i = 0; i < num_frames; ++i) {
-      //print_sg_frame(frames[i]);
-      //printf("\n");
+      // print_sg_frame(frames[i]);
+      // printf("\n");
 
       if (write(fd, frames[i], sizeof(sg_frame_t)) != sizeof(sg_frame_t)) {
         perror("write error");
@@ -127,6 +131,7 @@ int main(int argc, char *argv[]) {
         }
     */
   }
+  if (rc < 0) printf("here\n");
 
   return 0;
 }

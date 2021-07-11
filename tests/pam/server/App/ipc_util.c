@@ -7,6 +7,47 @@
 #define HI_BYTE(x) ((x & 0xff00) >> 8)
 #define LO_BYTE(x) (x & 0xff)
 
+static char *_hex_buffer = NULL;
+static size_t _hex_buffer_size = 0;
+static const char _hextable[] = "0123456789abcdef";
+
+static const char *hexstring(const void *vsrc, size_t len) {
+  size_t i, bsz;
+  const unsigned char *src = (const unsigned char *)vsrc;
+  char *bp, *tmp;
+
+  bsz = len * 2 + 1; /* Make room for NULL byte */
+  if (bsz >= _hex_buffer_size) {
+    /* Allocate in 1K increments. Make room for the NULL byte. */
+
+    /*
+            tmp = malloc(new_sz);
+            memcpy(tmp, _hex_buffer, _hex_buffer_size);
+            _hex_buffer_size= newsz;
+            free(_hex_buffer);
+           _hex_buffer= tmp;
+
+      */
+    size_t newsz = 1024 * (bsz / 1024) + ((bsz % 1024) ? 1024 : 0);
+    _hex_buffer_size = newsz;
+    _hex_buffer = (char *)realloc(_hex_buffer, newsz);
+    if (_hex_buffer == NULL) {
+      return "(out of memory)";
+    }
+  }
+  unsigned int idx = 0;
+  for (i = 0, bp = _hex_buffer; i < len; ++i) {
+    idx = (src[i] >> 4) % strlen(_hextable);
+    *bp = _hextable[idx];
+    ++bp;
+    *bp = _hextable[src[i] & 0xf];
+    ++bp;
+  }
+  _hex_buffer[len * 2] = 0;
+
+  return (const char *)_hex_buffer;
+}
+
 static size_t needed_frames(size_t len) {
   size_t count = 1;
   int sofar = len - SG_INIT_PAYLOAD_SZ;
@@ -35,11 +76,12 @@ void print_sg_frame(sg_frame_t *frame) {
   switch (frame->type) {
   case (INIT_FRAME):
     printf("bc \t%d\n", (frame->init.bclo) | (frame->init.bchi << 8));
-    printf("data <omitted>\n"); //\t%s\n", hexstring(frame->init.data));
+    printf("data %s\n", hexstring(frame->init.data, SG_INIT_PAYLOAD_SZ));
+
     break;
   case (CONT_FRAME):
     printf("seq \t%x\n", frame->cont.seq);
-    printf("data <omitted>\n"); //\t%s\n", hexstring(frame->cont.data));
+    printf("data %s\n", hexstring(frame->cont.data, SG_CONT_PAYLOAD_SZ));
     break;
   default:
     printf("unknown frame type\n");
@@ -67,6 +109,7 @@ void init_sg_frame_ctx(sg_frame_ctx_t *ctx) {
   ctx->data_size = 256;
   ctx->data = malloc(ctx->data_size * sizeof(uint8_t));
   ctx->data_len = 0;
+  memset(ctx->data, 0, ctx->data_size);
 
   ctx->sofar = 0;
 
@@ -103,7 +146,7 @@ int process_frame(sg_frame_t *frame, sg_frame_ctx_t *frame_ctx) {
       // Resize
       free(frame_ctx->data);
       frame_ctx->data = (uint8_t *)malloc(data_len + 1);
-      frame_ctx->data_len = data_len + 1;
+      frame_ctx->data_size = data_len + 1;
     }
     memset(frame_ctx->data, 0, frame_ctx->data_size);
     memcpy(frame_ctx->data, frame->init.data, SG_INIT_PAYLOAD_SZ);
@@ -115,6 +158,7 @@ int process_frame(sg_frame_t *frame, sg_frame_ctx_t *frame_ctx) {
     // Number of bytes of data we have
     frame_ctx->sofar +=
         (data_len > SG_INIT_PAYLOAD_SZ ? SG_INIT_PAYLOAD_SZ : data_len);
+
     break;
 
   case CONT_FRAME:
@@ -131,7 +175,9 @@ int process_frame(sg_frame_t *frame, sg_frame_ctx_t *frame_ctx) {
       recv = SG_CONT_PAYLOAD_SZ;
       //++frame_ctx->recv_cont;
     }
+
     memcpy(frame_ctx->data + frame_ctx->sofar, frame->cont.data, recv);
+    frame_ctx->sofar += recv;
     frame_ctx->recv_cont += 1;
     break;
 
@@ -140,14 +186,18 @@ int process_frame(sg_frame_t *frame, sg_frame_ctx_t *frame_ctx) {
     return -1;
   }
 
-  //printf("%s : frame_ctx->total_cont %d frame_ctx->recv_cont %d\n",
-  //       __FUNCTION__, frame_ctx->total_cont, frame_ctx->recv_cont);
+  /* DEBUG
+  if (frame_ctx->total_cont == frame_ctx->recv_cont)
+    printf("%s : frame_ctx.data (len %d) : %s\n", __FUNCTION__,
+           frame_ctx->data_len,
+           hexstring(frame_ctx->data, frame_ctx->data_len));
+  */
 
   return (frame_ctx->total_cont == frame_ctx->recv_cont);
 }
 
 void free_frames(sg_frame_t **frames[], size_t num_frames) {
-  for (int i=0; i<num_frames; ++i) {
+  for (int i = 0; i < num_frames; ++i) {
     free((*frames)[i]);
   }
   free(*frames);
