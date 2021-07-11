@@ -21,6 +21,22 @@ typedef struct ms_ecall_poll_and_process_updates_t {
 	int ms_retval;
 } ms_ecall_poll_and_process_updates_t;
 
+typedef struct ms_ecall_add_user_t {
+	int ms_retval;
+	char* ms_username;
+	size_t ms_username_len;
+	char* ms_password;
+	size_t ms_password_len;
+} ms_ecall_add_user_t;
+
+typedef struct ms_ecall_auth_user_t {
+	int ms_retval;
+	char* ms_username;
+	size_t ms_username_len;
+	char* ms_password;
+	size_t ms_password_len;
+} ms_ecall_auth_user_t;
+
 typedef struct ms_create_session_ocall_t {
 	sgx_status_t ms_retval;
 	uint32_t* ms_sid;
@@ -536,6 +552,32 @@ sgx_status_t ecall_poll_and_process_updates(sgx_enclave_id_t eid, int* retval)
 	sgx_status_t status;
 	ms_ecall_poll_and_process_updates_t ms;
 	status = sgx_ecall(eid, 5, &ocall_table_Enclave, &ms);
+	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
+	return status;
+}
+
+sgx_status_t ecall_add_user(sgx_enclave_id_t eid, int* retval, const char* username, const char* password)
+{
+	sgx_status_t status;
+	ms_ecall_add_user_t ms;
+	ms.ms_username = (char*)username;
+	ms.ms_username_len = username ? strlen(username) + 1 : 0;
+	ms.ms_password = (char*)password;
+	ms.ms_password_len = password ? strlen(password) + 1 : 0;
+	status = sgx_ecall(eid, 6, &ocall_table_Enclave, &ms);
+	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
+	return status;
+}
+
+sgx_status_t ecall_auth_user(sgx_enclave_id_t eid, int* retval, const char* username, const char* password)
+{
+	sgx_status_t status;
+	ms_ecall_auth_user_t ms;
+	ms.ms_username = (char*)username;
+	ms.ms_username_len = username ? strlen(username) + 1 : 0;
+	ms.ms_password = (char*)password;
+	ms.ms_password_len = password ? strlen(password) + 1 : 0;
+	status = sgx_ecall(eid, 7, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }

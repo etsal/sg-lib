@@ -3,10 +3,10 @@ project(ipc_client)
 
 set(CMAKE_C_COMPILER /usr/local/bin/gcc48)
 
-file(GLOB SRCS *.c)  
+file(GLOB SRCS *.c ../common/*.c)  
 
 add_executable(ipc_client ${SRCS})
 
-#target_include_directories(ipc_client PUBLIC ../../server/App/)
+target_include_directories(ipc_client PUBLIC ../common)
 
 set_property(TARGET ipc_client PROPERTY C_STANDARD 99)

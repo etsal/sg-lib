@@ -7,11 +7,22 @@ typedef struct sg_request {
   char *key;
   uint32_t value_len;
   void *value;
+  uint32_t ret;
 } sg_request_t;
 
 
 /* 
  **/
-int get(const char *key, void **value, size_t *value_len);
+int get(sg_request_t *req) {
+  req->ret = put_sg(sg_ctx, req->key, &req->value, &req->value_len);
+  return req->ret;
+
+}
+
+
+int put(sg_request_t *req) {
+  req->ret = get_sg(sg_ctx, req->key, req->value, req->value_len);
+  return req->ret;
+}
 
 #endif

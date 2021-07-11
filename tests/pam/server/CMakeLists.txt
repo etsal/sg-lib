@@ -58,11 +58,13 @@ else()
 endif()
 
 file(GLOB App_C_Files 
-    App/*.c 
+    App/*.c
+    ../common/*.c
 )
 
 set(App_Include_Paths
     App
+    ../common
     ${SG_ROOT}/include
     ${SG_ROOT}/deps
     ${SGX_SDK}/include

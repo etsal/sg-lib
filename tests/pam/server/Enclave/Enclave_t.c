@@ -38,6 +38,22 @@ typedef struct ms_ecall_poll_and_process_updates_t {
 	int ms_retval;
 } ms_ecall_poll_and_process_updates_t;
 
+typedef struct ms_ecall_add_user_t {
+	int ms_retval;
+	char* ms_username;
+	size_t ms_username_len;
+	char* ms_password;
+	size_t ms_password_len;
+} ms_ecall_add_user_t;
+
+typedef struct ms_ecall_auth_user_t {
+	int ms_retval;
+	char* ms_username;
+	size_t ms_username_len;
+	char* ms_password;
+	size_t ms_password_len;
+} ms_ecall_auth_user_t;
+
 typedef struct ms_create_session_ocall_t {
 	sgx_status_t ms_retval;
 	uint32_t* ms_sid;
@@ -317,11 +333,137 @@ static sgx_status_t SGX_CDECL sgx_ecall_poll_and_process_updates(void* pms)
 	return status;
 }
 
+static sgx_status_t SGX_CDECL sgx_ecall_add_user(void* pms)
+{
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_add_user_t));
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+	ms_ecall_add_user_t* ms = SGX_CAST(ms_ecall_add_user_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+	char* _tmp_username = ms->ms_username;
+	size_t _len_username = ms->ms_username_len ;
+	char* _in_username = NULL;
+	char* _tmp_password = ms->ms_password;
+	size_t _len_password = ms->ms_password_len ;
+	char* _in_password = NULL;
+
+	CHECK_UNIQUE_POINTER(_tmp_username, _len_username);
+	CHECK_UNIQUE_POINTER(_tmp_password, _len_password);
+
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+
+	if (_tmp_username != NULL && _len_username != 0) {
+		_in_username = (char*)malloc(_len_username);
+		if (_in_username == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
+
+		memcpy((void*)_in_username, _tmp_username, _len_username);
+		_in_username[_len_username - 1] = '\0';
+		if (_len_username != strlen(_in_username) + 1)
+		{
+			status = SGX_ERROR_UNEXPECTED;
+			goto err;
+		}
+	}
+	if (_tmp_password != NULL && _len_password != 0) {
+		_in_password = (char*)malloc(_len_password);
+		if (_in_password == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
+
+		memcpy((void*)_in_password, _tmp_password, _len_password);
+		_in_password[_len_password - 1] = '\0';
+		if (_len_password != strlen(_in_password) + 1)
+		{
+			status = SGX_ERROR_UNEXPECTED;
+			goto err;
+		}
+	}
+
+	ms->ms_retval = ecall_add_user((const char*)_in_username, (const char*)_in_password);
+err:
+	if (_in_username) free((void*)_in_username);
+	if (_in_password) free((void*)_in_password);
+
+	return status;
+}
+
+static sgx_status_t SGX_CDECL sgx_ecall_auth_user(void* pms)
+{
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_auth_user_t));
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+	ms_ecall_auth_user_t* ms = SGX_CAST(ms_ecall_auth_user_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+	char* _tmp_username = ms->ms_username;
+	size_t _len_username = ms->ms_username_len ;
+	char* _in_username = NULL;
+	char* _tmp_password = ms->ms_password;
+	size_t _len_password = ms->ms_password_len ;
+	char* _in_password = NULL;
+
+	CHECK_UNIQUE_POINTER(_tmp_username, _len_username);
+	CHECK_UNIQUE_POINTER(_tmp_password, _len_password);
+
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+
+	if (_tmp_username != NULL && _len_username != 0) {
+		_in_username = (char*)malloc(_len_username);
+		if (_in_username == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
+
+		memcpy((void*)_in_username, _tmp_username, _len_username);
+		_in_username[_len_username - 1] = '\0';
+		if (_len_username != strlen(_in_username) + 1)
+		{
+			status = SGX_ERROR_UNEXPECTED;
+			goto err;
+		}
+	}
+	if (_tmp_password != NULL && _len_password != 0) {
+		_in_password = (char*)malloc(_len_password);
+		if (_in_password == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
+
+		memcpy((void*)_in_password, _tmp_password, _len_password);
+		_in_password[_len_password - 1] = '\0';
+		if (_len_password != strlen(_in_password) + 1)
+		{
+			status = SGX_ERROR_UNEXPECTED;
+			goto err;
+		}
+	}
+
+	ms->ms_retval = ecall_auth_user((const char*)_in_username, (const char*)_in_password);
+err:
+	if (_in_username) free((void*)_in_username);
+	if (_in_password) free((void*)_in_password);
+
+	return status;
+}
+
 SGX_EXTERNC const struct {
 	size_t nr_ecall;
-	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[6];
+	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[8];
 } g_ecall_table = {
-	6,
+	8,
 	{
 		{(void*)(uintptr_t)sgx_ecall_test, 0},
 		{(void*)(uintptr_t)sgx_ecall_init_sg, 0},
@@ -329,46 +471,48 @@ SGX_EXTERNC const struct {
 		{(void*)(uintptr_t)sgx_ecall_initiate_connections_sg, 0},
 		{(void*)(uintptr_t)sgx_ecall_verify_connections_sg, 0},
 		{(void*)(uintptr_t)sgx_ecall_poll_and_process_updates, 0},
+		{(void*)(uintptr_t)sgx_ecall_add_user, 0},
+		{(void*)(uintptr_t)sgx_ecall_auth_user, 0},
 	}
 };
 
 SGX_EXTERNC const struct {
 	size_t nr_ocall;
-	uint8_t entry_table[31][6];
+	uint8_t entry_table[31][8];
 } g_dyn_entry_table = {
 	31,
 	{
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, },
 	}
 };
 

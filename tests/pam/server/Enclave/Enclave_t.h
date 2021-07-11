@@ -25,6 +25,8 @@ int ecall_recieve_connections_sg();
 int ecall_initiate_connections_sg();
 int ecall_verify_connections_sg();
 int ecall_poll_and_process_updates();
+int ecall_add_user(const char* username, const char* password);
+int ecall_auth_user(const char* username, const char* password);
 
 sgx_status_t SGX_CDECL create_session_ocall(sgx_status_t* retval, uint32_t* sid, uint8_t* dh_msg1, uint32_t dh_msg1_size, uint32_t timeout);
 sgx_status_t SGX_CDECL exchange_report_ocall(sgx_status_t* retval, uint32_t sid, uint8_t* dh_msg2, uint32_t dh_msg2_size, uint8_t* dh_msg3, uint32_t dh_msg3_size, uint32_t timeout);

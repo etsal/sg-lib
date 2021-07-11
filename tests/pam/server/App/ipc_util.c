@@ -34,13 +34,12 @@ void print_sg_frame(sg_frame_t *frame) {
   printf("type \t%x\n", frame->type);
   switch (frame->type) {
   case (INIT_FRAME):
-    printf("cmd \t%x\n", frame->init.cmd);
     printf("bc \t%d\n", (frame->init.bclo) | (frame->init.bchi << 8));
-    // printf("data \t%s\n", hexstring(frame->init.data));
+    printf("data <omitted>\n"); //\t%s\n", hexstring(frame->init.data));
     break;
   case (CONT_FRAME):
     printf("seq \t%x\n", frame->cont.seq);
-    // printf("data \t%s\n", hexstring(frame->cont.data));
+    printf("data <omitted>\n"); //\t%s\n", hexstring(frame->cont.data));
     break;
   default:
     printf("unknown frame type\n");
@@ -141,13 +140,21 @@ int process_frame(sg_frame_t *frame, sg_frame_ctx_t *frame_ctx) {
     return -1;
   }
 
-  printf("%s : frame_ctx->total_cont %d frame_ctx->recv_cont %d\n",
-         __FUNCTION__, frame_ctx->total_cont, frame_ctx->recv_cont);
+  //printf("%s : frame_ctx->total_cont %d frame_ctx->recv_cont %d\n",
+  //       __FUNCTION__, frame_ctx->total_cont, frame_ctx->recv_cont);
 
   return (frame_ctx->total_cont == frame_ctx->recv_cont);
 }
 
-int prepare_frames(uint32_t cid, uint8_t cmd, uint8_t *data, size_t data_len,
+void free_frames(sg_frame_t **frames[], size_t num_frames) {
+  for (int i=0; i<num_frames; ++i) {
+    free((*frames)[i]);
+  }
+  free(*frames);
+  *frames = NULL;
+}
+
+int prepare_frames(uint32_t cid, uint8_t *data, size_t data_len,
                    sg_frame_t **frames[], size_t *num_frames) {
   int tmp, sofar, send;
   sg_frame_t *frame;
