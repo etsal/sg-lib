@@ -107,6 +107,7 @@ file(GLOB Enclave_C_Files
 
 set(Enclave_Include_Paths
     Enclave
+    ../common
     ${SG_ROOT}/include
     ${SG_ROOT}/deps
     ${SGX_SDK}/include 

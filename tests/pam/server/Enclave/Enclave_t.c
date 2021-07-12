@@ -18,6 +18,12 @@
 } while (0)
 
 
+typedef struct ms_ecall_process_request_t {
+	int ms_retval;
+	uint8_t* ms_data;
+	size_t ms_data_len;
+} ms_ecall_process_request_t;
+
 typedef struct ms_ecall_init_sg_t {
 	int ms_retval;
 } ms_ecall_init_sg_t;
@@ -243,6 +249,44 @@ static sgx_status_t SGX_CDECL sgx_ecall_test(void* pms)
 	return status;
 }
 
+static sgx_status_t SGX_CDECL sgx_ecall_process_request(void* pms)
+{
+	CHECK_REF_POINTER(pms, sizeof(ms_ecall_process_request_t));
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+	ms_ecall_process_request_t* ms = SGX_CAST(ms_ecall_process_request_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+	uint8_t* _tmp_data = ms->ms_data;
+	size_t _tmp_data_len = ms->ms_data_len;
+	size_t _len_data = _tmp_data_len;
+	uint8_t* _in_data = NULL;
+
+	CHECK_UNIQUE_POINTER(_tmp_data, _len_data);
+
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
+
+	if (_tmp_data != NULL && _len_data != 0) {
+		_in_data = (uint8_t*)malloc(_len_data);
+		if (_in_data == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
+
+		memcpy(_in_data, _tmp_data, _len_data);
+	}
+
+	ms->ms_retval = ecall_process_request(_in_data, _tmp_data_len);
+err:
+	if (_in_data) free(_in_data);
+
+	return status;
+}
+
 static sgx_status_t SGX_CDECL sgx_ecall_init_sg(void* pms)
 {
 	CHECK_REF_POINTER(pms, sizeof(ms_ecall_init_sg_t));
@@ -461,11 +505,12 @@ err:
 
 SGX_EXTERNC const struct {
 	size_t nr_ecall;
-	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[8];
+	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[9];
 } g_ecall_table = {
-	8,
+	9,
 	{
 		{(void*)(uintptr_t)sgx_ecall_test, 0},
+		{(void*)(uintptr_t)sgx_ecall_process_request, 0},
 		{(void*)(uintptr_t)sgx_ecall_init_sg, 0},
 		{(void*)(uintptr_t)sgx_ecall_recieve_connections_sg, 0},
 		{(void*)(uintptr_t)sgx_ecall_initiate_connections_sg, 0},
@@ -478,41 +523,41 @@ SGX_EXTERNC const struct {
 
 SGX_EXTERNC const struct {
 	size_t nr_ocall;
-	uint8_t entry_table[31][8];
+	uint8_t entry_table[31][9];
 } g_dyn_entry_table = {
 	31,
 	{
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
-		{0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
 	}
 };
 

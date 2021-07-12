@@ -1,11 +1,28 @@
+#include <string.h>
+
 #include "Enclave_t.h"
 #include "sg.h"
-#include <string.h>
+#include "ipc_msg.h"
 
 sg_ctx_t sg_ctx;
 
 void ecall_test() {
 
+}
+
+int ecall_process_request(uint8_t *data, size_t data_len) {
+  struct msg_request *msg = (struct msg_request *)data;
+  int ret;
+
+  switch(msg->cmd) {
+    case ADD_CMD:
+      ret = add_user_sg(&sg_ctx, msg->key, msg->value);
+    break;
+    case AUTH_CMD:
+      ret = auth_user_sg(&sg_ctx, msg->key, msg->value);
+    break;
+  }
+  return ret;
 }
 
 void init() { 

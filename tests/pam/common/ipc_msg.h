@@ -8,16 +8,20 @@
 
 typedef enum {ADD_CMD, AUTH_CMD} cmd_type;
 
-typedef struct ipc_msg {
+typedef struct msg_request {
   uint8_t cmd;
   uint32_t value_len;
   char key[MAX_KEY_LEN];
   uint8_t value[MAX_VALUE_LEN];
-} ipc_msg_t;
+} msg_request_t;
 
-void print_ipc_msg(struct ipc_msg *msg);
+typedef struct msg_response {
+  uint8_t ret;
+} msg_response_t;
 
-struct ipc_msg *gen_ipc_msg(uint8_t cmd, char *key, uint8_t *value,
+void print_msg_request(struct msg_request *msg);
+
+struct msg_request *gen_msg_request(uint8_t cmd, char *key, uint8_t *value,
                             uint32_t value_len);
 
 #endif

@@ -31,10 +31,6 @@ int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len);
 int put_u64_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len);
 int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len);
 
-
-
-
-
 int remove_sg(sg_ctx_t *ctx, uint64_t key);
 int count_sg(sg_ctx_t *ctx);
 int save_sg(sg_ctx_t *ctx, const char *filename);
@@ -45,13 +41,9 @@ void print_sg(sg_ctx_t *ctx, void(*format)(const void *data));
 int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
 int modify_password_sg(sg_ctx_t *ctx, const char *username, const char *password);
 
-// Anyone
-int auth_user_sg(sg_ctx_t *ctx, const char *username, const char *password); //Verify identitdy by checking pw
-int account_user_sg(sg_ctx_t *ctx); // Check that the specified account is a valid authentication target
-
-
-
-
+// Auth
+int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
+int auth_user_sg(sg_ctx_t *ctx, const char *username, const char *password); 
 
 // Private functions
 void init_connections(sg_ctx_t *ctx); // Initializes connection structures

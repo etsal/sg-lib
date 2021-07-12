@@ -1,6 +1,12 @@
 #include "Enclave_u.h"
 #include <errno.h>
 
+typedef struct ms_ecall_process_request_t {
+	int ms_retval;
+	uint8_t* ms_data;
+	size_t ms_data_len;
+} ms_ecall_process_request_t;
+
 typedef struct ms_ecall_init_sg_t {
 	int ms_retval;
 } ms_ecall_init_sg_t;
@@ -511,11 +517,22 @@ sgx_status_t ecall_test(sgx_enclave_id_t eid)
 	return status;
 }
 
+sgx_status_t ecall_process_request(sgx_enclave_id_t eid, int* retval, uint8_t* data, size_t data_len)
+{
+	sgx_status_t status;
+	ms_ecall_process_request_t ms;
+	ms.ms_data = data;
+	ms.ms_data_len = data_len;
+	status = sgx_ecall(eid, 1, &ocall_table_Enclave, &ms);
+	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
+	return status;
+}
+
 sgx_status_t ecall_init_sg(sgx_enclave_id_t eid, int* retval)
 {
 	sgx_status_t status;
 	ms_ecall_init_sg_t ms;
-	status = sgx_ecall(eid, 1, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 2, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
@@ -524,7 +541,7 @@ sgx_status_t ecall_recieve_connections_sg(sgx_enclave_id_t eid, int* retval)
 {
 	sgx_status_t status;
 	ms_ecall_recieve_connections_sg_t ms;
-	status = sgx_ecall(eid, 2, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 3, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
@@ -533,7 +550,7 @@ sgx_status_t ecall_initiate_connections_sg(sgx_enclave_id_t eid, int* retval)
 {
 	sgx_status_t status;
 	ms_ecall_initiate_connections_sg_t ms;
-	status = sgx_ecall(eid, 3, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 4, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
@@ -542,7 +559,7 @@ sgx_status_t ecall_verify_connections_sg(sgx_enclave_id_t eid, int* retval)
 {
 	sgx_status_t status;
 	ms_ecall_verify_connections_sg_t ms;
-	status = sgx_ecall(eid, 4, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 5, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
@@ -551,7 +568,7 @@ sgx_status_t ecall_poll_and_process_updates(sgx_enclave_id_t eid, int* retval)
 {
 	sgx_status_t status;
 	ms_ecall_poll_and_process_updates_t ms;
-	status = sgx_ecall(eid, 5, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 6, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
@@ -564,7 +581,7 @@ sgx_status_t ecall_add_user(sgx_enclave_id_t eid, int* retval, const char* usern
 	ms.ms_username_len = username ? strlen(username) + 1 : 0;
 	ms.ms_password = (char*)password;
 	ms.ms_password_len = password ? strlen(password) + 1 : 0;
-	status = sgx_ecall(eid, 6, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 7, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
@@ -577,7 +594,7 @@ sgx_status_t ecall_auth_user(sgx_enclave_id_t eid, int* retval, const char* user
 	ms.ms_username_len = username ? strlen(username) + 1 : 0;
 	ms.ms_password = (char*)password;
 	ms.ms_password_len = password ? strlen(password) + 1 : 0;
-	status = sgx_ecall(eid, 7, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 8, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }

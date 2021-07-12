@@ -116,7 +116,7 @@ static void create_entry(entry_t **entry, const char *key, const void *value,
 
 /* put_store
  * The store allocates memory and copies value into it
- *
+ * return 1 on error, 0 on success
  */
 int put_store(table_t *table, const char *key, const void *value,
               size_t value_len) {

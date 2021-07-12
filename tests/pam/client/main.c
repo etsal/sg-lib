@@ -13,23 +13,23 @@ char *socket_path = "/tmp/sg";
 
 static void usage() { printf("Usage: add/auth <user> <password>\n"); }
 
-/* Implements gen_ipc_msg() easier to do it here b.c
+/* Implements gen_msg_request() easier to do it here b.c
  * we are using strtok, which mangles the string and
  * is annoying
  */
 static uint8_t *prepare_request(char *tokens, size_t *ret) {
   int i;
-  struct ipc_msg *msg = malloc(sizeof(struct ipc_msg));
+  struct msg_request *msg = malloc(sizeof(struct msg_request));
 
   assert(tokens != NULL);
-  memset(msg, 0, sizeof(struct ipc_msg));
+  memset(msg, 0, sizeof(struct msg_request));
   if (strcmp(tokens, "add") == 0) {
     msg->cmd = ADD_CMD;
   } else if (strcmp(tokens, "auth") == 0) {
     msg->cmd = AUTH_CMD;
   } else {
     usage();
-    memset(msg, 0, sizeof(struct ipc_msg));
+    memset(msg, 0, sizeof(struct msg_request));
     free(msg);
     return NULL;
   }
@@ -50,9 +50,9 @@ static uint8_t *prepare_request(char *tokens, size_t *ret) {
   }
   assert(i == 2); // ensures client supplies a command +2 args
 
-  print_ipc_msg(msg);
+  print_msg_request(msg);
 
-  *ret = sizeof(struct ipc_msg);
+  *ret = sizeof(struct msg_request);
   return (uint8_t *)msg;
 }
 
@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
   while ((rc = read(STDIN_FILENO, buf, sizeof(buf))) > 0) {
     char *tokens;
     uint8_t *request = NULL;
+    msg_response_t response;
     sg_frame_t **frames;
     size_t request_len = 0, num_frames = 0;
 
@@ -120,7 +121,30 @@ int main(int argc, char *argv[]) {
     memset(buf, 0, sizeof(buf));
     free(request);
     free_frames(&frames, num_frames);
-    /*
+
+    memset(&response, 0, sizeof(msg_response_t));
+    if ((rc = read(fd, &response, sizeof(msg_response_t))) > 0) {
+      if (response.ret == 0) printf("SUCCESS\n");
+      else printf("ERROR\n");
+    }
+    if (rc == -1) {
+      perror("read");
+      exit(-1);
+    } else if (rc == 0) {
+      printf("EOF");
+      close(fd);
+      exit(-1);
+    }
+  }
+  if (rc < 0) printf("here\n");
+
+  printf("done");
+
+  return 0;
+}
+
+    
+/*
         if (write(fd, buf, rc) != rc) {
           if (rc > 0)
             fprintf(stderr, "partial write");
@@ -130,8 +154,3 @@ int main(int argc, char *argv[]) {
           }
         }
     */
-  }
-  if (rc < 0) printf("here\n");
-
-  return 0;
-}

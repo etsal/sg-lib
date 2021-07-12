@@ -26,6 +26,8 @@ typedef enum _ret_t {
 	ER_FBIG = MK_ERROR(0x5058),
 	ER_NOEXIST = MK_ERROR(0x5060),
 	ER_AFTEREXEC = MK_ERROR(0x5061),
+  ER_LIBC = MK_ERROR(0x5062),
+  ER_SDK = MK_ERROR(0x5063),
 
 	ER_ENCODING = MK_ERROR(0x5070),
 	ER_DECODING = MK_ERROR(0x5071),
@@ -67,6 +69,10 @@ static errlist_t errlist[] = {
 	{ ER_ENCODING, "An error occured when encoding data", NULL },
 	{ ER_NOEXIST, "An error occured when decoding data", NULL },
 	{ ER_AFTEREXEC, "Exec faile", NULL },
+	{ ER_LIBC, "Libc function failed", NULL },
+	{ ER_SDK, "SGX SDK function failed", NULL },
+
+
 
 	{ ER_IAS_OK, "", NULL },
 	{ ER_IAS_BAD_REQUEST, "Bad request sent to IAS", NULL },

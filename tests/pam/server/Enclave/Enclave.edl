@@ -3,6 +3,7 @@ enclave {
   from "name_service.edl" import *;
   trusted {
     public void ecall_test();
+    public int ecall_process_request([in, size=data_len]uint8_t *data, size_t data_len);
   };
 
   untrusted {

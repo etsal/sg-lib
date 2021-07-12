@@ -11,7 +11,7 @@
 #include "ipc_util.h"
 #include "ipc_msg.h"
 #include "sg_interface.h"
-
+#include "Enclave_u.h"
 // char *socket_path = "./socket";
 char *socket_path = "/tmp/sg";
 
@@ -25,25 +25,38 @@ sgx_status_t initialize_enclave(void) {
   return status;
 }
 
-static void process_request(uint8_t *data, size_t data_len) {
-  struct ipc_msg *msg;
-  //assert(data_len == sizeof(struct ipc_msg));
+static int process_request(uint8_t *data, size_t data_len) {
+  /*
+struct msg_request *msg;
+  sgx_status_t status;
+  int ret;
+  //assert(data_len == sizeof(struct msg_request));
 
-  msg = (struct ipc_msg *)data;
-  print_ipc_msg(msg);
-/*
+  msg = (struct msg_request *)data;
+  print_msg_request(msg);
+
   switch(msg->cmd) {
     case ADD_CMD:
       printf("add ");
+      status = ecall_add_user(&ret, msg->key, msg->value);
     break;
     case AUTH_CMD:
       printf("auth ");
+      status = ecall_auth_user(&ret, msg->key, msg->value);
     break;
   }
-*/
- // printf("%s %s\n", msg->key, msg->value);
-  
 
+  if (status || ret) {
+  // Error 
+  } 
+
+ // printf("%s %s\n", msg->key, msg->value);
+ */ 
+
+}
+
+static void prepare_response(int ret, msg_response_t *response) {
+  response->ret = (ret & 0xff);
 }
 
 int process() {
@@ -51,8 +64,10 @@ int process() {
   char buf[100];
   sg_frame_t frame;
   int ret, fd, cl, rc;
+  sgx_status_t status;
 
   sg_frame_ctx_t frame_ctx;
+  msg_response_t response;
 
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
     perror("socket error");
@@ -104,8 +119,19 @@ int process() {
     printf("request recieved (len %d) : ", frame_ctx.data_len);
     for(int i=0; i<frame_ctx.data_len; ++i) printf("%c", frame_ctx.data[i]);
 
-    process_request(frame_ctx.data, frame_ctx.data_len);
+    ret = 0;
+    // enclave will cast it to struct msg_request
+    status = ecall_process_request(global_eid, &ret, frame_ctx.data, frame_ctx.data_len); 
+    if (status) {
+      perror("sgx");
+      exit(-1);
+    }
+    prepare_response(ret, &response);
 
+    if (write(cl, &response, sizeof(msg_response_t)) != sizeof(msg_response_t)) {
+      perror("write error");
+    }
+  
     clear_sg_frame_ctx(&frame_ctx);
     goto loop;
   }

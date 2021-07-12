@@ -13,6 +13,7 @@ struct user_info {
   sgx_sha256_hash_t hash;
 };
 
+/* 1 on error, 0 on success */
 int ecall_add_user(const char *username, const char *password) {
   struct user_info info;
   sgx_status_t status;

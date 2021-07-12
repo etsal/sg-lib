@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 void ecall_test();
+int ecall_process_request(uint8_t* data, size_t data_len);
 int ecall_init_sg();
 int ecall_recieve_connections_sg();
 int ecall_initiate_connections_sg();
