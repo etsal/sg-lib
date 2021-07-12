@@ -34,10 +34,16 @@ int init_new_db(db_ctx_t *db, const char *filename)
 }
 
 int put_db(db_ctx_t *db, const char *key, const void *value, size_t len) {
-  return put_store(&db->table, key, value, len);
+//int ret = put_store(&db->table, key, value, len); 
+//  print_store(&db->table);
+//  return ret;
+return put_store(&db->table, key, value, len);
 }
 
 int get_db(db_ctx_t *db, const char *key, void **value, size_t *len) {
+//  int ret = get_store(&db->table, key, value, len); 
+//  print_store(&db->table);
+//  return ret;
   return get_store(&db->table, key, value, len);
 }
 

@@ -5,11 +5,11 @@
 #include "sgx_tseal.h"
 
 #include "db.h"
+#include "errlist.h"
 #include "sg_auth.h"
 #include "sg_common.h"
-#include "errlist.h"
 
-#define DEBUG_SG 1
+//#define DEBUG_SG 1
 /*
 #include "sg.h"
 
@@ -23,8 +23,8 @@ struct sg_passwd {
 };
 
 static void print_sg_passwd(struct sg_passwd *p) {
-  eprintf("hash : %s\n", hexstring(p->hash, sizeof(sgx_sha256_hash_t)));
-  eprintf("salt : %s\n", hexstring(p->salt, SALT_SIZE));
+  eprintf("\thash : %s\n", hexstring(p->hash, sizeof(sgx_sha256_hash_t)));
+  eprintf("\tsalt : %s\n", hexstring(p->salt, SALT_SIZE));
 }
 
 int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password) {
@@ -41,10 +41,6 @@ int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password) {
     memset(passwd.salt, 0, SALT_SIZE);
   }
 
-#ifdef DEBUG_SG
-  eprintf("%s Salt generated\n", __FUNCTION__);
-#endif
-
   // Concatenate P = salt+password
   memcpy(buf, passwd.salt, SALT_SIZE);
   memcpy(buf + SALT_SIZE, password, strlen(password));
@@ -59,14 +55,16 @@ int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password) {
   }
 
 #ifdef DEBUG_SG
-  eprintf("%s Hash computed\n", __FUNCTION__);
+  eprintf("%s : Adding entry :\n", __FUNCTION__);
   print_sg_passwd(&passwd);
 #endif
 
   ret = put_db(&ctx->db, username, &passwd, sizeof(passwd));
+
 #ifdef DEBUG_SG
-  eprintf("%s : Put ... %s\n", __FUNCTION__, ret ? "ERROR" : "SUCCESS");
+  eprintf("%s : %s\n", __FUNCTION__, ret ? "ERROR" : "SUCCESS");
 #endif
+
   if (ret) {
     memset(buf, 0, buf_len);
     return 1;
@@ -90,14 +88,15 @@ int auth_user_sg(sg_ctx_t *ctx, const char *username, const char *password) {
   char *buf = malloc(SALT_SIZE + strlen(password) + 1);
   size_t buf_len = SALT_SIZE + strlen(password) + 1;
 
-  ret = get_db(&ctx->db, username, (void **) &passwd, &passwd_len);
+  ret = get_db(&ctx->db, username, (void **)&passwd, &passwd_len);
   if (!ret) {
     free(buf);
-    eprintf("get_db failed!\n");
+    eprintf("%s : get_db failed!\n", __FUNCTION__);
     return 1;
   }
 
 #ifdef DEBUG_SG
+  eprintf("%s : Found entry :\n", __FUNCTION__);
   print_sg_passwd(passwd);
 #endif
 

@@ -107,7 +107,7 @@ static void create_entry(entry_t **entry, const char *key, const void *value,
     *entry = NULL;
     return;
   }
-  memcpy((*entry)->key, key, strlen(key));
+  memcpy((*entry)->key, key, strlen(key)+1);
   memcpy((*entry)->value, value, value_len);
   //(*entry)->key_len = strlen(key) + 1;
   (*entry)->value_len = value_len;
@@ -142,6 +142,7 @@ int put_store(table_t *table, const char *key, const void *value,
   }
 
   create_entry(&entry, key, value, value_len);
+  
   if (!entry)
     return 1;
 
@@ -356,8 +357,10 @@ void merge_store(table_t *local_set, table_t *remote_set) {
 
 static void print_entry(entry_t *entry) {
   int print_len = (entry->value_len < 10) ? entry->value_len : 10;
-  eprintf("'%s' ", entry->key);
-  eprintf("%s[...] -> ", hexstring(entry->value, print_len));
+  eprintf("(%s, ", entry->key);
+  eprintf("%s", hexstring(entry->value, print_len));
+  if (print_len != entry->value_len) printf("...");
+  printf(")\t");
 }
 
 void print_store(table_t *table) {
