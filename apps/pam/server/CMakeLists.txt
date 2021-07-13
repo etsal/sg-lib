@@ -59,12 +59,12 @@ endif()
 
 file(GLOB App_C_Files 
     App/*.c
-    ../common/*.c
+    ../src/ipc_*
 )
 
 set(App_Include_Paths
     App
-    ../common
+    ../src
     ${SG_ROOT}/include
     ${SG_ROOT}/deps
     ${SGX_SDK}/include
@@ -107,7 +107,7 @@ file(GLOB Enclave_C_Files
 
 set(Enclave_Include_Paths
     Enclave
-    ../common
+    ../src
     ${SG_ROOT}/include
     ${SG_ROOT}/deps
     ${SGX_SDK}/include 

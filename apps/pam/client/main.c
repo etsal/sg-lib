@@ -41,7 +41,8 @@ static void parse_input(char *buf, struct input *input) {
 
   tokens = strtok(NULL, " ");
   assert(strlen(tokens) < 128);
-  memcpy(input->password, tokens, strlen(tokens) + 1);
+  memcpy(input->password, tokens, strlen(tokens));
+  input->password[strlen(tokens)-1] = '\0';
 }
 
 int main(int argc, char *argv[]) {

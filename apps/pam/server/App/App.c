@@ -116,8 +116,9 @@ int process() {
     }
     // printf("TODO: process frame_ctx-> data, and write result back to
     // client\n");
-    printf("request recieved (len %d) : ", frame_ctx.data_len);
+    printf("request recieved (len %d) : '", frame_ctx.data_len);
     for(int i=0; i<frame_ctx.data_len; ++i) printf("%c", frame_ctx.data[i]);
+    printf("'\n");
 
     ret = 0;
     // enclave will cast it to struct request_msg
@@ -126,6 +127,10 @@ int process() {
       perror("sgx");
       exit(-1);
     }
+  
+    fflush(stdout);
+    fflush(stderr);
+
     prepare_response(ret, &response);
 
     if (write(cl, &response, sizeof(response_msg_t)) != sizeof(response_msg_t)) {

@@ -3,7 +3,7 @@
 #include "sgx_tseal.h"
 
 #include "sg.h"
-
+#include "sg_common.h"
 #define PASSWD_SALT_SZ 32
 
 extern sg_ctx_t sg_ctx;
@@ -60,6 +60,8 @@ int ecall_auth_user(const char *username, const char *password) {
   char *buf = malloc(PASSWD_SALT_SZ + strlen(password) + 1);
   size_t buf_len = PASSWD_SALT_SZ + strlen(password) + 1;
 
+  eprintf("%s : Calling get_sg\n", __FUNCTION__);
+
   ret = get_sg(&sg_ctx, username, (void **)&info, &sz);
   if (!ret || sz != sizeof(struct user_info)) {
     free(buf);
@@ -71,7 +73,9 @@ int ecall_auth_user(const char *username, const char *password) {
   memcpy(buf + PASSWD_SALT_SZ, password, strlen(password));
   buf[buf_len - 1] = '\0';
 
-  // Compute hash SHA256(P)
+  eprintf("%s : Calling sgx_sha256_msg\n", __FUNCTION__);
+
+// Compute hash SHA256(P)
   status = sgx_sha256_msg(buf, buf_len, &hash);
   if (status) {
     memset(buf, 0, buf_len);
@@ -82,5 +86,8 @@ int ecall_auth_user(const char *username, const char *password) {
   ret = memcmp(hash, info->hash, sizeof(sgx_sha256_hash_t));
   memset(buf, 0, buf_len);
   free(buf);
+
+  eprintf("%s : memcmp returned %d\n", __FUNCTION__, ret);
+
   return ret;
 }

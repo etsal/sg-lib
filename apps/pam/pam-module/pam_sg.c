@@ -9,16 +9,21 @@
 
 #ifdef HAVE_PAM_EXT
 #include <security/pam_ext.h>
-#endif
-#ifdef HAVE_PAM_APPL
+//#endif
+//#ifdef HAVE_PAM_APPL
+#else
 #include <security/pam_appl.h>
 #endif
 
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "client_ipc.h"
+
 #define MAX_USERFILE_SIZE 1024
 #define USERSFILE "users"
+
+//#define DEBUG_AUTH 1
 
 bool auth_user(const char *, const char *);
 void change_pass(const char *, const char *);
@@ -30,36 +35,48 @@ void change_pass(const char *, const char *);
  */
 bool auth_user(const char *user, const char *password) {
 
-/*
-  FILE *f = fopen(USERSFILE, "r");
-  char content[MAX_USERFILE_SIZE];
-  int pos = 0;
   bool authenticated = false;
+  int ret, status = -1;
 
-  int c;
-  // Reading the file until EOF and filling content
-  while ((c = fgetc(f)) != EOF) {
-    content[pos++] = c;
-  }
-
-  char *userfield = strtok(content, ":");
-  char *passfield = strtok(NULL, "\n");
-
-  while (1) {
-    if (strcmp(user, userfield) == 0 && strcmp(password, passfield) == 0) {
+  ret = ipc_request(&status, AUTH_REQUEST, user, password);
+  if (ret == 0 && status == 0) {
       authenticated = true;
-      break;
-    }
-    userfield = strtok(NULL, ":");
-    if (userfield == NULL)
-      break;
-    passfield = strtok(NULL, "\n");
-    if (passfield == NULL)
-      break;
   }
+
+  //printf("%s : ret %d, status %d, auth %d\n", __FUNCTION__, ret, status, authenticated);
+  
   return authenticated;
 
-*/
+  /*
+    FILE *f = fopen(USERSFILE, "r");
+    char content[MAX_USERFILE_SIZE];
+    int pos = 0;
+    bool authenticated = false;
+
+    int c;
+    // Reading the file until EOF and filling content
+    while ((c = fgetc(f)) != EOF) {
+      content[pos++] = c;
+    }
+
+    char *userfield = strtok(content, ":");
+    char *passfield = strtok(NULL, "\n");
+
+    while (1) {
+      if (strcmp(user, userfield) == 0 && strcmp(password, passfield) == 0) {
+        authenticated = true;
+        break;
+      }
+      userfield = strtok(NULL, ":");
+      if (userfield == NULL)
+        break;
+      passfield = strtok(NULL, "\n");
+      if (passfield == NULL)
+        break;
+    }
+    return authenticated;
+
+  */
 }
 
 void change_pass(const char *username, const char *password) {
@@ -100,7 +117,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
   const char *username = NULL;
   const char *password = NULL;
 
-  //printf("\n\t+ (%s) Calling pam_get_user\n", __FUNCTION__);
+#ifdef DEBUG_AUTH
+  printf("\n\t+ (%s) Calling pam_get_user\n", __FUNCTION__);
+#endif
 
   /* Asking the application for an  username */
   pam_code = pam_get_user(handle, &username, "Username: ");
@@ -109,7 +128,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
     return PAM_PERM_DENIED;
   }
 
-  //printf("\n\t+ (%s) Calling pam_get_authtok\n", __FUNCTION__);
+#ifndef DEBUG_AUTH
+  printf("\n\t+ (%s) Calling pam_get_authtok\n", __FUNCTION__);
+#endif
 
   /* Asking the application for a password */
   pam_code = pam_get_authtok(handle, PAM_AUTHTOK, &password, "Password: ");
@@ -118,7 +139,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
     return PAM_PERM_DENIED;
   }
 
-  //printf("\n\t+ (%s) Recieved password: %s\n", __FUNCTION__, password);
+#ifdef DEBUG_AUTH
+  printf("\n\t+ (%s) Recieved password: %s\n", __FUNCTION__, password);
+#endif
 
   /* Checking the PAM_DISALLOW_NULL_AUTHTOK flag: if on, we can't accept empty
    * passwords */
@@ -129,15 +152,19 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
     }
   }
 
+#ifdef DEBUG_AUTH
+  printf("\n\t+ (%s) Calling auth_user \n", __FUNCTION__);
+#endif
+
   /*Auth user reads a file with usernames and passwords and returns true if
    * username
    * and password are correct. Obviously, you must not save clear text passwords
    */
   if (auth_user(username, password)) {
-    printf("Welcome, user");
+    printf("Welcome, user\n");
     return PAM_SUCCESS;
   } else {
-    fprintf(stderr, "Wrong username or password");
+    fprintf(stderr, "Wrong username or password\n");
     return PAM_PERM_DENIED;
   }
 
@@ -163,10 +190,10 @@ PAM_EXTERN int pam_sm_open_session(pam_handle_t *pamh, int flags, int argc,
 
 PAM_EXTERN int pam_sm_close_session(pam_handle_t *pamh, int flags, int argc,
                                     const char **argv) {
-  return PAM_SERVICE_ERR; 
+  return PAM_SERVICE_ERR;
 }
 
 PAM_EXTERN int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc,
                                 const char **argv) {
-  return PAM_SERVICE_ERR; 
+  return PAM_SERVICE_ERR;
 }
