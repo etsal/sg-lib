@@ -11,14 +11,14 @@ void ecall_test() {
 }
 
 int ecall_process_request(uint8_t *data, size_t data_len) {
-  struct msg_request *msg = (struct msg_request *)data;
+  struct request_msg *msg = (struct request_msg *)data;
   int ret;
 
   switch(msg->cmd) {
-    case ADD_CMD:
+    case ADD_REQUEST:
       ret = add_user_sg(&sg_ctx, msg->key, msg->value);
     break;
-    case AUTH_CMD:
+    case AUTH_REQUEST:
       ret = auth_user_sg(&sg_ctx, msg->key, msg->value);
     break;
   }

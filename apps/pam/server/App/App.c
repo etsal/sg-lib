@@ -27,13 +27,13 @@ sgx_status_t initialize_enclave(void) {
 
 static int process_request(uint8_t *data, size_t data_len) {
   /*
-struct msg_request *msg;
+struct request_msg *msg;
   sgx_status_t status;
   int ret;
-  //assert(data_len == sizeof(struct msg_request));
+  //assert(data_len == sizeof(struct request_msg));
 
-  msg = (struct msg_request *)data;
-  print_msg_request(msg);
+  msg = (struct request_msg *)data;
+  print_request_msg(msg);
 
   switch(msg->cmd) {
     case ADD_CMD:
@@ -55,7 +55,7 @@ struct msg_request *msg;
 
 }
 
-static void prepare_response(int ret, msg_response_t *response) {
+static void prepare_response(int ret, response_msg_t *response) {
   response->ret = (ret & 0xff);
 }
 
@@ -67,7 +67,7 @@ int process() {
   sgx_status_t status;
 
   sg_frame_ctx_t frame_ctx;
-  msg_response_t response;
+  response_msg_t response;
 
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
     perror("socket error");
@@ -120,7 +120,7 @@ int process() {
     for(int i=0; i<frame_ctx.data_len; ++i) printf("%c", frame_ctx.data[i]);
 
     ret = 0;
-    // enclave will cast it to struct msg_request
+    // enclave will cast it to struct request_msg
     status = ecall_process_request(global_eid, &ret, frame_ctx.data, frame_ctx.data_len); 
     if (status) {
       perror("sgx");
@@ -128,12 +128,11 @@ int process() {
     }
     prepare_response(ret, &response);
 
-    if (write(cl, &response, sizeof(msg_response_t)) != sizeof(msg_response_t)) {
+    if (write(cl, &response, sizeof(response_msg_t)) != sizeof(response_msg_t)) {
       perror("write error");
     }
   
     clear_sg_frame_ctx(&frame_ctx);
-    goto loop;
   }
   free_sg_frame_ctx(&frame_ctx);
   return 0;
@@ -148,14 +147,12 @@ int main(int argc, char *argv[]) {
     printf("Error %08x @ %d\n", status, __LINE__);
     exit(1);
   }
-  printf("Enclave initialized\n");
 
   ret = initialize_sg();
   if (status) {
     printf("Error %08x @ %d\n", status, __LINE__);
     exit(1);
   }
-  printf("SG initialized\nRunning service ...\n");
 
   ret = process();
 

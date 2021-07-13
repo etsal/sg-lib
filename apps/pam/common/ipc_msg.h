@@ -6,22 +6,22 @@
 #define MAX_KEY_LEN 128
 #define MAX_VALUE_LEN 4096
 
-typedef enum {ADD_CMD, AUTH_CMD} cmd_type;
+typedef enum {ADD_REQUEST, AUTH_REQUEST} request_type;
 
-typedef struct msg_request {
+typedef struct request_msg {
   uint8_t cmd;
   uint32_t value_len;
   char key[MAX_KEY_LEN];
   uint8_t value[MAX_VALUE_LEN];
-} msg_request_t;
+} request_msg_t;
 
-typedef struct msg_response {
+typedef struct response_msg {
   uint8_t ret;
-} msg_response_t;
+} response_msg_t;
 
-void print_msg_request(struct msg_request *msg);
+void print_request_msg(request_msg_t *msg);
 
-struct msg_request *gen_msg_request(uint8_t cmd, char *key, uint8_t *value,
+request_msg_t *gen_msg_request(uint8_t cmd, char *key, uint8_t *value,
                             uint32_t value_len);
 
 #endif
