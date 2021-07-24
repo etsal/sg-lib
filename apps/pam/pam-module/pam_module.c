@@ -29,13 +29,14 @@ void change_pass(const char *, const char *);
  * @param password
  */
 bool auth_user(const char *user, const char *password) {
-  FILE *f = fopen(USERSFILE, "r");
+  
+FILE *f = fopen(USERSFILE, "r");
   char content[MAX_USERFILE_SIZE];
   int pos = 0;
   bool authenticated = false;
 
   int c;
-  /* Reading the file until EOF and filling content */
+  // Reading the file until EOF and filling content
   while ((c = fgetc(f)) != EOF) {
     content[pos++] = c;
   }
@@ -56,6 +57,7 @@ bool auth_user(const char *user, const char *password) {
       break;
   }
   return authenticated;
+
 }
 
 void change_pass(const char *username, const char *password) {

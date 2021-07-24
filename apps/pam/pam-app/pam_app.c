@@ -134,7 +134,6 @@ int main() {
       handle,
       0); /* Do authentication (user will be asked for username and password)*/
   if (retval != PAM_SUCCESS) {
-    fprintf(stderr, "here\n");
     fprintf(stderr, "Failure in pam authentication: %s",
             pam_strerror(handle, retval));
     return 1;
