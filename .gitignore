@@ -61,6 +61,8 @@ CMakeFiles
 
 build/*
 CMakeFiles/*
+tests/db
+tests/sampleenclavecmake
 tests/SampleEnclave/
 tests/SimpleC/build/*
 tests/SimpleC/build
