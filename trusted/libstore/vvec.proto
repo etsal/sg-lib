@@ -1,8 +1,0 @@
-message version {
-	required uint64 uid = 1;
-	required uint64 ts = 2;
-}
-
-message version_vector {
-	repeated version versions = 1;
-}

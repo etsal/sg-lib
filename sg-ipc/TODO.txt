@@ -1,1 +1,0 @@
-Create a library that apps can link to communiate with sg daemon

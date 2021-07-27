@@ -1,7 +1,0 @@
-import "store.proto";
-import "keycert.proto";
-
-message stateSg {
-    required keycert kc = 1;
-    required table t = 2;
-}

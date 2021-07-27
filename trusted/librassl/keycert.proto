@@ -1,5 +1,0 @@
-message keycert {
-    required uint32 key_type = 1;
-    required bytes key = 2;
-    required bytes cert = 3;
-};

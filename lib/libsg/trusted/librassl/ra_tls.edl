@@ -1,0 +1,5 @@
+enclave {
+    include "ra_tls.h"
+    from "wolfssl_enclave.edl" import *;
+    from "attest.edl" import *;
+};

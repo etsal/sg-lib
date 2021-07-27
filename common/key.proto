@@ -1,6 +1,0 @@
-
-message key {
-	required int32 type = 1;
-	required int32 curve = 2;
-	repeated int32 kbuf = 3;
-}

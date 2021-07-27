@@ -1,0 +1,12 @@
+enclave {
+    include "ra_tls_util.h" 
+    include "attester.h"
+    include "sgx_report.h"
+
+    untrusted {
+        void ocall_sgx_init_quote([out] sgx_target_info_t* target_info);
+        void ocall_remote_attestation([in] sgx_report_t* report,
+                                  [in] const ra_tls_options_t* opts,
+                                  [out] attestation_verification_report_t* attn_report);
+    };
+};
