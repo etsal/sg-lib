@@ -12,8 +12,8 @@ set(SGX_MODE "HW")
 set(SGX_ARCH "x64")
 set(SGX_DEBUG 1)
 
-set(DEPS_DIR "../deps")
-set(LIBSG_ROOT "../lib/libsg")
+set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps")
+set(LIBSG_ROOT "${CMAKE_SOURCE_DIR}/../lib/libsg")
 
 # WOLFSSL
 set(WOLFSSL_ROOT "${DEPS_DIR}/wolfssl")
@@ -24,7 +24,8 @@ set(WOLFSSL_C_FLAGS "-DWOLFSSL_SGX -DUSER_TIME -DWOLFSSL_SGX_ATTESTATION \
 set(BEARSSL_ROOT "${DEPS_DIR}/BearSSL")
 
 # PROTOBUF C
-set(PROTOBUF_ROOT "${DEPS_DIR}/protobuf-c")
+set(PROTOBUF_ROOT "${DEPS_DIR}/protobuf-c-1.3.3")
+
 
 set(ENCLAVE_DIR "${CMAKE_SOURCE_DIR}/Enclave")
 set(APP_DIR "${CMAKE_SOURCE_DIR}/App")
@@ -108,7 +109,7 @@ file(GLOB Enclave_C_Files
 
 set(Enclave_Include_Paths
     Enclave
-    ../src
+    ipc
     ${LIBSG_ROOT}/include
     ${DEPS_DIR}
     ${SGX_SDK}/include 
@@ -152,13 +153,13 @@ set(Enclave_Link_Flags
 
 ### Start
 add_custom_target(UntrustedEdger8r
-COMMAND ${SGX_EDGER8R} --untrusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR} --search-path ../${LIBSG_ROOT}/include --search-path ${SGX_SDK}/include
+COMMAND ${SGX_EDGER8R} --untrusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR} --search-path ${LIBSG_ROOT}/include --search-path ${SGX_SDK}/include
 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/App
 COMMENT "GEN => Enclave_u.h"
 )
 
 add_custom_target(TrustedEdger8r
-COMMAND  ${SGX_EDGER8R} --trusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR} --search-path ../${LIBSG_ROOT}/include --search-path ${SGX_SDK}/include
+COMMAND  ${SGX_EDGER8R} --trusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR} --search-path ${LIBSG_ROOT}/include --search-path ${SGX_SDK}/include
 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/Enclave
 COMMENT "GEN => Enclave_t.h"
 )
@@ -195,9 +196,8 @@ ${LIBSG_ROOT}/build
 /usr/local/lib/gcc48
 ${BEARSSL_ROOT}/build
 ${WOLFSSL_ROOT}/IDE/LINUX-SGX
-${PROTOBUF_ROOT}/build
+#${PROTOBUF_ROOT}/build
 )
-
 
 target_link_libraries(${App_Name} 
 ${Urts_Library_Name}    #.so 
@@ -206,7 +206,7 @@ curl                    #.so
 ${CMAKE_THREAD_LIBS_INIT} #pthread
 libsgx_ukey_exchange.a 
 libsguntrusted.a
-libprotobuf-c.a 
+#${PROTOBUF_ROOT}/build/libprotobuf-c.a 
 libbearssl.a
 libwolfssl.sgx.static.lib.a
 )
