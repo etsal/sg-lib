@@ -41,6 +41,7 @@ file (GLOB UNTRUSTED_SRCS
     untrusted/*.c
     untrusted/librassl/*.c
     common/*.c
+    ${DEPS_DIR}/inih/ini.c
 )
 
 set (TRUSTED_INCLUDE
