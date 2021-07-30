@@ -10,6 +10,3 @@
 [submodule "deps/uthash"]
 	path = deps/uthash
 	url = https://github.com/troydhanson/uthash.git
-[submodule "deps/inih"]
-	path = deps/inih
-	url = https://github.com/benhoyt/inih.git
