@@ -18,7 +18,7 @@ int initialize_sg(const char *path) {
   configuration *config;
   sgx_status_t status;
   int ret;
-  char *buf;
+  void *buf;
   size_t len;
 
   config = parse_config(path);
@@ -36,7 +36,7 @@ int initialize_sg(const char *path) {
     goto exit;
   }
 
-  buf = serialize_config(config, &len);
+  buf = pack_config(config, &len);
   if (buf == NULL) {
     ret = 1;
     goto exit;

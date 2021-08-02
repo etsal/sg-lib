@@ -1,0 +1,9 @@
+message host {
+  required string host = 1;
+}
+
+message config {
+  required string database_file = 1;
+  repeated string hosts = 2;
+}
+

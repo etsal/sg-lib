@@ -26,8 +26,8 @@ typedef struct ms_ecall_process_request_t {
 
 typedef struct ms_ecall_init_sg_t {
 	int ms_retval;
-	char* ms_config_str;
-	size_t ms_config_str_len;
+	void* ms_config;
+	size_t ms_config_len;
 } ms_ecall_init_sg_t;
 
 typedef struct ms_ecall_recieve_connections_sg_t {
@@ -298,31 +298,31 @@ static sgx_status_t SGX_CDECL sgx_ecall_init_sg(void* pms)
 	sgx_lfence();
 	ms_ecall_init_sg_t* ms = SGX_CAST(ms_ecall_init_sg_t*, pms);
 	sgx_status_t status = SGX_SUCCESS;
-	char* _tmp_config_str = ms->ms_config_str;
-	size_t _tmp_config_str_len = ms->ms_config_str_len;
-	size_t _len_config_str = _tmp_config_str_len;
-	char* _in_config_str = NULL;
+	void* _tmp_config = ms->ms_config;
+	size_t _tmp_config_len = ms->ms_config_len;
+	size_t _len_config = _tmp_config_len;
+	void* _in_config = NULL;
 
-	CHECK_UNIQUE_POINTER(_tmp_config_str, _len_config_str);
+	CHECK_UNIQUE_POINTER(_tmp_config, _len_config);
 
 	//
 	// fence after pointer checks
 	//
 	sgx_lfence();
 
-	if (_tmp_config_str != NULL && _len_config_str != 0) {
-		_in_config_str = (char*)malloc(_len_config_str);
-		if (_in_config_str == NULL) {
+	if (_tmp_config != NULL && _len_config != 0) {
+		_in_config = (void*)malloc(_len_config);
+		if (_in_config == NULL) {
 			status = SGX_ERROR_OUT_OF_MEMORY;
 			goto err;
 		}
 
-		memcpy((void*)_in_config_str, _tmp_config_str, _len_config_str);
+		memcpy(_in_config, _tmp_config, _len_config);
 	}
 
-	ms->ms_retval = ecall_init_sg((const char*)_in_config_str, _tmp_config_str_len);
+	ms->ms_retval = ecall_init_sg(_in_config, _tmp_config_len);
 err:
-	if (_in_config_str) free((void*)_in_config_str);
+	if (_in_config) free(_in_config);
 
 	return status;
 }

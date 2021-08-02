@@ -202,7 +202,7 @@ ${LIBSG_ROOT}/build
 /usr/local/lib/gcc48
 ${BEARSSL_ROOT}/build
 ${WOLFSSL_ROOT}/IDE/LINUX-SGX
-#${PROTOBUF_ROOT}/build
+${PROTOBUF_ROOT}/build
 )
 
 target_link_libraries(${App_Name} 
@@ -212,7 +212,8 @@ curl                    #.so
 ${CMAKE_THREAD_LIBS_INIT} #pthread
 libsgx_ukey_exchange.a 
 libsguntrusted.a
-#${PROTOBUF_ROOT}/build/libprotobuf-c.a 
+#${PROTOBUF_ROOT}/build/libprotobuf-c.a
+libprotobuf-c.a
 libbearssl.a
 libwolfssl.sgx.static.lib.a
 )

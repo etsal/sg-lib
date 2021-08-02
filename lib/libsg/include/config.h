@@ -2,14 +2,20 @@
 #define __CONFIG_H__
 
 #define MAX_NODES 5
-
+#define MAX_FILE_PATH_LEN 64
 
 /* Structure is used by both app and enclave */
 typedef struct {
+  char *database_file;
   int expected_ips;
   int found_ips;
   char *ips[MAX_NODES];
 } configuration;
+
+/* using protobufs */
+configuration *unpack_config(void *buf, size_t len);
+void *pack_config(configuration *config, size_t *out_len);
+int verify_config(configuration *config);
 
 // Used by both App and Enclave
 configuration *deserialize_config(const char *config, size_t config_len);
@@ -18,7 +24,6 @@ configuration *deserialize_config(const char *config, size_t config_len);
 //configuration *deserialize_config(const char *config, size_t config_len);
 char *serialize_config(configuration *config, size_t *len);
 configuration *parse_config(const char *path);
-int verify_config(configuration *config);
 void destroy_config(configuration *config);
 void prettyprint_config(configuration *config);
 

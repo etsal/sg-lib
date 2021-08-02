@@ -75,16 +75,18 @@ static configuration *parse_config(const char *config, size_t config_len) {
  * the attestation information together
  * so we call them here instead
  */
-void init_sg(sg_ctx_t *ctx, const char *config, size_t config_len) {
+void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
 
   int ret;
   
-  configuration *c = deserialize_config(config, config_len);
+  configuration *c = unpack_config(config, config_len);
   assert(c != NULL);
+  ret = verify_config(config);
+  assert(ret); // TODO Better error handling
 
-  strcpy(ctx->db.db_filename, db_filename);
+  // Retrieve database file name from config
+  strcpy(ctx->db.db_filename, c->database_file); 
   ret = unseal_and_deserialize_sg(ctx);
-
   if (ret) {
 #ifdef DEBUG_SG
     eprintf("\t+ (%s) Database failed to load from %s, db is not set\n",

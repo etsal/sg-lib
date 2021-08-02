@@ -21,7 +21,7 @@ extern "C" {
 
 void ecall_test();
 int ecall_process_request(uint8_t* data, size_t data_len);
-int ecall_init_sg(const char* config_str, size_t config_str_len);
+int ecall_init_sg(void* config, size_t config_len);
 int ecall_recieve_connections_sg();
 int ecall_initiate_connections_sg();
 int ecall_verify_connections_sg();
