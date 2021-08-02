@@ -9,6 +9,8 @@ typedef struct ms_ecall_process_request_t {
 
 typedef struct ms_ecall_init_sg_t {
 	int ms_retval;
+	char* ms_config_str;
+	size_t ms_config_str_len;
 } ms_ecall_init_sg_t;
 
 typedef struct ms_ecall_recieve_connections_sg_t {
@@ -528,10 +530,12 @@ sgx_status_t ecall_process_request(sgx_enclave_id_t eid, int* retval, uint8_t* d
 	return status;
 }
 
-sgx_status_t ecall_init_sg(sgx_enclave_id_t eid, int* retval)
+sgx_status_t ecall_init_sg(sgx_enclave_id_t eid, int* retval, const char* config_str, size_t config_str_len)
 {
 	sgx_status_t status;
 	ms_ecall_init_sg_t ms;
+	ms.ms_config_str = (char*)config_str;
+	ms.ms_config_str_len = config_str_len;
 	status = sgx_ecall(eid, 2, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;

@@ -3,7 +3,7 @@ enclave {
 
   trusted {
 
-    public int ecall_init_sg();
+    public int ecall_init_sg([in, size=config_str_len] const char *config_str, size_t config_str_len);
     public int ecall_recieve_connections_sg();
     public int ecall_initiate_connections_sg();
     public int ecall_verify_connections_sg();

@@ -7,6 +7,8 @@
 #include "sg_util.h"
 #include "store.pb-c.h"
 #include "wolfssl_enclave.h"
+#include "config.h"
+
 extern ra_tls_options_t global_opts;
 
 #define DEBUG_SG 1
@@ -42,6 +44,30 @@ static char *iota_u64(uint64_t value, char *str, size_t len) {
   return str;
 }
 
+static configuration *parse_config(const char *config, size_t config_len) {
+  int cur = 0;
+  configuration *c =  malloc(sizeof(configuration)); 
+  c->found_ips = 0;
+
+  int i = 0;
+  while(cur < config_len && i < MAX_NODES) {
+    if (config + cur == '\0') break;
+    c->ips[i++] = strndup(config + cur, strlen(config + cur));        
+    cur += strlen(config + cur) + 1;
+#ifdef DEBUG_SG
+    eprintf("\t+ (%s) Found: %s\n", __FUNCTION__, c->ips[i-1]);
+#endif
+  }
+  if (!(i < MAX_NODES)) {
+#ifdef DEBUG_SG
+      eprintf("\t+ (%s) WARNING: More than %d nodes found in config\n", __FUNCTION__, MAX_NODES);
+#endif
+  }
+
+  c->found_ips = i;
+  return c;
+}
+
 /*
  * init_sg()
  * Ideally we call init_db to do the database
@@ -49,10 +75,16 @@ static char *iota_u64(uint64_t value, char *str, size_t len) {
  * the attestation information together
  * so we call them here instead
  */
-void init_sg(sg_ctx_t *ctx) {
+void init_sg(sg_ctx_t *ctx, const char *config, size_t config_len) {
+
+  int ret;
+  
+  configuration *c = deserialize_config(config, config_len);
+  assert(c != NULL);
 
   strcpy(ctx->db.db_filename, db_filename);
-  int ret = unseal_and_deserialize_sg(ctx);
+  ret = unseal_and_deserialize_sg(ctx);
+
   if (ret) {
 #ifdef DEBUG_SG
     eprintf("\t+ (%s) Database failed to load from %s, db is not set\n",

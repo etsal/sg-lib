@@ -2,8 +2,8 @@
 
 extern sg_ctx_t sg_ctx;
 
-int ecall_init_sg() {
-  init_sg(&sg_ctx);
+int ecall_init_sg(const char *config_str, size_t config_str_len) {
+  init_sg(&sg_ctx, config_str, config_str_len);
   return 0;
 }
 

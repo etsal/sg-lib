@@ -59,7 +59,7 @@ app.core
 build
 CMakeFiles
 
-deps/*
+#deps/*
 build/*
 CMakeFiles/*
 tests/db

@@ -54,7 +54,7 @@ void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_remote_attestation, (sgx_report_t* repo
 
 sgx_status_t ecall_test(sgx_enclave_id_t eid);
 sgx_status_t ecall_process_request(sgx_enclave_id_t eid, int* retval, uint8_t* data, size_t data_len);
-sgx_status_t ecall_init_sg(sgx_enclave_id_t eid, int* retval);
+sgx_status_t ecall_init_sg(sgx_enclave_id_t eid, int* retval, const char* config_str, size_t config_str_len);
 sgx_status_t ecall_recieve_connections_sg(sgx_enclave_id_t eid, int* retval);
 sgx_status_t ecall_initiate_connections_sg(sgx_enclave_id_t eid, int* retval);
 sgx_status_t ecall_verify_connections_sg(sgx_enclave_id_t eid, int* retval);

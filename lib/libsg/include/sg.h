@@ -12,7 +12,7 @@ typedef struct {
     
 } sg_ctx_t;
 
-void init_sg(sg_ctx_t *ctx);
+void init_sg(sg_ctx_t *ctx, const char *config, size_t config_len);
 void init_new_sg(sg_ctx_t *ctx);
 
 int verify_connections_sg(sg_ctx_t *ctx);

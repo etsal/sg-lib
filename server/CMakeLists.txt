@@ -86,7 +86,7 @@ else()
     set(App_C_Flags "${App_C_Flags} -DNDEBUG -UEDEBUG -UDEBUG")
 endif()
 
-set(App_C_Flags "${App_C_Flags} -Wno-attributes -std=c99")#-nostdinc++ ")
+set(App_C_Flags "${App_C_Flags} -D__APP__ -Wno-attributes -std=c99")#-nostdinc++ ")
 
 ### Enclave Settings
 set(Enclave_Name "enclave")
@@ -172,6 +172,12 @@ OUTPUT lib${Signed_Enclave_Name}.so
 DEPENDS ${App_Name}
 )
 
+add_custom_target(CopyConfig ALL
+  COMMAND cp config.ini ${CMAKE_SOURCE_DIR}/build
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  #COMMENT "COPY config.ini to /build"
+)
+
 #link_directories(${SGX_LIBRARY_PATH} /usr/local/lib/gcc48)
 
 # These are the targets (1) the app executable and (2) the shared enclave lib
@@ -235,4 +241,5 @@ ${Enclave_Link_Flags}
 add_dependencies(${App_Name} UntrustedEdger8r TrustedEdger8r)
 add_dependencies(${Enclave_Name} ${App_Name}) #TrustedEdger8r)
 add_dependencies(SignEnclave ${Enclave_Name})
+add_dependencies(CopyConfig SignEnclave)
 

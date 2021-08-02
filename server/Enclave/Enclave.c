@@ -24,11 +24,11 @@ int ecall_process_request(uint8_t *data, size_t data_len) {
   }
   return ret;
 }
-
+/*
 void init() { 
   init_sg(&sg_ctx); 
 }
-
+*/
 void connect_cluster() {
   initiate_connections_sg(&sg_ctx);
 }
