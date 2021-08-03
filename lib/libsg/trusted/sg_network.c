@@ -24,10 +24,10 @@ struct connection {
   char ip[INET6_ADDRSTRLEN];
 };
 
-struct connection client_connections[3];
-struct connection server_connections[3];
+struct connection client_connections[MAX_NODES];
+struct connection server_connections[MAX_NODES];
 
-int num_hosts = 3;
+int num_hosts = 0;
 int pollUpdatesFlag = 1;
 
 static void gethostname(char *hostname) {
@@ -65,13 +65,16 @@ static void init_connection(struct connection *c, const char *hostname) {
   sgx_thread_mutex_init(&c->lock, NULL);
 }
 
-static void init_connections_(sg_ctx_t *ctx, struct connection c[]) {
+/* Initializes the connection array, must properly set the flag for local ip
+ *
+ */
+static void init_connections_(sg_ctx_t *ctx, struct connection *c) {
   char hostname[128];
   char ip[INET6_ADDRSTRLEN];
-  const char *cluster_hosts[] = {"mantou.rcs.uwaterloo.ca",
-                                 "baguette.rcs.uwaterloo.ca",
-                                 "tortilla.rcs.uwaterloo.ca"};
-  char **cluster_ips = (char **)ctx->config->ips;
+  const char *hostnames[] = {"mantou.rcs.uwaterloo.ca",
+                             "baguette.rcs.uwaterloo.ca",
+                             "tortilla.rcs.uwaterloo.ca"};
+  char **hostips = (char **)ctx->config->ips;
 
   gethostname(hostname);
   gethostip(ip);
@@ -83,10 +86,18 @@ static void init_connections_(sg_ctx_t *ctx, struct connection c[]) {
 
   memset(c, 0, sizeof(struct connection) * num_hosts);
   for (int i = 0; i < num_hosts; ++i) {
-    if (strcmp(hostname, cluster_hosts[i]) == 0) {
-      c[i].ignore = 1;
+    if (strcmp(ip, hostips[i]) == 0) {
+      c[i].ignore = 0;
+#ifdef DEBUG_SG
+      eprintf("\t+ (%s) Ignoring %s\n", __FUNCTION__, hostips[i]);
+#endif
     }
-    init_connection(&c[i], cluster_hosts[i]);
+    /*
+        if (strcmp(hostname, cluster_hosts[i]) == 0) {
+          c[i].ignore = 1;
+        }
+    */
+    //init_connection(&c[i], cluster_hosts[i]);
   }
 }
 
