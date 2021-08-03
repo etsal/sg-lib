@@ -43,8 +43,8 @@ static void gethostname(char *hostname) {
   exit(1);
 }
 
-static void gethostbyname(char *ip) {
-  sgx_status_t status = ocall_gethostbyname(ip);
+static void gethostip(char *ip) {
+  sgx_status_t status = ocall_gethostip(ip);
   if (status != SGX_SUCCESS) {
     exit(1);
   }
@@ -74,7 +74,7 @@ static void init_connections_(sg_ctx_t *ctx, struct connection c[]) {
   char **cluster_ips = (char **)ctx->config->ips;
 
   gethostname(hostname);
-  gethostbyname(ip);
+  gethostip(ip);
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) This host is %s\n", __FUNCTION__, hostname);

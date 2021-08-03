@@ -35,7 +35,7 @@ int ocall_accept_client(int sockfd) { return accept_client(sockfd); }
 
 void ocall_gethostname(char *hostname) { gethostname(hostname, 128); }
 
-void ocall_gethostbyname(char *ip) {
+void ocall_gethostip(char *ip) {
   struct ifaddrs *ifap, *ifa;
   struct sockaddr_in *sa;
   char *addr;
@@ -46,10 +46,17 @@ void ocall_gethostbyname(char *ip) {
       sa = (struct sockaddr_in *)ifa->ifa_addr;
       addr = inet_ntoa(sa->sin_addr);
       printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
+      if (strcmp("mce0", ifa->ifa_name) == 0) {
+        assert(strlen(addr) < INET6_ADDRSTRLEN);
+        memcpy(ip, addr, strlen(addr));
+        freeifaddrs(ifap);
+        return;
+      }
     }
   }
 
   freeifaddrs(ifap);
+  assert(1); // Should not reach here
 
   /*(
     char hostbuf[256];

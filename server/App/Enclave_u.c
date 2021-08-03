@@ -187,9 +187,9 @@ typedef struct ms_ocall_gethostname_t {
 	char* ms_host;
 } ms_ocall_gethostname_t;
 
-typedef struct ms_ocall_gethostbyname_t {
+typedef struct ms_ocall_gethostip_t {
 	char* ms_ip;
-} ms_ocall_gethostbyname_t;
+} ms_ocall_gethostip_t;
 
 typedef struct ms_ocall_poll_and_process_updates_t {
 	int ms_retval;
@@ -422,10 +422,10 @@ static sgx_status_t SGX_CDECL Enclave_ocall_gethostname(void* pms)
 	return SGX_SUCCESS;
 }
 
-static sgx_status_t SGX_CDECL Enclave_ocall_gethostbyname(void* pms)
+static sgx_status_t SGX_CDECL Enclave_ocall_gethostip(void* pms)
 {
-	ms_ocall_gethostbyname_t* ms = SGX_CAST(ms_ocall_gethostbyname_t*, pms);
-	ocall_gethostbyname(ms->ms_ip);
+	ms_ocall_gethostip_t* ms = SGX_CAST(ms_ocall_gethostip_t*, pms);
+	ocall_gethostip(ms->ms_ip);
 
 	return SGX_SUCCESS;
 }
@@ -515,7 +515,7 @@ static const struct {
 		(void*)Enclave_ocall_host_connect,
 		(void*)Enclave_ocall_accept_client,
 		(void*)Enclave_ocall_gethostname,
-		(void*)Enclave_ocall_gethostbyname,
+		(void*)Enclave_ocall_gethostip,
 		(void*)Enclave_ocall_init_networking,
 		(void*)Enclave_ocall_poll_and_process_updates,
 		(void*)Enclave_ocall_low_res_time,

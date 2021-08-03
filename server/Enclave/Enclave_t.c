@@ -204,9 +204,9 @@ typedef struct ms_ocall_gethostname_t {
 	char* ms_host;
 } ms_ocall_gethostname_t;
 
-typedef struct ms_ocall_gethostbyname_t {
+typedef struct ms_ocall_gethostip_t {
 	char* ms_ip;
-} ms_ocall_gethostbyname_t;
+} ms_ocall_gethostip_t;
 
 typedef struct ms_ocall_poll_and_process_updates_t {
 	int ms_retval;
@@ -1598,13 +1598,13 @@ sgx_status_t SGX_CDECL ocall_gethostname(char* host)
 	return status;
 }
 
-sgx_status_t SGX_CDECL ocall_gethostbyname(char* ip)
+sgx_status_t SGX_CDECL ocall_gethostip(char* ip)
 {
 	sgx_status_t status = SGX_SUCCESS;
 	size_t _len_ip = 46;
 
-	ms_ocall_gethostbyname_t* ms = NULL;
-	size_t ocalloc_size = sizeof(ms_ocall_gethostbyname_t);
+	ms_ocall_gethostip_t* ms = NULL;
+	size_t ocalloc_size = sizeof(ms_ocall_gethostip_t);
 	void *__tmp = NULL;
 
 	void *__tmp_ip = NULL;
@@ -1615,8 +1615,8 @@ sgx_status_t SGX_CDECL ocall_gethostbyname(char* ip)
 		sgx_ocfree();
 		return SGX_ERROR_UNEXPECTED;
 	}
-	ms = (ms_ocall_gethostbyname_t*)__tmp;
-	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_gethostbyname_t));
+	ms = (ms_ocall_gethostip_t*)__tmp;
+	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_gethostip_t));
 
 	if (ip != NULL && sgx_is_within_enclave(ip, _len_ip)) {
 		ms->ms_ip = (char*)__tmp;
