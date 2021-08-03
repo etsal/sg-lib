@@ -77,12 +77,11 @@ static configuration *parse_config(const char *config, size_t config_len) {
  */
 void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
 
-  int ret;
-  
+  int ret; 
   configuration *c = unpack_config(config, config_len);
   assert(c != NULL);
-  ret = verify_config(config);
-  assert(ret); // TODO Better error handling
+  assert(verify_config(config));
+  ctx->config = c;
 
   // Retrieve database file name from config
   strcpy(ctx->db.db_filename, c->database_file); 
@@ -93,14 +92,11 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
             __FUNCTION__, ctx->db.db_filename);
 #endif
     init_new_sg(ctx);
-
   } else {
 #ifdef DEBUG_SG
     eprintf("\t+ (%s) Database successfully loaded from %s\n", __FUNCTION__,
             ctx->db.db_filename);
 #endif
-
-    // TODO: Load policy
   }
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Finishing up initialization\n", __FUNCTION__);

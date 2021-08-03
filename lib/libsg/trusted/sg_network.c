@@ -10,7 +10,9 @@
 #include "sg_t.h" //ocalls
 #include "sg_util.h"
 #include "wolfssl_enclave.h"
+
 #define DEBUG_SG 1
+#define INET6_ADDRSTRLEN 46 /* copied from <arpa/inet.h> */
 
 struct connection {
   int ignore; // Ignore this entry when iterating
@@ -19,6 +21,7 @@ struct connection {
   ratls_ctx_t ratls;
   sgx_thread_mutex_t lock;
   char hostname[128];
+  char ip[INET6_ADDRSTRLEN];
 };
 
 struct connection client_connections[3];
@@ -40,6 +43,13 @@ static void gethostname(char *hostname) {
   exit(1);
 }
 
+static void gethostbyname(char *ip) {
+  sgx_status_t status = ocall_gethostbyname(ip);
+  if (status != SGX_SUCCESS) {
+    exit(1);
+  }
+}
+
 static struct connection *find_connection(const char *hostname,
                                           struct connection c[]) {
   for (int i = 0; i < num_hosts; ++i) {
@@ -57,13 +67,18 @@ static void init_connection(struct connection *c, const char *hostname) {
 
 static void init_connections_(sg_ctx_t *ctx, struct connection c[]) {
   char hostname[128];
+  char ip[INET6_ADDRSTRLEN];
   const char *cluster_hosts[] = {"mantou.rcs.uwaterloo.ca",
                                  "baguette.rcs.uwaterloo.ca",
                                  "tortilla.rcs.uwaterloo.ca"};
+  char **cluster_ips = (char **)ctx->config->ips;
+
   gethostname(hostname);
+  gethostbyname(ip);
 
 #ifdef DEBUG_SG
-//  eprintf("\t+ (%s) This host is %s\n", __FUNCTION__, hostname);
+  eprintf("\t+ (%s) This host is %s\n", __FUNCTION__, hostname);
+  eprintf("\t+ (%s) The IP address is %s\n", __FUNCTION__, ip);
 #endif
 
   memset(c, 0, sizeof(struct connection) * num_hosts);

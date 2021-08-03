@@ -2,7 +2,9 @@
 #include <sys/limits.h>
 #include <sys/socket.h>
 
+#include <ifaddrs.h>
 #include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
 #include <netdb.h>
 #include <pthread.h>
@@ -33,12 +35,43 @@ int ocall_accept_client(int sockfd) { return accept_client(sockfd); }
 
 void ocall_gethostname(char *hostname) { gethostname(hostname, 128); }
 
+void ocall_gethostbyname(char *ip) {
+  struct ifaddrs *ifap, *ifa;
+  struct sockaddr_in *sa;
+  char *addr;
+
+  getifaddrs(&ifap);
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
+      sa = (struct sockaddr_in *)ifa->ifa_addr;
+      addr = inet_ntoa(sa->sin_addr);
+      printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
+    }
+  }
+
+  freeifaddrs(ifap);
+
+  /*(
+    char hostbuf[256];
+    int hostname;
+    struct hostent *entry;
+    char *ip_buf;
+
+    hostname = gethostname(hostbuf, sizeof(hostbuf));
+    entry = gethostbyname(hostbuf);
+
+    ip_buf = inet_ntoa(*((struct in_addr*) entry->h_addr_list[0]));
+    assert(strlen(ip_buf) < INET6_ADDRSTRLEN);
+
+    memcpy(ip, ip_buf, strlen(ip_buf)+1);
+  */
+}
+
 /* Defined in fileio.c
 int ocall_close(int fd) {
   return close(fd);
 }
 */
-
 
 /* ocall_poll_and_process_updates() To be called in a loop by the enclave
  * @param fds List of sockfds to listen on, needed to typedef it for sgx
@@ -46,8 +79,8 @@ int ocall_close(int fd) {
  * @return Populates check_fds that should be read for incoming messages,
  * easier this way, dont need to define an ecall to process each fd individually
  */
-int ocall_poll_and_process_updates(int *active_fds, int *check_fds, size_t len)
-{
+int ocall_poll_and_process_updates(int *active_fds, int *check_fds,
+                                   size_t len) {
   fd_set read_fd_set;
   int max_fd;
   int ret;
@@ -206,7 +239,7 @@ int host_bind(const char *host, const char *port) {
     }
 #ifdef SG_DEBUG
     eprintf("\t+ (%s) binding to: %s\n", __FUNCTION__, tmp);
-#endif    
+#endif
     fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
     if (fd < 0 || fd == 0) {
       // perror("socket()");
