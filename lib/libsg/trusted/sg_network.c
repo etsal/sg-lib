@@ -59,26 +59,20 @@ static struct connection *find_connection(const char *hostname,
   return NULL;
 }
 
-static void init_connection(struct connection *c, const char *hostname) {
+static void init_connection(struct connection *c, const char *ip) {
   c->retries = 0;
-  strcpy(c->hostname, hostname);
-  sgx_thread_mutex_init(&c->lock, NULL);
+  strcpy(c->ip, ip);
+  sgx_thread_mutex_init(&c->lock, NULL); //TODO: Do i need this?
 }
 
 /* Initializes the connection array, must properly set the flag for local ip
  *
  */
-static void init_connections_(sg_ctx_t *ctx, struct connection *c) {
-  char hostname[128];
-  char ip[INET6_ADDRSTRLEN];
+static void init_connections_(sg_ctx_t *ctx, const char *hostname, const char *ip, struct connection *c) {
+  char **hostips = (char **)ctx->config->ips;
   const char *hostnames[] = {"mantou.rcs.uwaterloo.ca",
                              "baguette.rcs.uwaterloo.ca",
                              "tortilla.rcs.uwaterloo.ca"};
-  char **hostips = (char **)ctx->config->ips;
-
-  gethostname(hostname);
-  gethostip(ip);
-
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) This host is %s\n", __FUNCTION__, hostname);
   eprintf("\t+ (%s) The IP address is %s\n", __FUNCTION__, ip);
@@ -92,23 +86,29 @@ static void init_connections_(sg_ctx_t *ctx, struct connection *c) {
       eprintf("\t+ (%s) Ignoring %s\n", __FUNCTION__, hostips[i]);
 #endif
     }
-    /*
-        if (strcmp(hostname, cluster_hosts[i]) == 0) {
+    /* Old way using hostnames
+        if (strcmp(hostname, hostnames[i]) == 0) {
           c[i].ignore = 1;
         }
     */
-    //init_connection(&c[i], cluster_hosts[i]);
+    init_connection(&c[i], hostips[i]);
   }
 }
 
 /* init_connections_sg()
  * Initializes connection structures
- * Remember to set retry count and flags for all connections
+ * TODO:Remember to set retry count and flags for all connections
  * @param ctx Unused
  */
 void init_connections(sg_ctx_t *ctx) {
-  init_connections_(ctx, client_connections);
-  init_connections_(ctx, server_connections);
+  char hostname[128];
+  char ip[INET6_ADDRSTRLEN];
+
+  gethostname(hostname);
+  gethostip(ip);
+  
+  init_connections_(ctx, hostname, ip, client_connections);
+  init_connections_(ctx, hostname, ip, server_connections);
 }
 
 static int push_msg_sg(sg_ctx_t *ctx, const char *msg) {
