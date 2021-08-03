@@ -45,7 +45,7 @@ void ocall_gethostip(char *ip) {
     if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
       sa = (struct sockaddr_in *)ifa->ifa_addr;
       addr = inet_ntoa(sa->sin_addr);
-      printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
+      //printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
       if (strcmp("mce0", ifa->ifa_name) == 0) {
         assert(strlen(addr) < INET6_ADDRSTRLEN);
         memcpy(ip, addr, strlen(addr));

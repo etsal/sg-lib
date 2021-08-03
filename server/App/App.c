@@ -46,6 +46,12 @@ int main(int argc, const char *argv[]) {
     exit(1);
   }
 
+  ret = connect_sg();
+  if (ret) {
+    printf("Error %08x @ %d\n", status, __LINE__);
+    exit(1);
+  }
+
 
   printf("Processing ...\n");
   ret = process();
