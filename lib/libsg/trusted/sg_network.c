@@ -85,7 +85,6 @@ void init_connections(sg_ctx_t *ctx) {
   char hostname[128];
   char ip[INET6_ADDRSTRLEN];
   char **hostips;
-  int assert_myip = 0;
 
   gethostname(hostname);
   gethostip(ip);
@@ -99,17 +98,6 @@ void init_connections(sg_ctx_t *ctx) {
 
   hostips = (char **)ctx->config->ips;
 
-  /*
-    // Make sure that this nodes IP is in the config file
-    for (int i=0; i<num_hosts; ++i) {
-      if (strcmp(ip, hostips[i]) == 0) {
-        assert_myip = 1;
-        break;
-      }
-    }
-    assert(assert_my_ip);
-  */
-
   for (int i = 0; i < num_hosts; ++i) {
     client_connections[i] = malloc(sizeof(struct connection));
     server_connections[i] = malloc(sizeof(struct connection));
@@ -120,18 +108,26 @@ void init_connections(sg_ctx_t *ctx) {
   int j = 0;
   for (int i = 0; i < num_hosts; ++i) {
     if (strcmp(ip, hostips[i]) != 0) {
-      eprintf("\t\tother node is: %s\n", hostips[i]);
+#ifdef DEBUG_SG
+      eprintf("\t\t + other node is: %s\n", hostips[i]);
+#endif
       client_connections[j]->retries =
           0; // Set retries here can be done with ctx->config->retries
       server_connections[j]->retries =
           0; // Set retries here can be done with ctx->config->retries
-      strcpy(client_connections[j]->ip, hostips[i]); //, strlen(hostips[i]) + 1);
+      strcpy(client_connections[j]->ip,
+             hostips[i]); //, strlen(hostips[i]) + 1);
       strcpy(server_connections[j]->ip, hostips[i]); // strlen(hostips[i]) + 1);
       ++j;
     }
   }
 
   num_hosts = j; // Number of initialized hosts
+
+#ifdef DEBUG_SG
+  eprintf("\t\t + number of hosts: %d\n", num_hosts);
+#endif
+
 }
 
 static int push_msg_sg(sg_ctx_t *ctx, const char *msg) {
