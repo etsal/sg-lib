@@ -1,5 +1,8 @@
 You can find the bash script `install_instructions.sh` in the `scripts` directory. Otherwise, you can follow each step below:
 
+    git submodule init
+    git submodule update
+
 ## Dependencies
 ### BearSSL
     cd deps/BearSSL && gmake CC="gcc48"
