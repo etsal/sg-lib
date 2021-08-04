@@ -1,0 +1,11 @@
+--- ./protobuf-c/build-cmake/CMakeLists.txt	2019-12-04 16:08:05.000000000 -0500
++++ ../scripts/CMakeLists.txt	2021-08-03 20:58:09.190835000 -0400
+@@ -38,6 +38,8 @@
+ 
+ ADD_LIBRARY(protobuf-c ${PC_SOURCES})
+ 
++SET_TARGET_PROPERTIES(protobuf-c PROPERTIES COMPILE_FLAGS "-fPIE")
++
+ INCLUDE_DIRECTORIES(${MAIN_DIR})
+ INCLUDE_DIRECTORIES(${MAIN_DIR}/protobuf-c)
+ INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}) # for generated files
