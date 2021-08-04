@@ -1,3 +1,5 @@
+You can find the bash script `install_instructions.sh` in the `scripts` directory. Otherwise, you can follow each step below:
+
 ## Dependencies
 ### BearSSL
     cd deps/BearSSL && gmake CC="gcc48"
