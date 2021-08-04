@@ -23,11 +23,29 @@ struct connection {
   char ip[INET6_ADDRSTRLEN];
 };
 
-struct connection client_connections[MAX_NODES];
-struct connection server_connections[MAX_NODES];
+struct connection *client_connections[MAX_NODES];
+struct connection *server_connections[MAX_NODES];
 
 int num_hosts = 0;
 int pollUpdatesFlag = 1;
+
+static void prettyprint_connection(struct connection *c) {
+  edividerWithText("Connection");
+  eprintf("Ignore -> %d\n", c->ignore);
+  eprintf("Hostname -> %s\n", c->hostname);
+  eprintf("IP -> %s\n", c->ip);
+  edivider();
+}
+
+static void prettyprint_connections() {
+  edividerWithText("Client Connections");
+  for (int i = 0; i < num_hosts; ++i)
+    prettyprint_connection(client_connections[i]);
+
+  edividerWithText("Server Connections");
+  for (int i = 0; i < num_hosts; ++i)
+    prettyprint_connection(server_connections[i]);
+}
 
 static void gethostname(char *hostname) {
   sgx_status_t status = ocall_gethostname(hostname);
@@ -50,28 +68,12 @@ static void gethostip(char *ip) {
 }
 
 static struct connection *find_connection(const char *ip,
-                                          struct connection c[]) {
+                                          struct connection **c) {
   for (int i = 0; i < num_hosts; ++i) {
-    if (strcmp(c[i].ip, ip) == 0)
-      return &c[i];
+    if (strcmp(c[i]->ip, ip) == 0)
+      return c[i];
   }
   return NULL;
-}
-
-/* Initializes the connection array, must properly set the flag for local ip
- *
- */
-static void init_connections_(sg_ctx_t *ctx, const char *hostname,
-                              const char *ip, struct connection *c) {
-  char **hostips = (char **)ctx->config->ips;
-  for (int i = 0; i < ctx->config->found_ips; ++i) {
-    if (strcmp(ip, hostips[i]) != 0) {
-      eprintf("\t\tother node is: %s\n", hostips[i]);
-      c[i].retries =
-          0; // Set retries here can be done with ctx->config->retries
-      strcpy(c[i].ip, hostips[i]);
-    }
-  }
 }
 
 /* init_connections_sg()
@@ -82,6 +84,8 @@ static void init_connections_(sg_ctx_t *ctx, const char *hostname,
 void init_connections(sg_ctx_t *ctx) {
   char hostname[128];
   char ip[INET6_ADDRSTRLEN];
+  char **hostips;
+  int assert_myip = 0;
 
   gethostname(hostname);
   gethostip(ip);
@@ -90,14 +94,44 @@ void init_connections(sg_ctx_t *ctx) {
   eprintf("\t+ (%s) This host is %s - %s\n", __FUNCTION__, hostname, ip);
 #endif
 
-  num_hosts = ctx->config->found_ips - 1; // Ignore ourselves
-  assert(num_hosts > 0);
+  num_hosts = ctx->config->found_ips;
+  assert(num_hosts > 0 && num_hosts < MAX_NODES);
 
-  memset(client_connections, 0, sizeof(struct connection) * MAX_NODES);
-  memset(server_connections, 0, sizeof(struct connection) * MAX_NODES);
+  hostips = (char **)ctx->config->ips;
 
-  init_connections_(ctx, hostname, ip, client_connections);
-  init_connections_(ctx, hostname, ip, server_connections);
+  /*
+    // Make sure that this nodes IP is in the config file
+    for (int i=0; i<num_hosts; ++i) {
+      if (strcmp(ip, hostips[i]) == 0) {
+        assert_myip = 1;
+        break;
+      }
+    }
+    assert(assert_my_ip);
+  */
+
+  for (int i = 0; i < num_hosts; ++i) {
+    client_connections[i] = malloc(sizeof(struct connection));
+    server_connections[i] = malloc(sizeof(struct connection));
+    memset(client_connections[i], 0, sizeof(struct connection));
+    memset(server_connections[i], 0, sizeof(struct connection));
+  }
+
+  int j = 0;
+  for (int i = 0; i < num_hosts; ++i) {
+    if (strcmp(ip, hostips[i]) != 0) {
+      eprintf("\t\tother node is: %s\n", hostips[i]);
+      client_connections[j]->retries =
+          0; // Set retries here can be done with ctx->config->retries
+      server_connections[j]->retries =
+          0; // Set retries here can be done with ctx->config->retries
+      strcpy(client_connections[j]->ip, hostips[i]); //, strlen(hostips[i]) + 1);
+      strcpy(server_connections[j]->ip, hostips[i]); // strlen(hostips[i]) + 1);
+      ++j;
+    }
+  }
+
+  num_hosts = j; // Number of initialized hosts
 }
 
 static int push_msg_sg(sg_ctx_t *ctx, const char *msg) {
@@ -125,15 +159,15 @@ static int push_msg_sg(sg_ctx_t *ctx, const char *msg) {
   update_len = strlen(msg) + 1;
 
   for (int i = 0; i < num_hosts; ++i) {
-    if (client_connections[i].ignore)
+    if (client_connections[i]->ignore)
       continue;
 
-    ret = prepare_and_send_updates(&client_connections[i].ratls, update,
+    ret = prepare_and_send_updates(&client_connections[i]->ratls, update,
                                    update_len);
     if (ret) {
 #ifdef DEBUG_SG
       eprintf("\t+ (%s) ERROR : Failed to send update to %s\n", __FUNCTION__,
-              client_connections[i].hostname);
+              client_connections[i]->hostname);
 #endif
       exit(1);
       // break;
@@ -162,12 +196,12 @@ int verify_connections_sg(sg_ctx_t *ctx) {
   int max_ignore = 0;
 
   for (int i = 0; i < num_hosts; ++i) {
-    if (!((!client_connections[i].ignore &&
-           client_connections[i].is_connected))) {
+    if (!((!client_connections[i]->ignore &&
+           client_connections[i]->is_connected))) {
       if (max_ignore++ > 1) {
 #ifdef DEBUG_SG
         eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
-                client_connections[i].hostname);
+                client_connections[i]->hostname);
 #endif
         return 0;
       }
@@ -176,12 +210,12 @@ int verify_connections_sg(sg_ctx_t *ctx) {
 
   max_ignore = 0;
   for (int i = 0; i < num_hosts; ++i) {
-    if (!((!server_connections[i].ignore &&
-           server_connections[i].is_connected))) {
+    if (!((!server_connections[i]->ignore &&
+           server_connections[i]->is_connected))) {
       if (max_ignore++ > 1) {
 #ifdef DEBUG_SG
         eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
-                server_connections[i].hostname);
+                server_connections[i]->hostname);
 #endif
         return 0;
       }
@@ -212,15 +246,15 @@ int push_updates_sg(sg_ctx_t *ctx) {
   db_get_update(&ctx->db, update, update_len);
 
   for (int i = 0; i < num_hosts; ++i) {
-    if (client_connections[i].ignore)
+    if (client_connections[i]->ignore)
       continue;
 
-    ret = prepare_and_send_updates(&client_connections[i].ratls, update,
+    ret = prepare_and_send_updates(&client_connections[i]->ratls, update,
                                    update_len);
     if (ret) {
 #ifdef DEBUG_SG
       eprintf("\t+ (%s) ERROR : Failed to send update to %s\n", __FUNCTION__,
-              client_connections[i].hostname);
+              client_connections[i]->hostname);
 #endif
       exit(1);
       // break;
@@ -251,24 +285,24 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
   // Gather sockfds and initialize select
   int j = 0;
   for (int i = 0; i < num_hosts; ++i) {
-    if (server_connections[i].ignore) {
+    if (server_connections[i]->ignore) {
       // continue;
       active_fds[i] = 0; // SGX will not copy  INT_MAX / -1 properly
     } else {
 
       // This connection is set (flag) and not to ourselves (ignore)
-      if (!(!server_connections[i].ignore &&
-            server_connections[i].is_connected)) {
+      if (!(!server_connections[i]->ignore &&
+            server_connections[i]->is_connected)) {
 #ifdef DEBUG_SG
         eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n",
-                __FUNCTION__, server_connections[i].hostname);
+                __FUNCTION__, server_connections[i]->hostname);
 #endif
         // return 1;
       }
 
-      active_fds[i] = server_connections[i].ratls.sockfd;
+      active_fds[i] = server_connections[i]->ratls.sockfd;
       m[j].sockfd = active_fds[i];
-      m[j].c = &server_connections[i];
+      m[j].c = server_connections[i];
       ++j;
     }
   }
@@ -291,9 +325,9 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
         continue;
 #ifdef DEBUG_SG
       eprintf("\t+ (%s) incoming message from host %s\n", __FUNCTION__,
-              server_connections[i].hostname);
+              server_connections[i]->hostname);
 #endif
-      process_message(&server_connections[i].ratls);
+      process_message(&server_connections[i]->ratls);
 
       /*
             uint8_t buf[1024];
@@ -310,7 +344,7 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
 /* recieve_connections_sg()
  * Will continue looping until all connections are made
  * 1. Calls accept_connections to get a ra_tls_ctx_t for the client
- * 2. After connectiong, the client will send it's IP address 
+ * 2. After connectiong, the client will send it's IP address
  * @param ctx Initialized sg_ctx_t
  * @return 1 on error, 0 on success
  */
@@ -335,7 +369,8 @@ int recieve_connections_sg(sg_ctx_t *ctx) {
     ret = accept_connections(&ctx->ratls, &client);
     if (ret) {
 #ifdef DEBUG_SG
-      eprintf("\t+ (%s) Failed to accept connection (0x%x)\n", __FUNCTION__, ret);
+      eprintf("\t+ (%s) Failed to accept connection (0x%x)\n", __FUNCTION__,
+              ret);
 #endif
       continue;
     }
@@ -357,7 +392,7 @@ int recieve_connections_sg(sg_ctx_t *ctx) {
       exit(1);
     }
 
-    memcpy(&c->ratls, &client, sizeof(ratls_ctx_t));    
+    memcpy(&c->ratls, &client, sizeof(ratls_ctx_t));
     c->is_connected = 1;
     ++connections_sofar;
   }
@@ -381,36 +416,38 @@ int initiate_connections_sg(sg_ctx_t *ctx) {
   gethostname(hostname);
   gethostip(ip);
 
-#ifdef DEBUG_SG
-  // eprintf("\t+ (%s) Establishing connection to cluster\n", __FUNCTION__);
-#endif
-
   while (connections_sofar != num_hosts) {
     ocall_sleep(1);
 
     for (i = 0; i < num_hosts; ++i) {
-      if (!client_connections[i].is_connected) {
+      if (!client_connections[i]->is_connected) {
+
+#ifdef DEBUG_SG
+        eprintf("\t+ (%s) Establishing connection to %s\n", __FUNCTION__,
+                client_connections[i]->ip);
+#endif
         ret = init_ratls_client(
-            &client_connections[i].ratls, &ctx->kc,
-            client_connections[i].ip); // CHANGED from hostname
+            &client_connections[i]->ratls, &ctx->kc,
+            client_connections[i]->ip); // CHANGED from hostname
 
         if (ret) {
 #ifdef DEBUG_SG
-          eprintf("\t+ (%s) Connection to %s failed with 0x%x. Retry count: %d\n",
-                  __FUNCTION__, client_connections[i].ip, ret, retries); 
-                  // client_connections[i].retries)
+          eprintf(
+              "\t+ (%s) Connection to %s failed with 0x%x. Retry count: %d\n",
+              __FUNCTION__, client_connections[i]->ip, ret, retries);
+          // client_connections[i].retries)
 #endif
 
           ++retries;
         } else {
 #ifdef DEBUG_SG
           eprintf("\t+ (%s) Connection to %s successful!\n", __FUNCTION__,
-                  client_connections[i].ip);
+                  client_connections[i]->ip);
 #endif
 
-          client_connections[i].is_connected = 1;
+          client_connections[i]->is_connected = 1;
           ++connections_sofar;
-          write_ratls(&client_connections[i].ratls, ip, INET6_ADDRSTRLEN);
+          write_ratls(&client_connections[i]->ratls, ip, INET6_ADDRSTRLEN);
         } // else
       }   // if
     }     // for
@@ -433,16 +470,17 @@ int initiate_connections_sg(sg_ctx_t *ctx) {
   return 0;
 }
 
-static void close_connections(struct connection c[]) {
+static void close_connections(struct connection **c) {
   for (int i = 0; i < num_hosts; ++i) {
-    if (c[i].is_connected) { // Only cleanup structs that represent a successful
-                             // connection (maybe do all?)
+    if (c[i]->is_connected) { // Only cleanup structs that represent a
+                              // successful connection (maybe do all?)
 #ifdef DEBUG_SG
       eprintf("\t+ (%s) Cleaning up connection to %s\n", __FUNCTION__,
-              c[i].hostname);
+              c[i]->hostname);
 #endif
-      cleanup_ratls(&c[i].ratls);
+      cleanup_ratls(&c[i]->ratls);
     }
+    free(c[i]);
   }
 }
 
