@@ -98,6 +98,7 @@ void init_connections(sg_ctx_t *ctx) {
 
   hostips = (char **)ctx->config->ips;
 
+  // We create 1 extra connection structure here, but ohwell
   for (int i = 0; i < num_hosts; ++i) {
     client_connections[i] = malloc(sizeof(struct connection));
     server_connections[i] = malloc(sizeof(struct connection));
@@ -127,7 +128,6 @@ void init_connections(sg_ctx_t *ctx) {
 #ifdef DEBUG_SG
   eprintf("\t\t + number of hosts: %d\n", num_hosts);
 #endif
-
 }
 
 static int push_msg_sg(sg_ctx_t *ctx, const char *msg) {
@@ -189,34 +189,26 @@ int send_msg_sg(sg_ctx_t *ctx, const char *msg) {
  * in the cluster
  */
 int verify_connections_sg(sg_ctx_t *ctx) {
-  int max_ignore = 0;
-
   for (int i = 0; i < num_hosts; ++i) {
-    if (!((!client_connections[i]->ignore &&
-           client_connections[i]->is_connected))) {
-      if (max_ignore++ > 1) {
+    if (!client_connections[i]->is_connected) {
 #ifdef DEBUG_SG
-        eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
-                client_connections[i]->hostname);
+      eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
+              client_connections[i]->ip);
 #endif
-        return 0;
-      }
+      return 0;
     }
   }
 
-  max_ignore = 0;
   for (int i = 0; i < num_hosts; ++i) {
-    if (!((!server_connections[i]->ignore &&
-           server_connections[i]->is_connected))) {
-      if (max_ignore++ > 1) {
+    if (!server_connections[i]->is_connected) {
 #ifdef DEBUG_SG
-        eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
-                server_connections[i]->hostname);
+      eprintf("\t+ (%s) FAILED @ %s\n", __FUNCTION__,
+              server_connections[i]->ip);
 #endif
-        return 0;
-      }
+      return 0;
     }
   }
+
   return 1;
 }
 

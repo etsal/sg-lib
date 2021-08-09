@@ -2,7 +2,7 @@
 
 #include "Enclave_t.h"
 #include "sg.h"
-#include "ipc_msg.h"
+#include "sgd_message.h"
 
 sg_ctx_t sg_ctx;
 
@@ -15,11 +15,12 @@ int ecall_process_request(uint8_t *data, size_t data_len) {
   int ret;
 
   switch(msg->cmd) {
-    case ADD_REQUEST:
-      ret = add_user_sg(&sg_ctx, msg->key, msg->value);
+    case PUT_REQUEST:
+      assert(msg->value_len < MAX_VALUE_LEN);
+      ret = put_sg(&sg_ctx, msg->key, msg->value, msg->value_len);
     break;
-    case AUTH_REQUEST:
-      ret = auth_user_sg(&sg_ctx, msg->key, msg->value);
+    case GET_REQUEST:
+      //ret = _sg(&sg_ctx, msg->key, msg->value);
     break;
   }
   return ret;

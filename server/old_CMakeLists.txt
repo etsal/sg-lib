@@ -19,18 +19,13 @@ set(LIBSG_ROOT "${CMAKE_SOURCE_DIR}/../lib/libsg")
 set(WOLFSSL_ROOT "${DEPS_DIR}/wolfssl")
 set(WOLFSSL_C_FLAGS "-DWOLFSSL_SGX -DUSER_TIME -DWOLFSSL_SGX_ATTESTATION \
 -DWOLFSSL_KEY_GEN -DWOLFSSL_CERT_GEN -DWOLFSSL_CERT_EXT -DFP_MAX_BITS=8192")
-find_library(WOLFSSL_LIB wolfssl.sgx.static.lib HINTS ${WOLFSSL_ROOT}/IDE/LINUX-SGX)
 
 # BEARSSL
 set(BEARSSL_ROOT "${DEPS_DIR}/BearSSL")
-find_library(BEARSSL_LIB bearssl HINTS ${BEARSSL_ROOT}/build)
 
 # PROTOBUF C
 set(PROTOBUF_ROOT "${DEPS_DIR}/protobuf-c")
-find_library(PROTOBUF_LIB protobuf-c HINTS ${PROTOBUF_ROOT}/build)
 
-# Libsgd
-find_library(SGD_LIB sgd HINTS ${CMAKE_SOURCE_DIR}/lib/libsgd/build)
 
 set(ENCLAVE_DIR "${CMAKE_SOURCE_DIR}/Enclave")
 set(APP_DIR "${CMAKE_SOURCE_DIR}/App")
@@ -203,10 +198,11 @@ target_include_directories(${App_Name} PUBLIC ${App_Include_Paths})
 target_link_directories(${App_Name} PRIVATE 
 ${SGX_LIBRARY_PATH}
 ${LIBSG_ROOT}/build 
-#/usr/local/lib/gcc48
-#${BEARSSL_ROOT}/build
-#${WOLFSSL_ROOT}/IDE/LINUX-SGX
-#${PROTOBUF_ROOT}/build
+/usr/local/lib/gcc48
+${BEARSSL_ROOT}/build
+${WOLFSSL_ROOT}/IDE/LINUX-SGX
+${PROTOBUF_ROOT}/build
+${CMAKE_SOURCE_DIR}/lib/libsdg/build
 )
 
 target_link_libraries(${App_Name} 
@@ -216,13 +212,10 @@ curl                    #.so
 ${CMAKE_THREAD_LIBS_INIT} #pthread
 libsgx_ukey_exchange.a 
 libsguntrusted.a
-#libprotobuf-c.a
-#libbearssl.a
-#libwolfssl.sgx.static.lib.a
-${PROTOBUF_LIB}
-${BEARSSL_LIB}
-${WOLFSSL_LIB}
-${SGD_LIB}
+libprotobuf-c.a
+libbearssl.a
+libwolfssl.sgx.static.lib.a
+libsgd.a
 )
 
 target_link_directories(${Enclave_Name} PUBLIC 

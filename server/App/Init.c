@@ -84,6 +84,9 @@ int connect_sg() {
   pthread_join(tid1, NULL);
   pthread_join(tid2, NULL);
 
+  sleep(2);
+  printf("\n");
+
   status = ecall_verify_connections_sg(global_eid, &ret);
   if (status || !ret) {
     printf("Failed to connect to cluster ... Exiting status = %08x ret = %d\n",

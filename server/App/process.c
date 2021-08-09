@@ -7,8 +7,9 @@
 #include <unistd.h>
 
 #include "sgx_urts.h"
-#include "ipc_util.h"
-#include "ipc_msg.h"
+
+#include "sgd_message.h"
+#include "sgd_frame.h"
 #include "sg_interface.h"
 #include "Enclave_u.h"
 // char *socket_path = "./socket";
