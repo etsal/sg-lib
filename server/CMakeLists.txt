@@ -182,6 +182,11 @@ add_custom_target(CopyConfig ALL
   #COMMENT "COPY config.ini to /build"
 )
 
+add_custom_target(FinalMessage ALL
+   COMMAND echo "Done\n"
+   COMMENT "SUCCESSFULLY BUILT ${App_Name}"
+)
+
 #link_directories(${SGX_LIBRARY_PATH} /usr/local/lib/gcc48)
 
 # These are the targets (1) the app executable and (2) the shared enclave lib
@@ -250,4 +255,4 @@ add_dependencies(${App_Name} UntrustedEdger8r TrustedEdger8r)
 add_dependencies(${Enclave_Name} ${App_Name}) #TrustedEdger8r)
 add_dependencies(SignEnclave ${Enclave_Name})
 add_dependencies(CopyConfig SignEnclave)
-
+add_dependencies(FinalMessage CopyConfig)
