@@ -1,0 +1,81 @@
+#!/usr/local/bin/expect
+
+proc abort args {
+  puts "+ Aborting"
+  exit 1
+}
+
+proc start_aesm args {
+  puts "+ Starting aesm_service"
+  send "cd /opt/intel/sgxpsw/aesm && ./aesm_service && cd ~\r"
+}
+
+proc run_app args {
+  log_user 1
+  puts "+ Starting application"
+  send "cd sg-lib/server/build && ./app\r"
+  expect {
+    -re "Error 00004001 @ 39" {
+      puts "+ Start aesm_service and try again"
+      return 1
+    }
+    -re "Processing ..." { 
+      #puts "+ App started"
+      return 0 
+    }
+  }
+}
+
+log_user 0
+set timeout 15
+set prompt {\$ $}
+set jail_prompt  {# $}
+set jail_name [lindex $argv 0]
+set rebuild [lindex $argv 1]
+
+if { $prompt == "" || $jail_name == "" } {
+  puts "Usage: <jail name>"
+  exit 1
+}
+
+spawn bash
+expect -re $prompt
+send "sudo iocage start $jail_name\r"
+expect {
+  -re "Executing poststart OK" { puts "+ Started jail '$jail_name'" }
+  -re "$jail_name is already running!" { puts "+ Jail '$jail_name' is already running" }
+}
+
+puts "+ Starting jail console"
+send "sudo iocage console $jail_name\r"
+expect -re $jail_prompt
+
+# Option to rebuild the app 
+if {$rebuild == "-r"} {
+  puts "+ Rebuilding the server application ..."
+  send "cd sg-lib/server/build\r"
+  expect -re "SUCCESSFULLY BUILT app"
+  send "cd -"
+}
+
+set ret [run_app]
+if { $ret == 1 } { 
+  puts "+ Closing spawned proc" 
+  close $spawn_id
+  exit 1
+}
+
+spawn bash
+expect -re $prompt
+puts "+ Running 'interact'"
+interact {
+  + {puts "hi"}
+}
+
+close
+close 
+exit 0
+
+
+
+

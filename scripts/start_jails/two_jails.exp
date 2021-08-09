@@ -1,0 +1,78 @@
+#!/usr/local/bin/expect
+
+#log_user 0
+
+set jail_1_id 0
+set jail_2_id 0
+
+set prompt {\$ $}
+set jail_prompt  {# $}
+set jail_name [lindex $argv 0]
+set rebuild [lindex $argv 1]
+
+
+proc abort args {
+  puts "+ Aborting"
+  exit 1
+}
+
+proc run_app args {
+  log_user 1
+  puts "+ Starting application"
+  send "cd sg-lib/server/build && ./app\r"
+  expect {
+    -re "Error 00004001 @ 39" {
+      puts "+ Start aesm_service and try again"
+      return 1
+    }
+    -re "^enclave_base" { return 0 }
+  }
+}
+
+proc start_jail {id prompt jail_name jail_prompt args} {
+  if { $prompt == "" || $jail_name == "" } {
+    puts "Usage: <jail name>"
+    exit 1
+  }
+
+#expect -re $prompt 
+  send -i $id "sudo iocage start $jail_name\r"
+  expect {
+    -re "Executing poststart OK" { puts "+ Started jail '$jail_name'" }
+    -re "$jail_name is already running!" { puts "+ Jail '$jail_name' is already running" }
+  }
+
+  puts "+ Starting jail console"
+  send -i $id "sudo iocage console $jail_name\r" 
+  expect -re $jail_prompt
+
+  # Option to rebuild the app 
+  if {$rebuild == "-r"} {
+    puts "+ Rebuilding the server application ..."
+    send -i $id "cd sg-lib/server/build\r"
+    expect -re "SUCCESSFULLY BUILT app"
+    send -i $id "cd -"
+  }
+
+#  set ret [run_app]
+}
+
+spawn bash
+expect -re $prompt 
+set jail_id_1 $spawn_id
+
+spawn bash
+expect -re $prompt 
+set jail_id_2 $spawn_id
+
+puts "jail_id_1: $jail_id_1"
+puts "jail_id_2: $jail_id_2"
+
+start_jail $jail_1_id $prompt stef $jail_prompt
+start_jail $jail_2_id $prompt stef_2 $jail_prompt
+
+exit 0
+
+
+
+
