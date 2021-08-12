@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include "sgx_edger8r.h" /* for sgx_ocall etc. */
 
+#include "sgd_message.h"
 #include "ra_tls.h"
 #include "ra_tls_util.h"
 #include "attester.h"
@@ -20,7 +21,7 @@ extern "C" {
 #endif
 
 void ecall_test();
-int ecall_process_request(uint8_t* data, size_t data_len);
+void ecall_process_request(uint8_t* data, size_t data_len, struct response_msg* resp);
 int ecall_init_sg(void* config, size_t config_len);
 int ecall_recieve_connections_sg();
 int ecall_initiate_connections_sg();

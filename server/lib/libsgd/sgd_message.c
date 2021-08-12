@@ -5,6 +5,14 @@
 
 #include "sgd_message.h"
 
+struct response_msg *init_response_msg() {
+  struct response_msg *msg = malloc(sizeof(struct response_msg));
+  memset(msg, 0, sizeof(struct response_msg));
+  msg->value_len_max = MAX_VALUE_LEN; 
+  return msg;
+}
+
+
 void print_request_msg(struct request_msg *msg) {
 #ifndef __ENCLAVE__
   int i;

@@ -9,7 +9,7 @@
 #include "sg_stdfunc.h"
 #endif
 
-//#define DEBUG_STORE 1
+#define DEBUG_STORE 1
 
 /*TODO: merge timestamps into vv */
 
@@ -190,31 +190,39 @@ int get_store(table_t *table, const char *key, void *value, size_t *value_len) {
 /* get_store()
  * RETURNS ADDRESS OF value 
  * @param **value : a void ptr that will point to value
- * @ret 1 on success, 0 on error
+ * @ret 0 on success, 1 on error
  */
 int get_store(table_t *table, const char *key, void **value, size_t *len) {
   entry_t *entry = NULL;
   uint64_t ts = 0;
   
   if (strlen(key) > MAX_KEY_LEN)
-    return 0;
+    return 1;
 
   if (!table->entries)
-    return 0;
+    return 1;
 
   HASH_FIND_STR(table->entries, key, entry);
-  if (!entry)
-    return 0;
+  if (!entry) {
+#ifdef DEBUG_STORE
+    eprintf("++ (%s) Could not find entry with key %s\n",  __FUNCTION__, key);
+#endif
+    return 1;
+  }
+
+#ifdef DEBUG_STORE
+  eprintf("++ (%s) Found entry with key %s\n",  __FUNCTION__, key);
+#endif
 
   if (value == NULL)
-    return 1;
+    return 0;
 
   *value = entry->value;
 
   if (len != NULL)
     *len = entry->value_len;
 
-  return 1;
+  return 0;
 }
 
 

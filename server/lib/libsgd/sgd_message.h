@@ -18,11 +18,16 @@ typedef struct request_msg {
 
 typedef struct response_msg {
   uint8_t ret;
+  uint32_t value_len;
+  uint32_t value_len_max;
+  uint8_t value[MAX_VALUE_LEN];
 } response_msg_t;
 
 void print_request_msg(request_msg_t *msg);
 
 request_msg_t *gen_msg_request(uint8_t cmd, char *key, uint8_t *value,
                             uint32_t value_len);
+
+struct response_msg *init_response_msg(); // Allocates memory
 
 #endif

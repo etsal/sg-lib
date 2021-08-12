@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/local/bin/bash
+
 
 set -x
 

@@ -89,12 +89,18 @@ void init_connections(sg_ctx_t *ctx) {
   gethostname(hostname);
   gethostip(ip);
 
+  num_hosts = ctx->config->found_ips;
+  assert(num_hosts != 0 && num_hosts < MAX_NODES);
+
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) This host is %s - %s\n", __FUNCTION__, hostname, ip);
+  eprintf("\t+ (%s) This host is %s - %s out of %d other hosts\n", __FUNCTION__, hostname, ip, num_hosts);
 #endif
 
-  num_hosts = ctx->config->found_ips;
-  assert(num_hosts > 0 && num_hosts < MAX_NODES);
+  // Run server without connection to other nodes
+  if (num_hosts == 1) {
+    num_hosts = 0;
+    return;
+  }
 
   hostips = (char **)ctx->config->ips;
 

@@ -7,6 +7,7 @@
 #include <string.h>
 #include "sgx_edger8r.h" /* for sgx_satus_t etc. */
 
+#include "sgd_message.h"
 #include "ra_tls.h"
 #include "ra_tls_util.h"
 #include "attester.h"
@@ -54,7 +55,7 @@ void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_sgx_init_quote, (sgx_target_info_t* tar
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_remote_attestation, (sgx_report_t* report, const ra_tls_options_t* opts, attestation_verification_report_t* attn_report));
 
 sgx_status_t ecall_test(sgx_enclave_id_t eid);
-sgx_status_t ecall_process_request(sgx_enclave_id_t eid, int* retval, uint8_t* data, size_t data_len);
+sgx_status_t ecall_process_request(sgx_enclave_id_t eid, uint8_t* data, size_t data_len, struct response_msg* resp);
 sgx_status_t ecall_init_sg(sgx_enclave_id_t eid, int* retval, void* config, size_t config_len);
 sgx_status_t ecall_recieve_connections_sg(sgx_enclave_id_t eid, int* retval);
 sgx_status_t ecall_initiate_connections_sg(sgx_enclave_id_t eid, int* retval);

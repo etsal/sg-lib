@@ -10,7 +10,7 @@
 # Linker output
 *.ilk
 *.map
-*.exp
+#*.exp Allow expect scripts
 
 # Precompiled Headers
 *.gch

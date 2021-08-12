@@ -19,9 +19,9 @@
 
 
 typedef struct ms_ecall_process_request_t {
-	int ms_retval;
 	uint8_t* ms_data;
 	size_t ms_data_len;
+	struct response_msg* ms_resp;
 } ms_ecall_process_request_t;
 
 typedef struct ms_ecall_init_sg_t {
@@ -268,8 +268,12 @@ static sgx_status_t SGX_CDECL sgx_ecall_process_request(void* pms)
 	size_t _tmp_data_len = ms->ms_data_len;
 	size_t _len_data = _tmp_data_len;
 	uint8_t* _in_data = NULL;
+	struct response_msg* _tmp_resp = ms->ms_resp;
+	size_t _len_resp = sizeof(struct response_msg);
+	struct response_msg* _in_resp = NULL;
 
 	CHECK_UNIQUE_POINTER(_tmp_data, _len_data);
+	CHECK_UNIQUE_POINTER(_tmp_resp, _len_resp);
 
 	//
 	// fence after pointer checks
@@ -285,10 +289,22 @@ static sgx_status_t SGX_CDECL sgx_ecall_process_request(void* pms)
 
 		memcpy(_in_data, _tmp_data, _len_data);
 	}
+	if (_tmp_resp != NULL && _len_resp != 0) {
+		if ((_in_resp = (struct response_msg*)malloc(_len_resp)) == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
 
-	ms->ms_retval = ecall_process_request(_in_data, _tmp_data_len);
+		memset((void*)_in_resp, 0, _len_resp);
+	}
+
+	ecall_process_request(_in_data, _tmp_data_len, _in_resp);
 err:
 	if (_in_data) free(_in_data);
+	if (_in_resp) {
+		memcpy(_tmp_resp, _in_resp, _len_resp);
+		free(_in_resp);
+	}
 
 	return status;
 }

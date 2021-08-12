@@ -83,6 +83,8 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   assert(verify_config(config));
   ctx->config = c;
 
+  // Retrieve KC
+
   // Retrieve database file name from config
   strcpy(ctx->db.db_filename, c->database_file); 
   ret = unseal_and_deserialize_sg(ctx);
@@ -166,6 +168,14 @@ int put_sg(sg_ctx_t *ctx, const char *key, const void *value, size_t len) {
 
 int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len) {
   int ret = get_db(&ctx->db, key, value, len);
+#ifdef DEBUG_SG
+  if (ret) {
+    eprintf("\t+ (%s) Failed to entry with key %lu!\n", __FUNCTION__, key);
+  } else {
+    eprintf("\t+ (%s) Successfully entry with key %lu!\n", __FUNCTION__, key);
+  }
+#endif
+  return ret;
 }
 
 int find_sg(sg_ctx_t *ctx, uint64_t key, void *value, size_t len) {
@@ -247,3 +257,4 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx) {
 
   return 0;
 }
+

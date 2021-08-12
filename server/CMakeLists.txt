@@ -30,6 +30,7 @@ set(PROTOBUF_ROOT "${DEPS_DIR}/protobuf-c")
 find_library(PROTOBUF_LIB protobuf-c HINTS ${PROTOBUF_ROOT}/build)
 
 # Libsgd
+set(SGD_LIB_ROOT "${CMAKE_SOURCE_DIR}/lib/libsgd")
 find_library(SGD_LIB sgd HINTS ${CMAKE_SOURCE_DIR}/lib/libsgd/build)
 
 set(ENCLAVE_DIR "${CMAKE_SOURCE_DIR}/Enclave")
@@ -157,7 +158,10 @@ set(Enclave_Link_Flags
 
 ### Start
 add_custom_target(UntrustedEdger8r
-COMMAND ${SGX_EDGER8R} --untrusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR} --search-path ${LIBSG_ROOT}/include --search-path ${SGX_SDK}/include
+COMMAND ${SGX_EDGER8R} --untrusted ${ENCLAVE_DIR}/Enclave.edl --search-path ${ENCLAVE_DIR}
+  --search-path ${LIBSG_ROOT}/include
+  --search-path ${SGX_SDK}/include
+  --search-path ${SGD_LIB_ROOT}
 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/App
 COMMENT "GEN => Enclave_u.h"
 )

@@ -10,21 +10,50 @@ void ecall_test() {
 
 }
 
-int ecall_process_request(uint8_t *data, size_t data_len) {
-  struct request_msg *msg = (struct request_msg *)data;
-  int ret;
 
+void ecall_process_request(uint8_t *data, size_t data_len, struct response_msg *resp) {
+  struct request_msg *msg = (struct request_msg *)data;
+
+  void *value = NULL;
+  size_t value_len = 0;
+
+  int ret;
   switch(msg->cmd) {
     case PUT_REQUEST:
       assert(msg->value_len < MAX_VALUE_LEN);
       ret = put_sg(&sg_ctx, msg->key, msg->value, msg->value_len);
     break;
     case GET_REQUEST:
-      //ret = _sg(&sg_ctx, msg->key, msg->value);
+      ret = get_sg(&sg_ctx, msg->key, &value, &value_len);
+      resp->ret = ret & 0xff;
+      resp->value_len = value_len;
+      printf("\t++ (%s) get_sg() returned %d, returning %d\n", __FUNCTION__, ret, resp->ret);
+      if (value_len < resp->value_len_max) {  // Only copy value if buffer has enough space
+        memcpy(resp->value, value, value_len);
+      }
+    break;
+  }
+  //return ret;
+}
+/* Should return a response_msg rather than ret
+ *
+int ecall_process_request(uint8_t *data, size_t data_len) {
+  struct request_msg *msg = (struct request_msg *)data;
+  int ret;
+  switch(msg->cmd) {
+    case PUT_REQUEST:
+      assert(msg->value_len < MAX_VALUE_LEN);
+      ret = put_sg(&sg_ctx, msg->key, msg->value, msg->value_len);
+    break;
+    case GET_REQUEST:
+      ret = get_sg(&sg_ctx, msg->key, msg->value, &msg->value_len);
     break;
   }
   return ret;
 }
+*/ 
+
+
 /*
 void init() { 
   init_sg(&sg_ctx); 

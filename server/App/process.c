@@ -47,10 +47,6 @@ struct request_msg *msg;
 
 }
 
-static void prepare_response(int ret, response_msg_t *response) {
-  response->ret = (ret & 0xff);
-}
-
 int process() {
   struct sockaddr_un addr;
   char buf[100];
@@ -59,7 +55,7 @@ int process() {
   sgx_status_t status;
 
   sg_frame_ctx_t frame_ctx;
-  response_msg_t response;
+  struct response_msg *response = init_response_msg();
 
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
     perror("socket error");
@@ -114,23 +110,29 @@ int process() {
 
     ret = 0;
     // enclave will cast it to struct request_msg
-    status = ecall_process_request(global_eid, &ret, frame_ctx.data, frame_ctx.data_len); 
+    // ret contains the return value of the sg_XX function, this will be returned to the client
+    //status = ecall_process_request(global_eid, &ret, frame_ctx.data, frame_ctx.data_len); 
+
+
+    status = ecall_process_request(global_eid, frame_ctx.data, frame_ctx.data_len, response);
     if (status) {
       perror("sgx");
       exit(-1);
     }
-  
+
+
+printf("\t+ (%s) After ecall_process_request() response->ret = %d\n", __FUNCTION__, response->ret);
+
     fflush(stdout);
     fflush(stderr);
 
-    prepare_response(ret, &response);
-
-    if (write(cl, &response, sizeof(response_msg_t)) != sizeof(response_msg_t)) {
+    if (write(cl, response, sizeof(struct response_msg)) != sizeof(struct response_msg)) {
       perror("write error");
     }
   
     clear_sg_frame_ctx(&frame_ctx);
   }
+  free(response);
   free_sg_frame_ctx(&frame_ctx);
   return 0;
 }

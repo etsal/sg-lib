@@ -2,9 +2,9 @@
 #include <errno.h>
 
 typedef struct ms_ecall_process_request_t {
-	int ms_retval;
 	uint8_t* ms_data;
 	size_t ms_data_len;
+	struct response_msg* ms_resp;
 } ms_ecall_process_request_t;
 
 typedef struct ms_ecall_init_sg_t {
@@ -532,14 +532,14 @@ sgx_status_t ecall_test(sgx_enclave_id_t eid)
 	return status;
 }
 
-sgx_status_t ecall_process_request(sgx_enclave_id_t eid, int* retval, uint8_t* data, size_t data_len)
+sgx_status_t ecall_process_request(sgx_enclave_id_t eid, uint8_t* data, size_t data_len, struct response_msg* resp)
 {
 	sgx_status_t status;
 	ms_ecall_process_request_t ms;
 	ms.ms_data = data;
 	ms.ms_data_len = data_len;
+	ms.ms_resp = resp;
 	status = sgx_ecall(eid, 1, &ocall_table_Enclave, &ms);
-	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
 
