@@ -37,7 +37,7 @@ struct  _Host
 struct  _Config
 {
   ProtobufCMessage base;
-  char *database_file;
+  char *sealed_sg_ctx_file;
   size_t n_hosts;
   char **hosts;
 };

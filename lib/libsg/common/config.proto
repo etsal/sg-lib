@@ -3,7 +3,7 @@ message host {
 }
 
 message config {
-  required string database_file = 1;
+  required string sealed_sg_ctx_file = 1;
   repeated string hosts = 2;
 }
 

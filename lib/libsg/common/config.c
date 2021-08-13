@@ -28,8 +28,8 @@ configuration *unpack_config(void *buf, size_t len) {
 
   configuration *config = malloc(sizeof(configuration));
 
-  //memcpy(config->database_file, c->database_file, strlen(c->database_file)+1);
-  config->database_file = strndup(c->database_file, strlen(c->database_file)+1);
+  //memcpy(config->sealed_sg_ctx_file, c->sealed_sg_ctx_file, strlen(c->sealed_sg_ctx_file)+1);
+  config->sealed_sg_ctx_file = strndup(c->sealed_sg_ctx_file, strlen(c->sealed_sg_ctx_file)+1);
   config->found_ips = c->n_hosts;
   config->expected_ips = c->n_hosts;
 
@@ -50,7 +50,7 @@ void *pack_config(configuration *config, size_t *out_len) {
   void *buf;
   size_t len;
   
-  c.database_file = config->database_file; //strdup(config->database_file);
+  c.sealed_sg_ctx_file = config->sealed_sg_ctx_file; //strdup(config->sealed_sg_ctx_file);
   c.hosts = malloc(config->found_ips * sizeof(char *));
   
   int i;
@@ -151,7 +151,7 @@ static int handler(void *user, const char *section, const char *name,
       pconfig->ips[pconfig->found_ips++] = strdup(value);
       return 1;
   } else if (MATCH("files", "database")) {
-    pconfig->database_file = strdup(value);
+    pconfig->sealed_sg_ctx_file = strdup(value);
   }
   return 0;
 }
@@ -173,7 +173,7 @@ configuration *parse_config(const char *path) {
 
 void destroy_config(configuration *config) {
   int i;
-  free(config->database_file);
+  free(config->sealed_sg_ctx_file);
   for (i = 0; i < config->found_ips; ++i) {
     free(config->ips[i]);
   }

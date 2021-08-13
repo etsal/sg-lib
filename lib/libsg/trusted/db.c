@@ -18,19 +18,23 @@ void db_print(db_ctx_t *db, void (*format)(const void *data)) {
   print_fmt_store(&db->table, format);
 }
 
-int init_new_db(db_ctx_t *db, const char *filename)
+int init_new_db(db_ctx_t *db)
 {
-  if (filename == NULL || strlen(filename) > MAX_FILENAME) {
-    eprintf("%s ERROR: Db filename too large/NULL\n", __FUNCTION__);
-    return 1;
-  }
-  strcpy(db->db_filename, filename);
   init_store(&db->table, 1);
   db->accounts = NULL;
   db->serial_buf_len = 0;
   db->serial_buf = NULL;
   db->is_init = 1;
   return 0;
+}
+
+int verify_db(db_ctx_t *db)
+{
+  if (db == NULL) return 0;
+  if (db->table.entries == NULL) return 0;
+  if (db->table.uid == 0) return 0;
+
+  return 1;
 }
 
 int put_db(db_ctx_t *db, const char *key, const void *value, size_t len) {
@@ -64,7 +68,7 @@ int load_db(db_ctx_t *db) {
   uint8_t *buf = NULL;
   size_t len = 0;
   int ret;
-
+/*
   if (db->db_filename == NULL) {
     eprintf("db filename NULL\n");
     return 1;
@@ -94,7 +98,8 @@ int load_db(db_ctx_t *db) {
 #endif
 
   free(buf);
-  return 0;
+*/
+return 0;
 }
 
 /* TODO: add password protection
@@ -133,14 +138,15 @@ int save_db(db_ctx_t *db) {
           }
   */
   // Seal table
-
+/*
   if (db->db_filename == NULL) {
     eprintf("db filename NULL\n");
     return 1;
   }
 
   ret = seal(db->db_filename, buf, len);
-  /*
+*/
+/*
       // Insert <username, account_file> to account db
       if (is_new) {
               assert(insert_strmap(&db->accounts, username, tablefile));

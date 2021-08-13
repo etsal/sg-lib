@@ -8,11 +8,8 @@
 #define DB_FILE "account.db"
 #define MACHINE_CONFIG_PATH ".sg"
 
-#define MAX_FILENAME 128
-
 typedef struct {
   int is_init;                    // is initialized?
-  char db_filename[MAX_FILENAME]; // db_filename
 
   strmap_t accounts;         // <username, tablefile> mapping
   const char *cur_tablefile; // table filename, points to accounts memory
@@ -27,7 +24,7 @@ typedef struct {
 } db_ctx_t;
 
 // Note: init_db() is handled by sg
-int init_new_db(db_ctx_t *db, const char *filename);
+int init_new_db(db_ctx_t *db);
 
 int put_db(db_ctx_t *db, const char *key, const void *value, size_t len);
 int get_db(db_ctx_t *db, const char *key, void **value, size_t *len);
@@ -39,6 +36,7 @@ int load_db(db_ctx_t *db);
 int serialize_db(db_ctx_t *db, uint8_t **buf, size_t *len);
 int deserialize_db(db_ctx_t *db, uint8_t *buf, size_t len);
 int compare_db(db_ctx_t *db1, db_ctx_t *db2);
+int verify_db(db_ctx_t *db);
 
 void db_print(db_ctx_t *db, void (*format)(const void *data));
 

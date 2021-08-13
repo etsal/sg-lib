@@ -47,5 +47,6 @@ void destroy_ratls(ratls_ctx_t *ctx);
 void protobuf_pack_keycert(key_cert_t *keycert, Keycert *kc);
 void protobuf_free_packed_keycert(Keycert *kc);
 void protobuf_unpack_keycert(key_cert_t *keycert, Keycert *kc);
+int verify_keycert(const key_cert_t *keycert);
 
 #endif

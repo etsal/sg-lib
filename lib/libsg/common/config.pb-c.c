@@ -138,12 +138,12 @@ const ProtobufCMessageDescriptor host__descriptor =
 static const ProtobufCFieldDescriptor config__field_descriptors[2] =
 {
   {
-    "database_file",
+    "sealed_sg_ctx_file",
     1,
     PROTOBUF_C_LABEL_REQUIRED,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(Config, database_file),
+    offsetof(Config, sealed_sg_ctx_file),
     NULL,
     NULL,
     0,             /* flags */
@@ -163,8 +163,8 @@ static const ProtobufCFieldDescriptor config__field_descriptors[2] =
   },
 };
 static const unsigned config__field_indices_by_name[] = {
-  0,   /* field[0] = database_file */
   1,   /* field[1] = hosts */
+  0,   /* field[0] = sealed_sg_ctx_file */
 };
 static const ProtobufCIntRange config__number_ranges[1 + 1] =
 {

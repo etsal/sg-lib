@@ -6,7 +6,7 @@
 
 /* Structure is used by both app and enclave */
 typedef struct {
-  char *database_file;
+  char *sealed_sg_ctx_file;
   int expected_ips;
   int found_ips;
   char *ips[MAX_NODES];

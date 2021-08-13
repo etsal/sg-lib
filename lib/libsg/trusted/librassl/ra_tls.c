@@ -433,3 +433,6 @@ void protobuf_unpack_keycert(key_cert_t *keycert, Keycert *kc) {
   memcpy(keycert->der_cert, kc->cert.data, kc->cert.len);
 }
 
+int verify_keycert(const key_cert_t *keycert) {
+  return (keycert->der_key_len > 0 && keycert->der_cert_len > 0);
+}

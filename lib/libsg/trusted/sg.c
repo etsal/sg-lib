@@ -5,6 +5,7 @@
 #include "sg_common.h"
 #include "sg_t.h" // ocalls
 #include "sg_util.h"
+#include "errlist.h"
 #include "store.pb-c.h"
 #include "wolfssl_enclave.h"
 #include "config.h"
@@ -16,6 +17,7 @@ extern ra_tls_options_t global_opts;
 static int serialize_and_seal_sg(sg_ctx_t *ctx);
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx);
 static char *iota_u64(uint64_t value, char *str, size_t len);
+static void init_keycert(sg_ctx_t *ctx);
 
 const char db_filename[] = "/opt/instance/sg.db";
 const char policy_filename[] = "/opt/instance/policy.txt";
@@ -68,6 +70,18 @@ static configuration *parse_config(const char *config, size_t config_len) {
   return c;
 }
 
+static void init_keycert(sg_ctx_t *ctx) {
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n", __FUNCTION__);
+#endif
+
+  ctx->kc.der_key_len = DER_KEY_LEN;
+  ctx->kc.der_cert_len = DER_CERT_LEN;
+
+  create_key_and_x509(ctx->kc.der_key, &ctx->kc.der_key_len, ctx->kc.der_cert,
+                      &ctx->kc.der_cert_len, &global_opts);
+}
+
 /*
  * init_sg()
  * Ideally we call init_db to do the database
@@ -76,38 +90,49 @@ static configuration *parse_config(const char *config, size_t config_len) {
  * so we call them here instead
  */
 void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
+  configuration *c;
+  int ret;
 
-  int ret; 
-  configuration *c = unpack_config(config, config_len);
-  assert(c != NULL);
-  assert(verify_config(config));
+  memset(ctx, 0, sizeof(sg_ctx_t));
+
+  // Deserialize configuration structure and save it to the sgx context
+  c = unpack_config(config, config_len);
   ctx->config = c;
+  assert(c != NULL && verify_config(config));
 
-  // Retrieve KC
-
-  // Retrieve database file name from config
-  strcpy(ctx->db.db_filename, c->database_file); 
+  // Attempts to unseal the sealed sgx ctx saved in ctx->config->sealed_sg_ctx_file
   ret = unseal_and_deserialize_sg(ctx);
   if (ret) {
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) Database failed to load from %s, db is not set\n",
-            __FUNCTION__, ctx->db.db_filename);
+    eprintf("\t+ (%s) Failed to unseal_and_deserialize()  with ret=%x!\n", __FUNCTION__, ret);
 #endif
+    // Todo: decide whether or not to do brandnew init
     init_new_sg(ctx);
   } else {
-#ifdef DEBUG_SG
-    eprintf("\t+ (%s) Database successfully loaded from %s\n", __FUNCTION__,
-            ctx->db.db_filename);
-#endif
+    // Todo: Check if each item in the saved context was loaded
+    // Verify keycert was loaded
+    if (!verify_keycert(&ctx->kc)) {
+      init_keycert(ctx);
+    }
+
+    // Verify kvstore
+    if (!verify_db(&ctx->db)) {
+      init_new_db(&ctx->db);
+    }
+
+    eprintf("\t+ (%s) Successfully verified keycert and db\n", __FUNCTION__);
   }
+
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Finishing up initialization\n", __FUNCTION__);
+  eprintf("\t+ (%s) Setting up network stuff\n", __FUNCTION__);
 #endif
+
   init_connections(ctx);
   init_ratls();
   init_ratls_server(&ctx->ratls, &ctx->kc);
+
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
+  eprintf("\t+ (%s) Completed initialization!\n", __FUNCTION__);
 #endif
 }
 
@@ -117,25 +142,18 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
  * @param ctx
  */
 void init_new_sg(sg_ctx_t *ctx) {
-  ctx->kc.der_key_len = DER_KEY_LEN;
-  ctx->kc.der_cert_len = DER_CERT_LEN;
 /*
 #ifdef DEBUG_SG
     eprintf("+ Turning on wolfssl debugging\n");
     enc_wolfSSL_Debugging_ON();
 #endif
 */
-#ifdef DEBUG_SG
-  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n",
-          __FUNCTION__);
-#endif
-  create_key_and_x509(ctx->kc.der_key, &ctx->kc.der_key_len, ctx->kc.der_cert,
-                      &ctx->kc.der_cert_len, &global_opts);
+  init_keycert(ctx);
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Initializing Key Value Store ...\n", __FUNCTION__);
 #endif
-  init_new_db(&ctx->db, ctx->db.db_filename);
+  init_new_db(&ctx->db);
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
@@ -200,17 +218,18 @@ int save_sg(sg_ctx_t *ctx, const char *filename) {
   return ret;
 }
 
+/*
 int load_sg(sg_ctx_t *ctx, const char *filename) {
   int ret = load_db(&ctx->db);
   return ret;
 }
+*/
 
 void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
   db_print(&ctx->db, format);
 }
 
 static int serialize_and_seal_sg(sg_ctx_t *ctx) {
-  // eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   StateSg state = STATE_SG__INIT;
   state.kc = malloc(sizeof(Keycert));
   state.t = malloc(sizeof(Table));
@@ -222,7 +241,7 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx) {
   size_t len = state_sg__get_packed_size(&state);
   uint8_t *buf = malloc(len);
   state_sg__pack(&state, buf);
-  int ret = seal(ctx->db.db_filename, buf, len);
+  int ret = seal(ctx->config->sealed_sg_ctx_file, buf, len);
 
   protobuf_free_packed_keycert(state.kc);
   protobuf_free_packed_store(state.t);
@@ -233,11 +252,11 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx) {
   return ret;
 }
 
+/* 0 on success, >0 on failure from errlist.h */
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx) {
-  // eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
   size_t len = 0;
   uint8_t *buf = NULL;
-  int ret = unseal(ctx->db.db_filename, &buf, &len);
+  int ret = unseal(ctx->config->sealed_sg_ctx_file, &buf, &len);
   if (ret) {
     return ret;
   }
@@ -245,7 +264,7 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx) {
   StateSg *state = NULL;
   state = state_sg__unpack(NULL, len, buf);
   if (!state) {
-    return 1;
+    return ER_PROTOBUF;
   }
 
   protobuf_unpack_store(&ctx->db.table, state->t);

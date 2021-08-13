@@ -105,8 +105,8 @@ unseal(const char *filename, uint8_t **buf, size_t *len)
 
     // Check if file is empty
 	if (tmp_len == 0) {
-		return 0;
-    }
+    return 0;
+  }
 
 	// Load file
 	tmp = xmalloc(sizeof(uint8_t) * tmp_len);
