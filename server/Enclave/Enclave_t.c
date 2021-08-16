@@ -183,6 +183,23 @@ typedef struct ms_ocall_close_t {
 	int ms_fd;
 } ms_ocall_close_t;
 
+typedef struct ms_ocall_fopen_t {
+	int ms_retval;
+	char* ms_filepath;
+	char* ms_mode;
+} ms_ocall_fopen_t;
+
+typedef struct ms_ocall_fwrite_t {
+	int ms_retval;
+	char* ms_buf;
+	int ms_fd;
+} ms_ocall_fwrite_t;
+
+typedef struct ms_ocall_fclose_t {
+	int ms_retval;
+	int ms_fd;
+} ms_ocall_fclose_t;
+
 typedef struct ms_ocall_host_bind_t {
 	int ms_retval;
 	char* ms_host;
@@ -565,10 +582,13 @@ SGX_EXTERNC const struct {
 
 SGX_EXTERNC const struct {
 	size_t nr_ocall;
-	uint8_t entry_table[32][9];
+	uint8_t entry_table[35][9];
 } g_dyn_entry_table = {
-	32,
+	35,
 	{
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, },
@@ -1442,6 +1462,125 @@ sgx_status_t SGX_CDECL ocall_close(int* retval, int fd)
 	return status;
 }
 
+sgx_status_t SGX_CDECL ocall_fopen(int* retval, const char* filepath, const char* mode)
+{
+	sgx_status_t status = SGX_SUCCESS;
+	size_t _len_filepath = sizeof(char);
+	size_t _len_mode = sizeof(char);
+
+	ms_ocall_fopen_t* ms = NULL;
+	size_t ocalloc_size = sizeof(ms_ocall_fopen_t);
+	void *__tmp = NULL;
+
+	ocalloc_size += (filepath != NULL && sgx_is_within_enclave(filepath, _len_filepath)) ? _len_filepath : 0;
+	ocalloc_size += (mode != NULL && sgx_is_within_enclave(mode, _len_mode)) ? _len_mode : 0;
+
+	__tmp = sgx_ocalloc(ocalloc_size);
+	if (__tmp == NULL) {
+		sgx_ocfree();
+		return SGX_ERROR_UNEXPECTED;
+	}
+	ms = (ms_ocall_fopen_t*)__tmp;
+	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_fopen_t));
+
+	if (filepath != NULL && sgx_is_within_enclave(filepath, _len_filepath)) {
+		ms->ms_filepath = (char*)__tmp;
+		memcpy(__tmp, filepath, _len_filepath);
+		__tmp = (void *)((size_t)__tmp + _len_filepath);
+	} else if (filepath == NULL) {
+		ms->ms_filepath = NULL;
+	} else {
+		sgx_ocfree();
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
+	
+	if (mode != NULL && sgx_is_within_enclave(mode, _len_mode)) {
+		ms->ms_mode = (char*)__tmp;
+		memcpy(__tmp, mode, _len_mode);
+		__tmp = (void *)((size_t)__tmp + _len_mode);
+	} else if (mode == NULL) {
+		ms->ms_mode = NULL;
+	} else {
+		sgx_ocfree();
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
+	
+	status = sgx_ocall(20, ms);
+
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
+	sgx_ocfree();
+	return status;
+}
+
+sgx_status_t SGX_CDECL ocall_fwrite(int* retval, const char* buf, int fd)
+{
+	sgx_status_t status = SGX_SUCCESS;
+	size_t _len_buf = sizeof(char);
+
+	ms_ocall_fwrite_t* ms = NULL;
+	size_t ocalloc_size = sizeof(ms_ocall_fwrite_t);
+	void *__tmp = NULL;
+
+	ocalloc_size += (buf != NULL && sgx_is_within_enclave(buf, _len_buf)) ? _len_buf : 0;
+
+	__tmp = sgx_ocalloc(ocalloc_size);
+	if (__tmp == NULL) {
+		sgx_ocfree();
+		return SGX_ERROR_UNEXPECTED;
+	}
+	ms = (ms_ocall_fwrite_t*)__tmp;
+	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_fwrite_t));
+
+	if (buf != NULL && sgx_is_within_enclave(buf, _len_buf)) {
+		ms->ms_buf = (char*)__tmp;
+		memcpy(__tmp, buf, _len_buf);
+		__tmp = (void *)((size_t)__tmp + _len_buf);
+	} else if (buf == NULL) {
+		ms->ms_buf = NULL;
+	} else {
+		sgx_ocfree();
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
+	
+	ms->ms_fd = fd;
+	status = sgx_ocall(21, ms);
+
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
+	sgx_ocfree();
+	return status;
+}
+
+sgx_status_t SGX_CDECL ocall_fclose(int* retval, int fd)
+{
+	sgx_status_t status = SGX_SUCCESS;
+
+	ms_ocall_fclose_t* ms = NULL;
+	size_t ocalloc_size = sizeof(ms_ocall_fclose_t);
+	void *__tmp = NULL;
+
+
+	__tmp = sgx_ocalloc(ocalloc_size);
+	if (__tmp == NULL) {
+		sgx_ocfree();
+		return SGX_ERROR_UNEXPECTED;
+	}
+	ms = (ms_ocall_fclose_t*)__tmp;
+	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_fclose_t));
+
+	ms->ms_fd = fd;
+	status = sgx_ocall(22, ms);
+
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
+	sgx_ocfree();
+	return status;
+}
+
 sgx_status_t SGX_CDECL ocall_host_bind(int* retval, const char* host, const char* port)
 {
 	sgx_status_t status = SGX_SUCCESS;
@@ -1485,7 +1624,7 @@ sgx_status_t SGX_CDECL ocall_host_bind(int* retval, const char* host, const char
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(20, ms);
+	status = sgx_ocall(23, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1537,7 +1676,7 @@ sgx_status_t SGX_CDECL ocall_host_connect(int* retval, const char* host, const c
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(21, ms);
+	status = sgx_ocall(24, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1564,7 +1703,7 @@ sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd)
 	__tmp = (void *)((size_t)__tmp + sizeof(ms_ocall_accept_client_t));
 
 	ms->ms_sock_fd = sock_fd;
-	status = sgx_ocall(22, ms);
+	status = sgx_ocall(25, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1605,7 +1744,7 @@ sgx_status_t SGX_CDECL ocall_gethostname(char* host)
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(23, ms);
+	status = sgx_ocall(26, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (host) memcpy((void*)host, __tmp_host, _len_host);
@@ -1646,7 +1785,7 @@ sgx_status_t SGX_CDECL ocall_gethostip(char* ip)
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(24, ms);
+	status = sgx_ocall(27, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (ip) memcpy((void*)ip, __tmp_ip, _len_ip);
@@ -1658,7 +1797,7 @@ sgx_status_t SGX_CDECL ocall_gethostip(char* ip)
 sgx_status_t SGX_CDECL ocall_init_networking()
 {
 	sgx_status_t status = SGX_SUCCESS;
-	status = sgx_ocall(25, NULL);
+	status = sgx_ocall(28, NULL);
 
 	return status;
 }
@@ -1708,7 +1847,7 @@ sgx_status_t SGX_CDECL ocall_poll_and_process_updates(int* retval, int* active_f
 	}
 	
 	ms->ms_len = len;
-	status = sgx_ocall(26, ms);
+	status = sgx_ocall(29, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1750,7 +1889,7 @@ sgx_status_t SGX_CDECL ocall_low_res_time(int* time)
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(27, ms);
+	status = sgx_ocall(30, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (time) memcpy((void*)time, __tmp_time, _len_time);
@@ -1794,7 +1933,7 @@ sgx_status_t SGX_CDECL ocall_recv(size_t* retval, int sockfd, void* buf, size_t 
 	
 	ms->ms_len = len;
 	ms->ms_flags = flags;
-	status = sgx_ocall(28, ms);
+	status = sgx_ocall(31, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1838,7 +1977,7 @@ sgx_status_t SGX_CDECL ocall_send(size_t* retval, int sockfd, const void* buf, s
 	
 	ms->ms_len = len;
 	ms->ms_flags = flags;
-	status = sgx_ocall(29, ms);
+	status = sgx_ocall(32, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (retval) *retval = ms->ms_retval;
@@ -1880,7 +2019,7 @@ sgx_status_t SGX_CDECL ocall_sgx_init_quote(sgx_target_info_t* target_info)
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(30, ms);
+	status = sgx_ocall(33, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (target_info) memcpy((void*)target_info, __tmp_target_info, _len_target_info);
@@ -1947,7 +2086,7 @@ sgx_status_t SGX_CDECL ocall_remote_attestation(sgx_report_t* report, const ra_t
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	
-	status = sgx_ocall(31, ms);
+	status = sgx_ocall(34, ms);
 
 	if (status == SGX_SUCCESS) {
 		if (attn_report) memcpy((void*)attn_report, __tmp_attn_report, _len_attn_report);

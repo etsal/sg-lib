@@ -1,10 +1,10 @@
+#include <sgx_tseal.h>
+
 #include "sg_util.h"
-#include "sg_t.h" 
 #include "errlist.h"
 #include "xmem.h"
-#include "sgx_tseal.h"
 #include "sg_common.h"
-#include "sg_stdfunc.h"
+#include "fileio_t.h"
 
 #define DEBUG_SG_UTIL 1
 

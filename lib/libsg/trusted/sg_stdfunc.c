@@ -3,8 +3,10 @@
 #include <string.h>
 
 #include "sg_stdfunc.h"
-#include "sg_t.h" // For boundary calls
 #include "sg_common.h"
+
+#include "stdfunc_t.h"
+#include "fileio_t.h" // ocalls
 
 void
 exit(int status)

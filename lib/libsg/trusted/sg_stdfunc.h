@@ -1,10 +1,14 @@
-#ifndef __STD_FUNCTIONS_H__
-#define __STD_FUNCTIONS_H__
+#ifndef __SG_STDFUNC_H__
+#define __SG_STDFUNC_H__
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stddef.h>
+/*
+ * This header defines the C-stdlib functions we needed to manually implement
+ * because we need OCALLs in order to preform them
+ */
 
-void exit(int s);
+void exit(int status);
 
 void perror(const char *s);
 
@@ -18,4 +22,4 @@ int printf(const char *fmt, ...);
 
 int close(int fd);
 
-#endif
+#endif // __SG_STDFUNC_H__

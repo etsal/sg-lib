@@ -21,7 +21,6 @@ void db_print(db_ctx_t *db, void (*format)(const void *data)) {
 int init_new_db(db_ctx_t *db)
 {
   init_store(&db->table, 1);
-  db->accounts = NULL;
   db->serial_buf_len = 0;
   db->serial_buf = NULL;
   db->is_init = 1;

@@ -166,6 +166,23 @@ typedef struct ms_ocall_close_t {
 	int ms_fd;
 } ms_ocall_close_t;
 
+typedef struct ms_ocall_fopen_t {
+	int ms_retval;
+	char* ms_filepath;
+	char* ms_mode;
+} ms_ocall_fopen_t;
+
+typedef struct ms_ocall_fwrite_t {
+	int ms_retval;
+	char* ms_buf;
+	int ms_fd;
+} ms_ocall_fwrite_t;
+
+typedef struct ms_ocall_fclose_t {
+	int ms_retval;
+	int ms_fd;
+} ms_ocall_fclose_t;
+
 typedef struct ms_ocall_host_bind_t {
 	int ms_retval;
 	char* ms_host;
@@ -390,6 +407,30 @@ static sgx_status_t SGX_CDECL Enclave_ocall_close(void* pms)
 	return SGX_SUCCESS;
 }
 
+static sgx_status_t SGX_CDECL Enclave_ocall_fopen(void* pms)
+{
+	ms_ocall_fopen_t* ms = SGX_CAST(ms_ocall_fopen_t*, pms);
+	ms->ms_retval = ocall_fopen((const char*)ms->ms_filepath, (const char*)ms->ms_mode);
+
+	return SGX_SUCCESS;
+}
+
+static sgx_status_t SGX_CDECL Enclave_ocall_fwrite(void* pms)
+{
+	ms_ocall_fwrite_t* ms = SGX_CAST(ms_ocall_fwrite_t*, pms);
+	ms->ms_retval = ocall_fwrite((const char*)ms->ms_buf, ms->ms_fd);
+
+	return SGX_SUCCESS;
+}
+
+static sgx_status_t SGX_CDECL Enclave_ocall_fclose(void* pms)
+{
+	ms_ocall_fclose_t* ms = SGX_CAST(ms_ocall_fclose_t*, pms);
+	ms->ms_retval = ocall_fclose(ms->ms_fd);
+
+	return SGX_SUCCESS;
+}
+
 static sgx_status_t SGX_CDECL Enclave_ocall_host_bind(void* pms)
 {
 	ms_ocall_host_bind_t* ms = SGX_CAST(ms_ocall_host_bind_t*, pms);
@@ -487,9 +528,9 @@ static sgx_status_t SGX_CDECL Enclave_ocall_remote_attestation(void* pms)
 
 static const struct {
 	size_t nr_ocall;
-	void * table[32];
+	void * table[35];
 } ocall_table_Enclave = {
-	32,
+	35,
 	{
 		(void*)Enclave_create_session_ocall,
 		(void*)Enclave_exchange_report_ocall,
@@ -511,6 +552,9 @@ static const struct {
 		(void*)Enclave_ocall_write,
 		(void*)Enclave_ocall_read,
 		(void*)Enclave_ocall_close,
+		(void*)Enclave_ocall_fopen,
+		(void*)Enclave_ocall_fwrite,
+		(void*)Enclave_ocall_fclose,
 		(void*)Enclave_ocall_host_bind,
 		(void*)Enclave_ocall_host_connect,
 		(void*)Enclave_ocall_accept_client,

@@ -2,16 +2,13 @@
 #define __DB_H__
 
 #include "BearSSL/inc/bearssl.h"
-#include "map.h"
 #include "store.h"
 
-#define DB_FILE "account.db"
-#define MACHINE_CONFIG_PATH ".sg"
+// TODO cleanup this file
 
 typedef struct {
   int is_init;                    // is initialized?
 
-  strmap_t accounts;         // <username, tablefile> mapping
   const char *cur_tablefile; // table filename, points to accounts memory
   table_t table;             // current table
   size_t serial_buf_len;

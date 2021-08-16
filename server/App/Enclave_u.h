@@ -41,6 +41,9 @@ int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_load, (const char* filename, uint8_t* bu
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_write, (const int* fd, const unsigned char* buf, size_t len));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_read, (const int* fd, unsigned char* buf, size_t len));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_close, (int fd));
+int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_fopen, (const char* filepath, const char* mode));
+int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_fwrite, (const char* buf, int fd));
+int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_fclose, (int fd));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_host_bind, (const char* host, const char* port));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_host_connect, (const char* host, const char* port));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_accept_client, (int sock_fd));

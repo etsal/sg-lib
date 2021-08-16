@@ -1,15 +1,19 @@
-#include "sgx_thread.h"
 #include <assert.h>
 #include <sys/limits.h>
+
+#include <sgx_thread.h>
 
 #include "librassl/attester.h"
 #include "ra_tls.h"
 #include "sg.h"
 #include "sg_common.h"
 #include "sg_messages.h"
-#include "sg_t.h" //ocalls
 #include "sg_util.h"
 #include "wolfssl_enclave.h"
+#include "sg_stdfunc.h"
+
+#include "stdfunc_t.h"
+#include "networking_t.h"
 
 #define DEBUG_SG 1
 #define INET6_ADDRSTRLEN 46 /* copied from <arpa/inet.h> */

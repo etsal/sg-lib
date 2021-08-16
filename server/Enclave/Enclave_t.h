@@ -50,6 +50,9 @@ sgx_status_t SGX_CDECL ocall_load(int* retval, const char* filename, uint8_t* bu
 sgx_status_t SGX_CDECL ocall_write(int* retval, const int* fd, const unsigned char* buf, size_t len);
 sgx_status_t SGX_CDECL ocall_read(int* retval, const int* fd, unsigned char* buf, size_t len);
 sgx_status_t SGX_CDECL ocall_close(int* retval, int fd);
+sgx_status_t SGX_CDECL ocall_fopen(int* retval, const char* filepath, const char* mode);
+sgx_status_t SGX_CDECL ocall_fwrite(int* retval, const char* buf, int fd);
+sgx_status_t SGX_CDECL ocall_fclose(int* retval, int fd);
 sgx_status_t SGX_CDECL ocall_host_bind(int* retval, const char* host, const char* port);
 sgx_status_t SGX_CDECL ocall_host_connect(int* retval, const char* host, const char* port);
 sgx_status_t SGX_CDECL ocall_accept_client(int* retval, int sock_fd);

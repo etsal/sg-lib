@@ -5,11 +5,11 @@
 #include "map.pb-c.h"
 #include "sg_common.h"
 #include "xmem.h"
-/*
+
 #ifdef __ENCLAVE__
-#include "stdfunc.h"
+#include "sg_stdfunc.h"
 #endif
-*/
+
 void
 free_strmap(strmap_t *map)
 {

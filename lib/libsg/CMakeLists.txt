@@ -30,10 +30,18 @@ set(WOLFSSL_C_FLAGS "-DWOLFSSL_SGX -DUSER_TIME \
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ENCLAVE_C_FLAGS} ${WOLFSSL_C_FLAGS} -D__ENCLAVE__")
 
+set(EDL_SRCS
+  trusted/networking.edl
+  trusted/fileio.edl
+  trusted/stdfunc.edl
+  trusted/librassl/ra_tls.edl
+)
+
 file (GLOB TRUSTED_SRCS 
     trusted/*.c 
     trusted/libstore/*.c 
     trusted/librassl/*.c
+    trusted/log/*.c
     common/*.c
 )
 
