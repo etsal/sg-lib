@@ -29,7 +29,7 @@ int init_new_db(db_ctx_t *db);
 int put_db(db_ctx_t *db, const char *key, const void *value, size_t len);
 int get_db(db_ctx_t *db, const char *key, void **value, size_t *len);
 
-int save_db(db_ctx_t *db);
+int save_db(db_ctx_t *db, const char *filename);
 int load_db(db_ctx_t *db);
 
 // Testing purposes

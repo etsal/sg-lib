@@ -102,17 +102,17 @@ int load_db(db_ctx_t *db) {
 return 0;
 }
 
-/* TODO: add password protection
+/*
  * @return : 0 on success, >0 else
  */
-int save_db(db_ctx_t *db) {
-  eprintf("+ (%s - %d)\n", __FUNCTION__, __LINE__);
+int save_db(db_ctx_t *db, const char *filename) {
   uint8_t *buf;
   size_t len;
   int is_new = 0;
   int ret;
+
 #if DEBUG_DB
-  eprintf("\t+ Saving current table\n");
+  eprintf("\t+ (%s) Sealing current table\n", __FUNCTION__);
   edividerWithText("Current Table");
   print_store(&db->table);
   edivider();
@@ -129,31 +129,9 @@ int save_db(db_ctx_t *db) {
 //	edivider();
 #endif
 
-  /*
-      // Get filename to save serialized table to
-          const char *tablefile = find_strmap(db->accounts, username);
-          if (!tablefile) {
-                  tablefile = "/tmp/testaccount.db";
-                  is_new = 1;
-          }
-  */
   // Seal table
-/*
-  if (db->db_filename == NULL) {
-    eprintf("db filename NULL\n");
-    return 1;
-  }
-
-  ret = seal(db->db_filename, buf, len);
-*/
-/*
-      // Insert <username, account_file> to account db
-      if (is_new) {
-              assert(insert_strmap(&db->accounts, username, tablefile));
-      }
-      free(buf);
-  */
-
+  if (filename == NULL) return ER_NOEXIST;
+  ret = seal(filename, buf, len);
   free(buf);
   return ret;
 }

@@ -31,26 +31,35 @@ ocall_access(const char *filename)
 
 /*
  *
- * @return: Returns 0 on success, >0 else
+ * @return: Returns 0 on success, >0 (errno) else
  */
 int
 ocall_store(const char *filename, const uint8_t *buf, size_t len)
 {
-	int ret = 0;
+	int fd, ret = 0;
 	FILE *fp = fopen(filename, "w");
 	if (fp == NULL) {
 		// Create the file
-		int fd = creat(filename, S_IRUSR | S_IWUSR);
-		if (fd) {
+		fd = open(filename, O_CREAT | O_TRUNC | O_WRONLY);
+    if (fd > 0) {
 			ret = write(fd, buf, len);
 			close(fd);
-			return (ret == len) ? 0 : ER_IO;
+#ifdef DEBUG_FILEIO
+      printf("\t + (%s) write errno = %d, ret = %d, len = %d\n", __FUNCTION__, errno, ret, len);
+#endif
+      return (ret == len) ? 0 : errno;
 		}
-		return ER_FCREATE;
+#ifdef DEBUG_FILEIO
+    printf("\t + (%s) open errno = %d\n", __FUNCTION__, errno);
+#endif
+		return errno;
 	}
 	ret = fwrite((uint8_t *)buf, sizeof(uint8_t), len, fp);
-	fclose(fp);
-	ret = (ret == len) ? 0 : ER_IO;
+#ifdef DEBUG_FILEIO
+  printf("\t + (%s) fwrite ret = %d, len = %d\n", __FUNCTION__, ret, len);
+#endif
+  fclose(fp);
+	ret = (ret == len) ? 0 : errno;
 	return ret;
 }
 

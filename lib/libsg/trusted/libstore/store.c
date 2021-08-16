@@ -9,7 +9,7 @@
 #include "sg_stdfunc.h"
 #endif
 
-#define DEBUG_STORE 1
+//#define DEBUG_STORE 1
 
 /*TODO: merge timestamps into vv */
 
@@ -438,8 +438,16 @@ void protobuf_free_packed_store(Table *t) {
 }
 
 void protobuf_unpack_store(table_t *table, Table *t) {
-  free(table);
+
+  assert(table != NULL && t != NULL);
+  if (table != NULL) free_store(table);
+
   table->uid = t->uid;
+
+#ifdef DEBUG_STORE
+  eprintf("\t+ (%s) table entries found :%d \n", __FUNCTION__, t->n_entries);
+#endif
+
   for (int i = 0; i < t->n_entries; ++i) {
     // Create pair
     entry_t *entry = malloc(sizeof(entry_t));

@@ -14,13 +14,10 @@ extern ra_tls_options_t global_opts;
 
 #define DEBUG_SG 1
 
-static int serialize_and_seal_sg(sg_ctx_t *ctx);
-static int unseal_and_deserialize_sg(sg_ctx_t *ctx);
+static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath);
+static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath);
 static char *iota_u64(uint64_t value, char *str, size_t len);
 static void init_keycert(sg_ctx_t *ctx);
-
-const char db_filename[] = "/opt/instance/sg.db";
-const char policy_filename[] = "/opt/instance/policy.txt";
 
 static char *iota_u64(uint64_t value, char *str, size_t len) {
   uint64_t tmp = value;
@@ -101,14 +98,17 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   assert(c != NULL && verify_config(config));
 
   // Attempts to unseal the sealed sgx ctx saved in ctx->config->sealed_sg_ctx_file
-  ret = unseal_and_deserialize_sg(ctx);
+  ret = unseal_and_deserialize_sg(ctx, NULL);
   if (ret) {
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) Failed to unseal_and_deserialize()  with ret=%x!\n", __FUNCTION__, ret);
+    eprintf("\t+ (%s) Failed to unseal_and_deserialize(%s) with ret=%x!\n", __FUNCTION__, ctx->config->sealed_sg_ctx_file, ret);
 #endif
     // Todo: decide whether or not to do brandnew init
     init_new_sg(ctx);
   } else {
+#ifdef DEBUG_SG
+    eprintf("\t+ (%s) Successfully unsealed saved context %s!\n", __FUNCTION__, ctx->config->sealed_sg_ctx_file);
+#endif
     // Todo: Check if each item in the saved context was loaded
     // Verify keycert was loaded
     if (!verify_keycert(&ctx->kc)) {
@@ -213,23 +213,26 @@ int remove_sg(sg_ctx_t *ctx, uint64_t key) { return 0; }
 
 int count_sg(sg_ctx_t *ctx) { return 0; }
 
-int save_sg(sg_ctx_t *ctx, const char *filename) {
-  int ret = save_db(&ctx->db);
+int save_sg(sg_ctx_t *ctx, const char *filepath) {
+  int ret = serialize_and_seal_sg(ctx, filepath);
   return ret;
 }
 
-/*
-int load_sg(sg_ctx_t *ctx, const char *filename) {
-  int ret = load_db(&ctx->db);
+
+int load_sg(sg_ctx_t *ctx, const char *filepath) {
+  int ret = unseal_and_deserialize_sg(ctx, filepath);
   return ret;
 }
-*/
+
 
 void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
   db_print(&ctx->db, format);
 }
 
-static int serialize_and_seal_sg(sg_ctx_t *ctx) {
+static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath) {
+  const char *fp = filepath;
+  if (fp == NULL) fp = ctx->config->sealed_sg_ctx_file;
+
   StateSg state = STATE_SG__INIT;
   state.kc = malloc(sizeof(Keycert));
   state.t = malloc(sizeof(Table));
@@ -241,7 +244,7 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx) {
   size_t len = state_sg__get_packed_size(&state);
   uint8_t *buf = malloc(len);
   state_sg__pack(&state, buf);
-  int ret = seal(ctx->config->sealed_sg_ctx_file, buf, len);
+  int ret = seal(fp, buf, len);
 
   protobuf_free_packed_keycert(state.kc);
   protobuf_free_packed_store(state.t);
@@ -252,27 +255,69 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx) {
   return ret;
 }
 
-/* 0 on success, >0 on failure from errlist.h */
-static int unseal_and_deserialize_sg(sg_ctx_t *ctx) {
+/* unseal_and_deserialize
+ * @param ctx Initialized context
+ * @param filepath The filepath to use, if NULL will use ctx->config->sealed_sg_ctx_file
+ *
+ * 0 on success, >0 on failure from errlist.h 
+ */
+static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
   size_t len = 0;
   uint8_t *buf = NULL;
-  int ret = unseal(ctx->config->sealed_sg_ctx_file, &buf, &len);
+  int ret;
+  const char *fp = filepath;
+ 
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) start\n", __FUNCTION__);
+#endif
+
+  if (fp == NULL) {
+    fp = ctx->config->sealed_sg_ctx_file;
+#ifdef DEBUG_SG
+    if (fp == NULL)
+      eprintf("\t+ (%s) ABORTING fp == NULL\n", __FUNCTION__);
+#endif
+    assert(fp != NULL);
+  }
+  ret = unseal(fp, &buf, &len);
+
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) unseal complete with ret = 0x%x!\n", __FUNCTION__, ret);
+#endif
+
   if (ret) {
     return ret;
   }
 
   StateSg *state = NULL;
   state = state_sg__unpack(NULL, len, buf);
-  if (!state) {
+  if (state == NULL) {
     return ER_PROTOBUF;
   }
 
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) x!\n", __FUNCTION__);
+#endif
+
   protobuf_unpack_store(&ctx->db.table, state->t);
+
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) x!\n", __FUNCTION__);
+#endif
+
   protobuf_unpack_keycert(&ctx->kc, state->kc);
+
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) x!\n", __FUNCTION__);
+#endif
 
   table__free_unpacked(state->t, NULL);
   // keycert__free_unpacked(state->kc, NULL);
   // state_sg__free_unpacked(state, NULL);
+
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) Complete!\n", __FUNCTION__);
+#endif
 
   return 0;
 }

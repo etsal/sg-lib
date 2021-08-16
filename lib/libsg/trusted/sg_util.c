@@ -5,14 +5,16 @@
 #include "sgx_tseal.h"
 #include "sg_common.h"
 #include "sg_stdfunc.h"
-//#define DEBUG_SG_UTIL 1
 
+#define DEBUG_SG_UTIL 1
 
+/* 0 on success, >0 on error */
 int
 seal(const char *filename, uint8_t *buf, size_t len)
 {
 
 #ifdef __ENCLAVE__
+  sgx_status_t status;
 
 #ifdef DEBUG_SG_UTIL
     edividerWithText("Data to be Sealed");
@@ -37,34 +39,19 @@ seal(const char *filename, uint8_t *buf, size_t len)
 		return ER_SGX_SEAL;
 	}
 #ifdef DEBUG_SG_UTIL
-edividerWithText("Sealed Data");
-eprintf("len %d\n%s\n", slen, hexstring(sbuf, slen));
-edivider();
+  edividerWithText("Sealed Data");
+  eprintf("len %d\n%s\n", slen, hexstring(sbuf, slen));
+  edivider();
 #endif
 	// Store to disk
-	ocall_store(&ret, filename, (uint8_t *)sbuf, slen);
-    if (ret) {
-        eprintf("\t+ %s : Error, ocall_store failed with 0x%08x\n", __FUNCTION__, ret);
-        exit(1);
-    }
-    
-/*#ifdef DEBUG_SG_UTIL
-    uint8_t *unsealbuf = malloc(16384);
-    uint32_t unsealbuf_sz = 16384;
-    ret = sgx_unseal_data(sbuf, NULL, NULL, unsealbuf, &unsealbuf_sz);
-    if (ret != SGX_SUCCESS) {
-        eprintf("\t+ %s : unsealing failed 0x%08x\n", __FUNCTION__, ret);
-        exit(1);
-    }
-    
-edividerWithText("Unsealed Data");
-eprintf("len %d\n%s\n", unsealbuf_sz,  hexstring(unsealbuf, unsealbuf_sz));
-edivider();
+	status = ocall_store(&ret, filename, (uint8_t *)sbuf, slen);
+#ifdef DEBUG_SG_UTIL
+  if (status || ret) {
+      eprintf("\t+ (%s) Error, ocall_store failed with status = 0x%08x, ret = 0x%08x\n", __FUNCTION__, status, ret);
+  }  
+#endif
 
-#endif*/
-    
-
-    // Propagate error
+  // Propagate error
 	xfree(sbuf);
 	return ret;
 #endif // __ENCLAVE__

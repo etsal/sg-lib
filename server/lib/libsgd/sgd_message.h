@@ -6,15 +6,28 @@
 #warning HARDCODED MAX_KEY_LEN AND MAX_VALUE_LEN, FIX THIS!!!!
 #define MAX_KEY_LEN 128
 #define MAX_VALUE_LEN 4096
+#define MAX_FILEPATH 128
 
-typedef enum {PUT_REQUEST, GET_REQUEST} request_type;
-
+typedef enum {PUT_REQUEST, GET_REQUEST, SAVE_REQUEST} request_type;
+/*
 typedef struct request_msg {
   uint8_t cmd;
   uint32_t value_len;
   char key[MAX_KEY_LEN];
   uint8_t value[MAX_VALUE_LEN];
 } request_msg_t;
+*/
+typedef struct request_msg {
+  uint8_t cmd;
+  union {
+    char key[MAX_KEY_LEN];
+    char filepath[MAX_FILEPATH];
+  };
+  uint32_t value_len;
+  uint8_t value[MAX_VALUE_LEN];
+} request_msg_t;
+
+
 
 typedef struct response_msg {
   uint8_t ret;

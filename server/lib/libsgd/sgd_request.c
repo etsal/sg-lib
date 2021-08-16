@@ -175,3 +175,90 @@ int sgd_send_request(int *sg_ret, request_type type, const char *key,
   return ret;
 }
 
+
+int sgd_send_requestV2(int *sg_ret, struct request_msg *request) {
+  struct ipc_conn conn;
+  struct response_msg *response = init_response_msg();
+  sg_frame_t **frames;
+  size_t num_frames;
+  int ret;
+
+#ifdef DEBUG_SG
+  printf("+ (%s) start\n", __FUNCTION__);
+#endif
+
+  // Make connection to our service
+  conn.socket_path = socket_path;
+  ret = make_connection(&conn);
+  if (ret) {
+    return ret;
+  }
+
+#ifdef DEBUG_SG
+  printf("+ (%s) make_connection() successful\n", __FUNCTION__);
+#endif
+
+
+/*
+  // Prepare the request message
+  request = prepare_request(type, key, NULL, 0);
+  if (request == NULL) {
+    close(conn.fd);
+    return EX_CANTCREAT;
+  }
+*/
+
+  // Prepare the frames
+  ret = prepare_frames(0, (uint8_t *)request, sizeof(struct request_msg),
+                       &frames, &num_frames);
+  if (ret) {
+    close(conn.fd);
+    return EX_CANTCREAT;
+  }
+
+#ifdef DEBUG_SG
+  printf("+ (%s) prepare_request() successful\n", __FUNCTION__);
+#endif
+
+  // Send the frames
+  int i;
+  for (i = 0; i < num_frames; ++i) {
+    if (write(conn.fd, frames[i], sizeof(sg_frame_t)) != sizeof(sg_frame_t)) {
+      free_frames(&frames, num_frames);
+      close(conn.fd);
+      return EX_PROTOCOL;
+    }
+  }
+
+  free_frames(&frames, num_frames);
+
+#ifdef DEBUG_SG
+  printf("+ (%s) write() successful\n", __FUNCTION__);
+#endif
+
+  // Read the response & set the return value
+  if ((ret = read(conn.fd, response, sizeof(struct response_msg))) > 0) {
+    *sg_ret = response->ret;
+    ret = 0;
+  } else if (ret == -1) {
+    ret = errno;
+  } else if (ret == 0) { // Recieved EOF
+    ret = EX_PROTOCOL;
+  } else {
+    ret = 1;
+  }
+
+#ifdef DEBUG_SG
+  printf("+ (%s) closing connection to sgd\n", __FUNCTION__);
+  printf("+ (%s) sg_ret = %d ret = %d\n", __FUNCTION__, *sg_ret, ret);
+  char buf[MAX_VALUE_LEN+1];
+  sprintf(buf, "%s", response->value);
+  printf("+ (%s) Recieved %s \n", __FUNCTION__, buf);
+#endif
+
+  free(response);
+  close(conn.fd);
+
+  return ret;
+}
+

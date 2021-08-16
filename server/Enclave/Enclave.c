@@ -17,12 +17,14 @@ void ecall_process_request(uint8_t *data, size_t data_len, struct response_msg *
   void *value = NULL;
   size_t value_len = 0;
 
+  const char *filepath;
+  
   int ret;
   switch(msg->cmd) {
     case PUT_REQUEST:
       assert(msg->value_len < MAX_VALUE_LEN);
       ret = put_sg(&sg_ctx, msg->key, msg->value, msg->value_len);
-    break;
+      break;
     case GET_REQUEST:
       ret = get_sg(&sg_ctx, msg->key, &value, &value_len);
       resp->ret = ret & 0xff;
@@ -31,9 +33,18 @@ void ecall_process_request(uint8_t *data, size_t data_len, struct response_msg *
       if (value_len < resp->value_len_max) {  // Only copy value if buffer has enough space
         memcpy(resp->value, value, value_len);
       }
-    break;
+      break;
+    case SAVE_REQUEST:
+      if (msg->filepath[0] == '\0') {                 // Save to file written in config
+        filepath = NULL;
+      } else {                                        // Save to specified file
+        filepath = msg->filepath;
+      }
+      ret = save_sg(&sg_ctx, filepath);
+      resp->ret = ret & 0xff;
+      break;
+    
   }
-  //return ret;
 }
 /* Should return a response_msg rather than ret
  *
