@@ -38,12 +38,13 @@ struct  _Config
 {
   ProtobufCMessage base;
   char *sealed_sg_ctx_file;
+  char *log_file;
   size_t n_hosts;
   char **hosts;
 };
 #define CONFIG__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&config__descriptor) \
-    , NULL, 0,NULL }
+    , NULL, NULL, 0,NULL }
 
 
 /* Host methods */

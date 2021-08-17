@@ -30,6 +30,7 @@ configuration *unpack_config(void *buf, size_t len) {
 
   //memcpy(config->sealed_sg_ctx_file, c->sealed_sg_ctx_file, strlen(c->sealed_sg_ctx_file)+1);
   config->sealed_sg_ctx_file = strndup(c->sealed_sg_ctx_file, strlen(c->sealed_sg_ctx_file)+1);
+  config->log_file = strndup(c->log_file, strlen(c->log_file)+!1);
   config->found_ips = c->n_hosts;
   config->expected_ips = c->n_hosts;
 
@@ -51,6 +52,7 @@ void *pack_config(configuration *config, size_t *out_len) {
   size_t len;
   
   c.sealed_sg_ctx_file = config->sealed_sg_ctx_file; //strdup(config->sealed_sg_ctx_file);
+  c.log_file = config->log_file;
   c.hosts = malloc(config->found_ips * sizeof(char *));
   
   int i;
@@ -87,11 +89,19 @@ configuration *deserialize_config(const char *config, size_t config_len) {
 
 void prettyprint_config(configuration *config) {
   int i;
+  printf("--- Config File -----------------\n");
   printf("Expected %d IPs\n", config->expected_ips);
   printf("Found %d IPs\n", config->found_ips);
   for (i = 0; i < config->found_ips; ++i) {
     printf("Node %d IP: %s\n", i + 1, config->ips[i]);
   }
+  if (config->sealed_sg_ctx_file != NULL) {
+    printf("Database file: %s\n", config->sealed_sg_ctx_file);
+  }
+  if (config->log_file != NULL) {
+    printf("Log file: %s\n", config->log_file);
+  }
+   printf("---------------------------------\n");
 }
 
 /* Very basic serialization to pass the IPs from the App the the Enclave
@@ -131,6 +141,7 @@ char *serialize_config(configuration *config, size_t *len) {
  *
  * [files]
  * database=
+ * log=
  *
  */
 static int handler(void *user, const char *section, const char *name,
@@ -152,6 +163,8 @@ static int handler(void *user, const char *section, const char *name,
       return 1;
   } else if (MATCH("files", "database")) {
     pconfig->sealed_sg_ctx_file = strdup(value);
+  } else if (MATCH("files", "log")) {
+    pconfig->log_file = strdup(value);
   }
   return 0;
 }

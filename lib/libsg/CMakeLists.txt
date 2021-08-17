@@ -85,6 +85,7 @@ add_custom_target(
     COMMAND cp trusted/libstore/*.h include
     COMMAND cp trusted/librassl/*.h include
     COMMAND cp trusted/librassl/*.edl include
+    COMMAND cp trusted/log/*.h include
     COMMAND cp untrusted/*.h include
     COMMAND cp common/*.h include
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

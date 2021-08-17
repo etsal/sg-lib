@@ -4,6 +4,7 @@ message host {
 
 message config {
   required string sealed_sg_ctx_file = 1;
-  repeated string hosts = 2;
+  required string log_file = 2;
+  repeated string hosts = 3;
 }
 

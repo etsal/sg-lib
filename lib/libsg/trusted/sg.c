@@ -10,6 +10,8 @@
 #include "wolfssl_enclave.h"
 #include "config.h"
 
+#include "sg_log.h"
+
 extern ra_tls_options_t global_opts;
 
 #define DEBUG_SG 1
@@ -126,6 +128,8 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Setting up network stuff\n", __FUNCTION__);
 #endif
+
+  init_log(ctx->config->log_file);
 
   init_connections(ctx);
   init_ratls();
@@ -267,10 +271,6 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
   int ret;
   const char *fp = filepath;
  
-#ifdef DEBUG_SG
-  eprintf("\t+ (%s) start\n", __FUNCTION__);
-#endif
-
   if (fp == NULL) {
     fp = ctx->config->sealed_sg_ctx_file;
 #ifdef DEBUG_SG
@@ -282,7 +282,7 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
   ret = unseal(fp, &buf, &len);
 
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) unseal complete with ret = 0x%x!\n", __FUNCTION__, ret);
+  //eprintf("\t+ (%s) unseal complete with ret = 0x%x!\n", __FUNCTION__, ret);
 #endif
 
   if (ret) {
@@ -295,28 +295,15 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
     return ER_PROTOBUF;
   }
 
-#ifdef DEBUG_SG
-  eprintf("\t+ (%s) x!\n", __FUNCTION__);
-#endif
-
   protobuf_unpack_store(&ctx->db.table, state->t);
-
-#ifdef DEBUG_SG
-  eprintf("\t+ (%s) x!\n", __FUNCTION__);
-#endif
-
   protobuf_unpack_keycert(&ctx->kc, state->kc);
-
-#ifdef DEBUG_SG
-  eprintf("\t+ (%s) x!\n", __FUNCTION__);
-#endif
 
   table__free_unpacked(state->t, NULL);
   // keycert__free_unpacked(state->kc, NULL);
   // state_sg__free_unpacked(state, NULL);
 
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Complete!\n", __FUNCTION__);
+  //eprintf("\t\t+ (%s) Complete!\n", __FUNCTION__);
 #endif
 
   return 0;

@@ -27,7 +27,6 @@ int initialize_sg(const char *path) {
   }
 
 #ifdef DEBUG_SG
-  printf("Configuration File:\n");
   prettyprint_config(config);
 #endif
   

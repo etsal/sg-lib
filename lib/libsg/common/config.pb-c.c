@@ -135,7 +135,7 @@ const ProtobufCMessageDescriptor host__descriptor =
   (ProtobufCMessageInit) host__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor config__field_descriptors[2] =
+static const ProtobufCFieldDescriptor config__field_descriptors[3] =
 {
   {
     "sealed_sg_ctx_file",
@@ -150,8 +150,20 @@ static const ProtobufCFieldDescriptor config__field_descriptors[2] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "hosts",
+    "log_file",
     2,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Config, log_file),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "hosts",
+    3,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_STRING,
     offsetof(Config, n_hosts),
@@ -163,13 +175,14 @@ static const ProtobufCFieldDescriptor config__field_descriptors[2] =
   },
 };
 static const unsigned config__field_indices_by_name[] = {
-  1,   /* field[1] = hosts */
+  2,   /* field[2] = hosts */
+  1,   /* field[1] = log_file */
   0,   /* field[0] = sealed_sg_ctx_file */
 };
 static const ProtobufCIntRange config__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor config__descriptor =
 {
@@ -179,7 +192,7 @@ const ProtobufCMessageDescriptor config__descriptor =
   "Config",
   "",
   sizeof(Config),
-  2,
+  3,
   config__field_descriptors,
   config__field_indices_by_name,
   1,  config__number_ranges,

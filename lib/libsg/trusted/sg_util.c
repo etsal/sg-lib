@@ -6,7 +6,7 @@
 #include "sg_common.h"
 #include "fileio_t.h"
 
-#define DEBUG_SG_UTIL 1
+//#define DEBUG_SG_UTIL 1
 
 /* 0 on success, >0 on error */
 int
