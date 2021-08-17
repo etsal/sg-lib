@@ -23,6 +23,7 @@ void init_log(const char *filepath) {
 
   assert(strlen(filepath) < 1024); // TODO: should be a MACRO 
   sgx_status_t status = ocall_fopen(&log_fd, filepath, "w");
+
 }
 
 int write_fmt_log() {
@@ -33,11 +34,20 @@ int write_fmt_log() {
  * returns 0 on success, errno on error
  */
 int write_blob_log(const char *buf) {
-
-  if (log_fd == 0) return EBADF;
   int ret;
+  if (log_fd == 0) {
+#ifdef DEBUG_SG_LOG
+  eprintf("\t\t+ (%s) log_fd was not initalized\n", __FUNCTION__);
+#endif
+    return EBADF;
+  }
   sgx_status_t status = ocall_fwrite(&ret, buf, log_fd);
-  ret = (ret == strlen(buf)?0:ret);
+#ifdef DEBUG_SG_LOG
+  eprintf("\t\t+ (%s) ocall_fwrite returned %d expected %d\n", __FUNCTION__, ret, strlen(buf));
+#endif
+  if (ret == strlen(buf)) {
+    ret = 0;
+  }
   return ret; 
 }
 

@@ -1,6 +1,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+
+#include <stddef.h>
 #define MAX_NODES 5
 #define MAX_FILE_PATH_LEN 64
 

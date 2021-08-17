@@ -13,6 +13,8 @@ typedef struct {
     configuration *config;
 } sg_ctx_t;
 
+typedef enum {SG_PUT, SG_GET, SG_SAVE} sg_cmd;
+
 void init_sg(sg_ctx_t *ctx, void *config, size_t config_len);
 void init_new_sg(sg_ctx_t *ctx);
 

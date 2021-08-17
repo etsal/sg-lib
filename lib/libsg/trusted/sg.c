@@ -1,14 +1,16 @@
-#include "sg.h"
+#include <assert.h>
+
+#include "config.h"
+#include "errlist.h"
 #include "keycert.pb-c.h"
 #include "librassl/attester.h"
+#include "sg.h"
 #include "sg.pb-c.h"
 #include "sg_common.h"
 #include "sg_t.h" // ocalls
 #include "sg_util.h"
-#include "errlist.h"
 #include "store.pb-c.h"
 #include "wolfssl_enclave.h"
-#include "config.h"
 
 #include "sg_log.h"
 
@@ -20,6 +22,57 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath);
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath);
 static char *iota_u64(uint64_t value, char *str, size_t len);
 static void init_keycert(sg_ctx_t *ctx);
+
+static void gen_log_msg(int cmd, const char *key, int sg_ret) {
+
+  char buf[1024];
+  size_t len = 0;
+
+  memset(buf, 0, 1024);
+
+  switch (cmd) {
+  case SG_PUT:
+    memcpy(buf, "PUT", 3 * sizeof(char));
+    len += 3;
+    break;
+  case SG_GET:
+    memcpy(buf, "GET", 3 * sizeof(char));
+    len += 3;
+    break;
+  case SG_SAVE:
+    memcpy(buf, "SAVE", 4 * sizeof(char));
+    len += 4;
+    break;
+  }
+
+  buf[len++] = ' ';
+  buf[len++] = '"';
+
+  memcpy(buf + len, key, strlen(key) * sizeof(char));
+  len += strlen(key);
+
+  buf[len++] = '"';
+  buf[len++] = ' ';
+
+  if (sg_ret) {
+    memcpy(buf + len, "FAIL", 4 * sizeof(char));
+    len += 4;
+  } else {
+    memcpy(buf + len, "SUCCESS", 7 * sizeof(char));
+    len += 7;
+  }
+
+  buf[len++] = '\n';
+  buf[len++] = '\0';
+
+  int ret = write_blob_log(buf);
+  if (ret) {
+    eprintf("\t+ (%s) Error failed to write to log ret=0x%x\n", __FUNCTION__,
+            ret);
+  }
+
+  // eprintf("\t\t+ (%s) Created: %s\n", __FUNCTION__, buf);
+}
 
 static char *iota_u64(uint64_t value, char *str, size_t len) {
   uint64_t tmp = value;
@@ -47,21 +100,23 @@ static char *iota_u64(uint64_t value, char *str, size_t len) {
 
 static configuration *parse_config(const char *config, size_t config_len) {
   int cur = 0;
-  configuration *c =  malloc(sizeof(configuration)); 
+  configuration *c = malloc(sizeof(configuration));
   c->found_ips = 0;
 
   int i = 0;
-  while(cur < config_len && i < MAX_NODES) {
-    if (config + cur == '\0') break;
-    c->ips[i++] = strndup(config + cur, strlen(config + cur));        
+  while (cur < config_len && i < MAX_NODES) {
+    if (config + cur == '\0')
+      break;
+    c->ips[i++] = strndup(config + cur, strlen(config + cur));
     cur += strlen(config + cur) + 1;
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) Found: %s\n", __FUNCTION__, c->ips[i-1]);
+    eprintf("\t+ (%s) Found: %s\n", __FUNCTION__, c->ips[i - 1]);
 #endif
   }
   if (!(i < MAX_NODES)) {
 #ifdef DEBUG_SG
-      eprintf("\t+ (%s) WARNING: More than %d nodes found in config\n", __FUNCTION__, MAX_NODES);
+    eprintf("\t+ (%s) WARNING: More than %d nodes found in config\n",
+            __FUNCTION__, MAX_NODES);
 #endif
   }
 
@@ -71,7 +126,8 @@ static configuration *parse_config(const char *config, size_t config_len) {
 
 static void init_keycert(sg_ctx_t *ctx) {
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n", __FUNCTION__);
+  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n",
+          __FUNCTION__);
 #endif
 
   ctx->kc.der_key_len = DER_KEY_LEN;
@@ -99,17 +155,28 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   ctx->config = c;
   assert(c != NULL && verify_config(config));
 
-  // Attempts to unseal the sealed sgx ctx saved in ctx->config->sealed_sg_ctx_file
+  init_log(ctx->config->log_file);
+  ret = write_blob_log("Initializing sg\n");
+  if (ret) {
+    eprintf("\t+ (%s) Failed to initialize log (%d)... exiting\n", __FUNCTION__,
+            ret);
+    assert(1);
+  }
+
+  // Attempts to unseal the sealed sgx ctx saved in
+  // ctx->config->sealed_sg_ctx_file
   ret = unseal_and_deserialize_sg(ctx, NULL);
   if (ret) {
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) Failed to unseal_and_deserialize(%s) with ret=%x!\n", __FUNCTION__, ctx->config->sealed_sg_ctx_file, ret);
+    eprintf("\t+ (%s) Failed to unseal_and_deserialize(%s) with ret=%x!\n",
+            __FUNCTION__, ctx->config->sealed_sg_ctx_file, ret);
 #endif
     // Todo: decide whether or not to do brandnew init
     init_new_sg(ctx);
   } else {
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) Successfully unsealed saved context %s!\n", __FUNCTION__, ctx->config->sealed_sg_ctx_file);
+    eprintf("\t+ (%s) Successfully unsealed saved context %s!\n", __FUNCTION__,
+            ctx->config->sealed_sg_ctx_file);
 #endif
     // Todo: Check if each item in the saved context was loaded
     // Verify keycert was loaded
@@ -129,8 +196,6 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   eprintf("\t+ (%s) Setting up network stuff\n", __FUNCTION__);
 #endif
 
-  init_log(ctx->config->log_file);
-
   init_connections(ctx);
   init_ratls();
   init_ratls_server(&ctx->ratls, &ctx->kc);
@@ -146,12 +211,12 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
  * @param ctx
  */
 void init_new_sg(sg_ctx_t *ctx) {
-/*
-#ifdef DEBUG_SG
-    eprintf("+ Turning on wolfssl debugging\n");
-    enc_wolfSSL_Debugging_ON();
-#endif
-*/
+  /*
+  #ifdef DEBUG_SG
+      eprintf("+ Turning on wolfssl debugging\n");
+      enc_wolfSSL_Debugging_ON();
+  #endif
+  */
   init_keycert(ctx);
 
 #ifdef DEBUG_SG
@@ -185,29 +250,19 @@ int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len) {
 
 /* 1 on error, 0 on success */
 int put_sg(sg_ctx_t *ctx, const char *key, const void *value, size_t len) {
-  return put_db(&ctx->db, key, value, len);
+  int ret = put_db(&ctx->db, key, value, len);
+  gen_log_msg(SG_PUT, key, ret);
+  return ret;
 }
 
 int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len) {
   int ret = get_db(&ctx->db, key, value, len);
+  gen_log_msg(SG_GET, key, ret);
 #ifdef DEBUG_SG
   if (ret) {
     eprintf("\t+ (%s) Failed to entry with key %lu!\n", __FUNCTION__, key);
   } else {
     eprintf("\t+ (%s) Successfully entry with key %lu!\n", __FUNCTION__, key);
-  }
-#endif
-  return ret;
-}
-
-int find_sg(sg_ctx_t *ctx, uint64_t key, void *value, size_t len) {
-  int ret = 0;
-//	int ret = get_u64_db(&ctx->db, key, value, len);
-#ifdef DEBUG_SG
-  if (!ret) {
-    eprintf("\t+ Failed to find key %lu!\n", key);
-  } else {
-    eprintf("\t+ Successfully found key %lu!\n", key);
   }
 #endif
   return ret;
@@ -219,15 +274,14 @@ int count_sg(sg_ctx_t *ctx) { return 0; }
 
 int save_sg(sg_ctx_t *ctx, const char *filepath) {
   int ret = serialize_and_seal_sg(ctx, filepath);
+  gen_log_msg(SG_SAVE, " " , ret);
   return ret;
 }
-
 
 int load_sg(sg_ctx_t *ctx, const char *filepath) {
   int ret = unseal_and_deserialize_sg(ctx, filepath);
   return ret;
 }
-
 
 void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
   db_print(&ctx->db, format);
@@ -235,7 +289,8 @@ void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
 
 static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath) {
   const char *fp = filepath;
-  if (fp == NULL) fp = ctx->config->sealed_sg_ctx_file;
+  if (fp == NULL)
+    fp = ctx->config->sealed_sg_ctx_file;
 
   StateSg state = STATE_SG__INIT;
   state.kc = malloc(sizeof(Keycert));
@@ -261,16 +316,17 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath) {
 
 /* unseal_and_deserialize
  * @param ctx Initialized context
- * @param filepath The filepath to use, if NULL will use ctx->config->sealed_sg_ctx_file
+ * @param filepath The filepath to use, if NULL will use
+ * ctx->config->sealed_sg_ctx_file
  *
- * 0 on success, >0 on failure from errlist.h 
+ * 0 on success, >0 on failure from errlist.h
  */
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
   size_t len = 0;
   uint8_t *buf = NULL;
   int ret;
   const char *fp = filepath;
- 
+
   if (fp == NULL) {
     fp = ctx->config->sealed_sg_ctx_file;
 #ifdef DEBUG_SG
@@ -282,7 +338,7 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
   ret = unseal(fp, &buf, &len);
 
 #ifdef DEBUG_SG
-  //eprintf("\t+ (%s) unseal complete with ret = 0x%x!\n", __FUNCTION__, ret);
+  // eprintf("\t+ (%s) unseal complete with ret = 0x%x!\n", __FUNCTION__, ret);
 #endif
 
   if (ret) {
@@ -303,7 +359,7 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
   // state_sg__free_unpacked(state, NULL);
 
 #ifdef DEBUG_SG
-  //eprintf("\t\t+ (%s) Complete!\n", __FUNCTION__);
+  // eprintf("\t\t+ (%s) Complete!\n", __FUNCTION__);
 #endif
 
   return 0;

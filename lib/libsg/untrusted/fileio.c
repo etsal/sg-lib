@@ -15,8 +15,6 @@
 //#define DEBUG_FILEIO 1
 
 buf_uint8_t gb;
-
-
 static int get_file_len(const char *filename, int *err);
 
 /* List containting open files */
@@ -58,7 +56,15 @@ int ocall_fopen(const char *filepath, const char *mode) {
 int ocall_fwrite(const char *buf, int fd) {
   FILE *fp = find_open_file(fd);
   if (fp == NULL) return EBADF;
+
+//  eprintf("\t+ (%s) fwrite called with '%s' strlen(buf) = %d\n", __FUNCTION__, buf, strlen(buf));
+
   int ret = fwrite((const void *)buf, sizeof(char), strlen(buf), fp);
+
+//  eprintf("\t+ (%s) fwrite returned with ret=%d and errno=%d\n", __FUNCTION__, strlen(buf), errno);
+  fflush(fp);
+//  fclose(fp);
+
   if (ret != strlen(buf)) return errno;
   return ret;
 }

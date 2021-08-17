@@ -1465,7 +1465,7 @@ sgx_status_t SGX_CDECL ocall_close(int* retval, int fd)
 sgx_status_t SGX_CDECL ocall_fopen(int* retval, const char* filepath, const char* mode)
 {
 	sgx_status_t status = SGX_SUCCESS;
-	size_t _len_filepath = sizeof(char);
+	size_t _len_filepath = filepath ? strlen(filepath) + 1 : 0;
 	size_t _len_mode = sizeof(char);
 
 	ms_ocall_fopen_t* ms = NULL;
@@ -1517,7 +1517,7 @@ sgx_status_t SGX_CDECL ocall_fopen(int* retval, const char* filepath, const char
 sgx_status_t SGX_CDECL ocall_fwrite(int* retval, const char* buf, int fd)
 {
 	sgx_status_t status = SGX_SUCCESS;
-	size_t _len_buf = sizeof(char);
+	size_t _len_buf = buf ? strlen(buf) + 1 : 0;
 
 	ms_ocall_fwrite_t* ms = NULL;
 	size_t ocalloc_size = sizeof(ms_ocall_fwrite_t);
