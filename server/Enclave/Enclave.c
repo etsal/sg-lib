@@ -11,6 +11,13 @@ void ecall_test() {
 
 }
 
+void ecall_shutdown_sg() {
+  cleanup_connections_sg();
+  int ret = save_sg(&sg_ctx, NULL);
+//  if (ret) 
+//    eprintf("\t+ (%s) Failed to save sg\n", __FUNCTION__);
+}
+
 void ecall_process_request(uint8_t *data, size_t data_len, struct response_msg *resp) {
   struct request_msg *msg = (struct request_msg *)data;
 

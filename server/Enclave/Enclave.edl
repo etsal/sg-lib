@@ -7,7 +7,7 @@ enclave {
   trusted {
     public void ecall_test();
     public void ecall_process_request([in, size=data_len]uint8_t *data, size_t data_len, [out] struct response_msg *resp);
-
+    public void ecall_shutdown_sg();
 };
 
   untrusted {

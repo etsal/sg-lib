@@ -47,7 +47,7 @@ struct request_msg *msg;
 
 }
 
-int process() {
+void* process() {
   struct sockaddr_un addr;
   char buf[100];
   sg_frame_t frame;
@@ -59,7 +59,7 @@ int process() {
 
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
     perror("socket error");
-    exit(-1);
+    return NULL;
   }
 
   memset(&addr, 0, sizeof(addr));
@@ -71,12 +71,12 @@ int process() {
 
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
     perror("bind error");
-    exit(-1);
+    return NULL;
   }
 
   if (listen(fd, 5) == -1) {
     perror("listen error");
-    exit(-1);
+    return NULL;
   }
 
   init_sg_frame_ctx(&frame_ctx);
@@ -96,11 +96,11 @@ int process() {
     if (rc == -1) {
       perror("read");
       free_sg_frame_ctx(&frame_ctx);
-      exit(-1);
+      return NULL;
     } else if (rc == 0) {
       printf("EOF\n");
       close(cl);
-      exit(-1);
+      return NULL;
     }
     // printf("TODO: process frame_ctx-> data, and write result back to
     // client\n");
@@ -117,7 +117,7 @@ int process() {
     status = ecall_process_request(global_eid, frame_ctx.data, frame_ctx.data_len, response);
     if (status) {
       perror("sgx");
-      exit(-1);
+      return NULL;
     }
 
 
@@ -134,6 +134,6 @@ printf("\t+ (%s) After ecall_process_request() response->ret = %d\n", __FUNCTION
   }
   free(response);
   free_sg_frame_ctx(&frame_ctx);
-  return 0;
+  return NULL;
 }
 

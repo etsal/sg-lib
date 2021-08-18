@@ -18,7 +18,7 @@ buf_uint8_t gb;
 static int get_file_len(const char *filename, int *err);
 
 /* List containting open files */
-static struct open_file {
+struct open_file {
   int fd;
   FILE *fp;
 };

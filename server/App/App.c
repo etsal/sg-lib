@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "sgx_urts.h"     /* sgx_launch_token_t */
 
@@ -13,7 +14,17 @@
 #define CONFIG_PATH "config.ini"
 sgx_enclave_id_t global_eid = 0;
 
-extern int process();
+extern void *process();
+
+static void *listen_for_exit() {
+  char c;
+  while(1) {
+    c = fgetc(stdin);
+    if (c == 'e') {
+      return NULL;
+    }
+  }
+}
 
 sgx_status_t initialize_enclave(void) {
   sgx_launch_token_t token = {0};
@@ -26,7 +37,8 @@ sgx_status_t initialize_enclave(void) {
 int main(int argc, const char *argv[]) {
   const char *path;
   sgx_status_t status;
-  int ret;
+  pthread_t tid, tid2;
+  int ret, ret2;
 
   if (argc == 2) {
     path = argv[1];
@@ -54,8 +66,18 @@ int main(int argc, const char *argv[]) {
   }
   */
 
+  pthread_create(&tid, NULL, listen_for_exit, (void *)&ret);
+
   printf("Processing ...\n");
-  ret = process();
+  pthread_create(&tid2, NULL, process, (void *)&ret2);
+
+  pthread_join(tid, NULL); // wait for command line exit
+  
+  pthread_cancel(tid2);
+  pthread_join(tid2, NULL);
+
+  printf("Shutting down ...\n");
+  shutdown_sg();
 
   return ret;
 }

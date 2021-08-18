@@ -23,10 +23,6 @@ int recieve_connections_sg(sg_ctx_t *ctx);
 int initiate_connections_sg(sg_ctx_t *ctx);
 void cleanup_connections_sg();
 
-// Save functions
-//int serialize_and_seal_sg(sg_ctx_t *ctx);
-//int unseal_and_deserialize_sg(sg_ctx_t *ctx);
-
 // Network functions. See sg_network.c
 int poll_and_process_updates_sg(sg_ctx_t *ctx);
 
@@ -35,8 +31,8 @@ int send_msg_sg(sg_ctx_t *ctx, const char *msg);
 
 int put_sg(sg_ctx_t *ctx, const char *key, const void *value, size_t len); // returns 0 on success
 int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len);
-int put_u64_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len);
-int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len);
+//int put_u64_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len);
+//int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len);
 
 int remove_sg(sg_ctx_t *ctx, uint64_t key);
 int count_sg(sg_ctx_t *ctx);
@@ -45,12 +41,12 @@ int load_sg(sg_ctx_t *ctx, const char *filepath);
 void print_sg(sg_ctx_t *ctx, void(*format)(const void *data));
 
 // Admin
-int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
-int modify_password_sg(sg_ctx_t *ctx, const char *username, const char *password);
+//int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
+//int modify_password_sg(sg_ctx_t *ctx, const char *username, const char *password);
 
 // Auth
-int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
-int auth_user_sg(sg_ctx_t *ctx, const char *username, const char *password); 
+//int add_user_sg(sg_ctx_t *ctx, const char *username, const char *password);
+//int auth_user_sg(sg_ctx_t *ctx, const char *username, const char *password); 
 
 // Private functions
 void init_connections(sg_ctx_t *ctx); // Initializes connection structures

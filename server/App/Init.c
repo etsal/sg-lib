@@ -102,3 +102,8 @@ int run_service_sg() {
     return 1;
   return 0;
 }
+
+void shutdown_sg() {
+  int ret;
+  sgx_status_t status = ecall_shutdown_sg(global_eid);
+}

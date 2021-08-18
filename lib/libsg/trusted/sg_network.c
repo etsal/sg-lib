@@ -470,6 +470,7 @@ int initiate_connections_sg(sg_ctx_t *ctx) {
 
 static void close_connections(struct connection **c) {
   for (int i = 0; i < num_hosts; ++i) {
+    if (c[i] == NULL) return; // If we encounter a null connection, than it has already been cleaned up
     if (c[i]->is_connected) { // Only cleanup structs that represent a
                               // successful connection (maybe do all?)
 #ifdef DEBUG_SG
@@ -479,6 +480,7 @@ static void close_connections(struct connection **c) {
       cleanup_ratls(&c[i]->ratls);
     }
     free(c[i]);
+    c[i] = NULL;
   }
 }
 

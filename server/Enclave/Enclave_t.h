@@ -22,6 +22,7 @@ extern "C" {
 
 void ecall_test();
 void ecall_process_request(uint8_t* data, size_t data_len, struct response_msg* resp);
+void ecall_shutdown_sg();
 int ecall_init_sg(void* config, size_t config_len);
 int ecall_recieve_connections_sg();
 int ecall_initiate_connections_sg();
