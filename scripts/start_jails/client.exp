@@ -1,0 +1,130 @@
+#!/usr/local/bin/expect
+
+#exp_internal 1
+
+proc run_app args {
+  log_user 1
+  puts "+ Starting application"
+  send "cd sg-lib/server/build && ./app\r"
+  expect {
+    -re "Error 00004001 @ 39" {
+      puts "+ Start aesm_service and try again"
+      return 1
+    }
+    -re "Processing ..." { 
+      #puts "+ App started"
+      return 0 
+    }
+  }
+}
+
+#puts "\n2 The output is '$expect_out(buffer)'."
+
+proc run_client {function key value} {
+  set jail_prompt  {# $}
+
+  send "cd sg-lib/clients/build\r"
+  send "echo ret val is $?\r"
+
+  expect {
+    "ret val is 1" {
+      send "mkdir sg-lib/clients/build && cd sg-lib/clients/build && cmake .. && gmake\r"
+      expect -re $jail_prompt
+    }
+    "ret val is 0" { }
+    timeout {
+      puts "+ timeout\n"
+      return 1
+    }  
+  }
+
+#puts "Output : $function $key\n"  
+  expect -re $jail_prompt
+#  expect *
+
+  if { $function == "get" } {
+    send "./sgget $key\r"
+    
+  } elseif { $function == "put" } {
+    send "./sgput $key $value\r"
+  } elseif { $function == "save" } {
+    send "./sgsave\r"
+  } else {
+    puts "Unknown function $function\r"
+    return 1
+
+  }
+  
+  expect -re $jail_prompt
+
+  send "echo ret val is $?\r"
+  expect {
+    "ret val is 1" { return 1 }
+    "ret val is 0" { }
+    timeout { puts "timeout\n"; return 1 }
+  }
+
+  expect -re $jail_prompt
+ 
+  puts "Done\n"
+  return 0
+
+}
+
+# SCRIPT STARTS HERE
+
+log_user 1
+set timeout 3
+set prompt {\$ $}
+set jail_prompt  {# $}
+set jail_name [lindex $argv 0]
+set arg_count [llength $argv]
+
+#puts "Arg count $arg_count"
+
+if { $prompt == "" || $jail_name == "" || $arg_count < 2 } {
+  puts "Usage: <jail name> \[ get <key> | put <key> <value> | save \]\n"
+  exit 1
+}
+
+
+
+spawn bash
+expect -re $prompt
+send "sudo iocage start $jail_name\r"
+expect {
+  -re "Executing poststart OK" { puts "+ Started jail '$jail_name'" }
+  -re "$jail_name is already running!" { puts "+ Jail '$jail_name' is already running" }
+}
+
+puts "+ Starting jail console"
+send "sudo iocage console $jail_name\r"
+expect -re $jail_prompt
+
+# Command
+
+set ret ""
+set cmd [lindex $argv 1]
+
+if { $cmd == "get" && $arg_count == 3 } {
+  set key [lindex $argv 2]
+  set ret [run_client $cmd $key ""]
+} elseif { $cmd == "put" && $arg_count == 4 } {
+  set key [lindex $argv 2]
+  set value [lindex $argv 3]
+  set ret [run_client $cmd $key $value]
+} elseif { $cmd == "save" } {
+  set ret [run_client $cmd "" ""]
+} else {
+  puts "Usage: <jail name> \[ get <key> | put <key> <value> | save \]\n"
+  exit
+  exit 1 
+}
+
+if { $ret == "1" } { puts "error\n" }
+if { $ret == "0"} { puts "success\n" }
+
+#Propagate sgcmd return value
+
+exit $ret
+
