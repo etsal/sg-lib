@@ -1,6 +1,3 @@
-
-Start
-
 Important structures
 
     typedef struct {
@@ -19,23 +16,24 @@ Important structures
     
     void init_sg(sg_ctx_t *ctx, void *config, size_t config_len)
 1. Deserialize config into `struct configuration`. The config file was read and serialized by the App and passed into the Enclave.
-2. Attempt to load/unseal an `key_cert_t` and `table_t` (in `db_ctx_t`). 
-3. Attempt to load/unseal an existing database file.
-a. Upon failure, initialize a new `sg_ctx_t` structure with `init_new_sg()`.  
+2. Initialize logging.
+3. Attempt to load/unseal an `key_cert_t` and `table_t` (in `db_ctx_t`). 
+4. Upon failure, initialize a new `sg_ctx_t` structure with `init_new_sg()`.  
 
 ----
     void init_new_sg(sg_ctx_t *ctx)
-1. Call `create_key_and_x509()`.
-a. Generate RSA key with exponent e=65537 and bits len=3072.
-b. Encode RSA key in DER format.
-c. Hash (SHA256) the RSA key for the `report_data`.
-d. Ocall to get `sgx_target_info_t`. Next call `sgx_create_report()` passing `sgx_target_info` and `report_data` to get `report`.
-e. Send `report` to IAS and recieve `attestation_report` from IAS.
-f. Create a self-signed X509 certificate with the DER encoded RSA key and `attestation_report`.
-# Explain why this works
-# Rearrange init_sg to load sealed key from file
-2. Call `init_new_db()`. 
+1. Call `init_keycert()` which does the following:
+a. Call `create_key_and_x509()`.
+b. Generate RSA key with exponent e=65537 and bits len=3072.
+c. Encode RSA key in DER format.
+d. Hash (SHA256) the RSA key for the `report_data`.
+e. Ocall to get `sgx_target_info_t`. Next call `sgx_create_report()` passing `sgx_target_info` and `report_data` to get `report`.
+f. Send `report` to IAS and recieve `attestation_report` from IAS.
+g. Create a self-signed X509 certificate with the DER encoded RSA key and `attestation_report`.
+2. Call `init_new_db()` which does the following:
 a. Initialize a new KV store context.
+
+Note: The `db.*` files can be removed because they are simply a wrapper for funcs in `libstore`; which can be called directly from `sg.c`.
 
 ---
     int initiate_connections(sg_ctx_t *ctx);
