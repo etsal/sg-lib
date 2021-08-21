@@ -1,6 +1,8 @@
 #ifndef __POLICY_H__
 #define __POLICY_H__
 
+#include "policy_errlist.h"
+
 #define POLICY_PREFIX       "/policy/"
 #define CREDENTIALS_PREFIX  "/cred/"
 #define DEFAULT_PREFIX      "/home/"

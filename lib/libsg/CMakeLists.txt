@@ -41,6 +41,7 @@ file (GLOB TRUSTED_SRCS
     trusted/*.c 
     trusted/libstore/*.c 
     trusted/librassl/*.c
+    trusted/libpolicy/*.c
     trusted/log/*.c
     common/*.c
 )

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
-
+#include <string.h>
+#include <stdlib.h>
 #include "tiny-regex-c/re.h"
 #include "policy.h"
 
@@ -23,13 +24,13 @@ char *gen_default_user_policy(const char *user) {
   char *buf;
   int len = 0;
 
-  int *which = malloc(num_default * sizeof(int));
+  int *which = malloc(num_defaults * sizeof(int));
   memset(which, 0, num_defaults * sizeof(int));
 
   // Roughly get an estimate of policy buf size
   for (int i=0; i<num_defaults; ++i) {
     int match_len;
-    int ret = re_matchp("%s", defaults[i], &match_len);
+    int ret = re_match("%s", defaults[i], &match_len);
     if (ret != -1) {
       len += user_len;
       which[i] = 1;
@@ -44,10 +45,10 @@ char *gen_default_user_policy(const char *user) {
   for (int i=0; i<num_defaults; ++i) {
     if (which[i] == 1) {
       snprintf(buf+sofar, len-sofar, defaults[i], user);
-      sofar += strlen(defaults) - 2 + user_len; // Subtract 2 for the %s
+      sofar += strlen(defaults[i]) - 2 + user_len; // Subtract 2 for the %s
     } else {
-      snprintf(buf_sofar, len-sofar, defaults[i]);
-      sofar += strlen(defaults);
+      snprintf(buf+sofar, len-sofar, defaults[i]);
+      sofar += strlen(defaults[i]);
     }
   }
   free(which);

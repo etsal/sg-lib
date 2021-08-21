@@ -5,17 +5,18 @@
 
 #include "policy.h"
 #include "tiny-regex-c/re.h"
-#include "sg.h";
+#include "sg.h"
 
 #define USERNAME_MAX 64
 #define PASSWORD_MAX 64
 
-struct {
-  char username[USERNAME_MAX];
+typedef struct {
+  char user[USERNAME_MAX];
   char password[PASSWORD_MAX];
 } login_t;
 
-extern sgx_ctx_t *ctx;
+//TODO dont extern, pass as arg
+extern sg_ctx_t *ctx;
 
 static char *gen_resource_key(int type, const char *user, const char *key);
 static int check_against_policy(const char *user, const char *resource_key,
@@ -29,7 +30,7 @@ int bind_user(sg_ctx_t *ctx, login_t *login) {
 
   char *cred_key = gen_resource_key(CREDENTIAL, login->user, NULL);
 
-  ret = sg_get(ctx, cred_key, &password, &password_len);
+  ret = get_sg(ctx, cred_key, (void **)&password, &password_len);
   if (ret) {
     free(cred_key);
     return USER_NOEXIST;
@@ -37,7 +38,7 @@ int bind_user(sg_ctx_t *ctx, login_t *login) {
 
   // TODO: FIX THIS
 
-  ret = strcmp(ctx->password, password);
+  ret = strcmp(login->password, password);
   if (ret) {
     ret = INCORRECT_PW;
   }
@@ -52,8 +53,8 @@ int bind_user(sg_ctx_t *ctx, login_t *login) {
 static int check_against_policy(const char *user, const char *resource_key,
                                 int action) {
   int ret;
-  const char *policies;
-  size_t policies_len;
+  const char *value;
+  size_t value_len;
 
   // Generate the key we will use to lookup the policies (p:<user>)
   char *policy_key = gen_resource_key(POLICY, user, NULL);
@@ -92,11 +93,13 @@ static int check_against_policy(const char *user, const char *resource_key,
   access[len++] = '\0';
 
   // Get the policies (by looking up policy_key)
-  ret = sg_get(ctx, policy_key, (void *)&policies, &policies_len);
+  ret = get_sg(ctx, policy_key, (void *)&value, &value_len);
   if (ret) {
     free(policy_key);
     return 1; // NOEXIST_POLICY
   }
+
+  char *policies = (char *) strndup(value, strlen(value));
 
   // Iterate through policies (newline delimited)
   char *policy = strtok(policies, "\n");
@@ -113,6 +116,7 @@ static int check_against_policy(const char *user, const char *resource_key,
   if (ret == -1)
     ret = 1; // NO_POLICY
 
+  free(policies);
   free(policy_key);
   return ret;
 }
