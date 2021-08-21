@@ -1,137 +1,191 @@
-/*
- * <operation>:<path to resource>:<user>
- * Example:
- *  (& (add:/u2f/<user>) (<user>))
- * access to /u2f/ by <> get, put, del
- *
- *
- * put:/u2f/stef/(*):stef
- * get:/u2f/stef/(*):stef
- *
- */
+#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-//#include <stdio.h>
-/*
+
 #include "policy.h"
 #include "tiny-regex-c/re.h"
+#include "sg.h";
 
-char *
-generate_action(const char *op, const char *resource, const char *user,
-    char *buf, size_t len)
-{
-	int action_len = strlen(op) + 1 + strlen(resource) + 1 + strlen(user) +
-	    1;
-	char *action = NULL, *start = NULL;
+#define USERNAME_MAX 64
+#define PASSWORD_MAX 64
 
-	if (buf == NULL) {
-		action = malloc(action_len);
-		start = action;
-	} else {
-		assert(len > action_len || len == action_len);
-		action = buf;
-		start = buf;
-	}
+struct {
+  char username[USERNAME_MAX];
+  char password[PASSWORD_MAX];
+} login_t;
 
-	len = strlen(op);
-	strncpy(action, op, len);
-	action += len;
+extern sgx_ctx_t *ctx;
 
-	len = strlen(":");
-	strncpy(action, ":", len);
-	action += len;
+static char *gen_resource_key(int type, const char *user, const char *key);
+static int check_against_policy(const char *user, const char *resource_key,
+                                int action);
 
-	len = strlen(resource);
-	strncpy(action, resource, len);
-	action += len;
+/* 0 on success, 1 on error */
+int bind_user(sg_ctx_t *ctx, login_t *login) {
+  int ret;
+  char *password;
+  size_t password_len;
 
-	len = strlen(":");
-	strncpy(action, ":", len);
-	action += len;
+  char *cred_key = gen_resource_key(CREDENTIAL, login->user, NULL);
 
-	len = strlen(user);
-	strncpy(action, user, len);
-	action += len;
+  ret = sg_get(ctx, cred_key, &password, &password_len);
+  if (ret) {
+    free(cred_key);
+    return USER_NOEXIST;
+  }
 
-	len = strlen("\0");
-	strncpy(action, "\0", len);
-	action += len;
+  // TODO: FIX THIS
 
-	return start;
+  ret = strcmp(ctx->password, password);
+  if (ret) {
+    ret = INCORRECT_PW;
+  }
+
+  free(cred_key);
+  return ret;
 }
 
-static int
-check_against_policy(const char *policy, const char *action)
-{
-	int ret = 0;
-	const char delim[2] = ":";
-	char *tmp_policy = malloc(strlen(policy) + 1);
-	char *tmp_action = malloc(strlen(action) + 1);
+/* Attempts to match the access_string against an existing policy
+ * return 0 on success, >0 on error
+ */
+static int check_against_policy(const char *user, const char *resource_key,
+                                int action) {
+  int ret;
+  const char *policies;
+  size_t policies_len;
 
-	strncpy(tmp_policy, policy, strlen(policy) + 1);
-	strncpy(tmp_action, action, strlen(action) + 1);
+  // Generate the key we will use to lookup the policies (p:<user>)
+  char *policy_key = gen_resource_key(POLICY, user, NULL);
 
-	char *policy_tokens[3];
-	char *action_tokens[3];
+  // Generate the permission the action requires
+  char *action_perm;
+  switch (action) {
+  case GET:
+    action_perm = "g---";
+    break;
+  case PUT:
+    action_perm = "-p--";
+    break;
+  case MODIFY:
+    action_perm = "--m-";
+    break;
+  case DELETE:
+    action_perm = "---d";
+    break;
+  }
 
-	policy_tokens[0] = strtok(tmp_policy, delim);
-	policy_tokens[1] = strtok(NULL, delim);
-	policy_tokens[2] = strtok(NULL, delim);
+  // Generate: resource_key + '/' + action_perm
+  char access[128];
+  int len = strlen(resource_key) + 1 + strlen(action_perm) + 1;
+  assert(len < 128);
 
-	action_tokens[0] = strtok(tmp_action, delim);
-	action_tokens[1] = strtok(NULL, delim);
-	action_tokens[2] = strtok(NULL, delim);
+  len = 0;
+  memcpy(access, resource_key, strlen(resource_key));
+  len += strlen(resource_key);
 
-	// printf("%s : \n\taction '%s' \n\tpolicy '%s'\n", __FUNCTION__,
-	// action, policy);
+  access[len++] = '/';
 
-	//   Match operation
-	if (strcmp(policy_tokens[0], action_tokens[0])) {
-		goto cleanup;
-	}
+  memcpy(access, action_perm, strlen(action_perm));
+  len += strlen(action_perm);
 
-	// Match resource identifier
-	int match_len = 0;
-	int match_idx = re_match(
-	    policy_tokens[1], action_tokens[1], &match_len);
-	if (match_idx == -1 || match_len != strlen(action_tokens[1])) {
-		//      printf("regex fail: \n\tpattern %s\n\ttext
-		//      %s\n\tmatch_len %d expected len %d\n", policy_tokens[1],
-		//      action_tokens[1], match_len, strlen(action_tokens[1]));
-		goto cleanup;
-	}
+  access[len++] = '\0';
 
-	// Match user
-	if (strcmp(policy_tokens[2], action_tokens[2])) {
-		goto cleanup;
-	}
+  // Get the policies (by looking up policy_key)
+  ret = sg_get(ctx, policy_key, (void *)&policies, &policies_len);
+  if (ret) {
+    free(policy_key);
+    return 1; // NOEXIST_POLICY
+  }
 
-	ret = 1;
+  // Iterate through policies (newline delimited)
+  char *policy = strtok(policies, "\n");
+  while (1) {
+    // Check the action against each policy
+    int match_len;
+    ret = re_match(policy, access, &match_len);
+    if (ret != -1) {
+      ret = 0;
+    }
+    policy = strtok(NULL, "\n");
+  }
 
-cleanup:
-	free(tmp_policy);
-	free(tmp_action);
-	return ret;
+  if (ret == -1)
+    ret = 1; // NO_POLICY
+
+  free(policy_key);
+  return ret;
 }
 
-static int
-validate_prepared_action(policy_ctx_t *p, const char *action)
-{
-	for (int i = 0; i < p->len; ++i) {
-		if (check_against_policy(p->policies[i], action))
-			return 1;
-	}
-	return 0;
+/* Verifies that the key does not contain a disallowed character */
+int verify_chars(const char *key) {
+  int match_length;
+  if (key == NULL)
+    return 1;
+  re_t pattern = re_compile("[:/<>]"); // TODO: more programmatic way
+  int match_idx = re_matchp(pattern, key, &match_length);
+  if (match_idx == -1) {
+    return 1;
+  }
+  return 0;
 }
 
-int
-validate_action(
-    policy_ctx_t *p, const char *op, const char *resource, const char *user)
-{
-	char action[128] = { 0 };
-	generate_action(op, resource, user, action, sizeof(action));
-	return validate_prepared_action(p, action);
+/* Generates the correct key in order to preform the desired operation
+ * allocates memory
+ * TODO: remove DEFAULT it is user's responsibility to provide correct
+ * resource_key
+ */
+static char *gen_resource_key(int type, const char *user, const char *key) {
+  const char *prefix;
+  char *buf;
+  size_t len;
+  unsigned int sofar;
+
+  switch (type) {
+  case POLICY:
+    prefix = POLICY_PREFIX;
+    break;
+  case CREDENTIAL:
+    prefix = CREDENTIALS_PREFIX;
+    break;
+  case DEFAULT:
+    prefix = DEFAULT_PREFIX;
+    assert(key != NULL);
+    if (!verify_chars(key)) {
+      return NULL;
+    }
+    break;
+  default:
+    prefix = "";
+    break;
+  }
+
+  len = strlen(prefix) + strlen(user) + 1 + 1;
+  if (type == DEFAULT) {
+    len += strlen(key);
+  }
+
+  buf = malloc(len * sizeof(char));
+
+  sofar = 0;
+  strncpy(buf, prefix, strlen(prefix));
+  sofar += strlen(prefix);
+
+  strncpy(buf + sofar, user, strlen(user));
+  sofar += strlen(user);
+
+  buf[sofar++] = '/';
+
+  if (type == DEFAULT) {
+    strncpy(buf + sofar, key, strlen(key));
+    sofar += strlen(key);
+  }
+
+  buf[sofar++] = '\0';
+
+  return buf;
 }
 
-*/
+// char *generate_action(const char *op, const char *resource, const char *user,
+// char *buf, size_t len); int validate_action(policy_ctx_t *p, const char *op,
+// const char *resource, const char *user);

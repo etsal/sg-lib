@@ -34,7 +34,7 @@ set jail_name [lindex $argv 0]
 set rebuild [lindex $argv 1]
 
 if { $prompt == "" || $jail_name == "" } {
-  puts "Usage: <jail name>"
+  puts "Usage: <jail name> \[-r\]"
   exit 1
 }
 
@@ -65,17 +65,12 @@ if { $ret == 1 } {
   exit 1
 }
 
-spawn bash
-expect -re $prompt
-puts "+ Running 'interact'"
 interact {
-  + {puts "hi"}
+  "e" { 
+    #expect -re "Shutting down"
+    exit
+  } #exit out of iocage
 }
 
-close
-close 
 exit 0
-
-
-
 

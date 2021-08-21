@@ -10,3 +10,6 @@
 [submodule "deps/inih"]
 	path = deps/inih
 	url = https://github.com/benhoyt/inih.git
+[submodule "deps/tiny-regex-c"]
+	path = deps/tiny-regex-c
+	url = https://github.com/kokke/tiny-regex-c.git

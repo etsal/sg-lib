@@ -1,0 +1,80 @@
+
+
+/* Policies operate in a whitelist manner
+ * to validate the action, an action must match with 
+ * atleast one policy to be approved
+ *
+ */
+
+p:admin:'p:*'/gpmd
+p:admin:'c:*'/gp-d
+p:admin:'h:*'/gpmd
+p:admin:'h:*:*'/g---
+
+p:stef:'p:stef'/g---    // Access to read policies for self
+p:stef:'c:stef:*'/gpmd  // Full access to modify cred
+p:stef:'h:stef:*'/gpmd  // Full access to modify home dir 
+
+
+p:stef:'p:stef'/g---    // Access to read policies for self
+p:stef:'c:stef:*'/gpmd  // Full access to modify cred
+p:stef:'h:stef:*'/gpmd  // Full access to modify home dir 
+
+NEVERMIND, we are using a hashtable so to veify policy we simply get from db and regex against each
+Policy entry (with examples):
+
+p:user:<regex>/----
+p:stef:<p:stef:*>/g--- p:stef:<^p:stef:.*/g--->
+p:stef:<h:stef:*>/gpmd
+p:stef:<h:*>/g---
+p:stef:<c:stef:*>/g-m-
+
+for each policy "p:<user>:" check that "<regex>/perms" the regex matched the resource and perms match intended use
+
+1. verify user
+2. verify policy against action
+3. permit/deny action
+
+
+
+bind(const char *user, const char *password) {
+    1. gen search key c:user
+    2. lookup 'c:user' in database, if
+        a. does not exist, fail
+        b. exists, validate password against value returned from lookup
+    - For now assume users can only have 1 credential which is saved in the value portion.
+    - All of these operations are reads! so we are save wrt CRDTs.
+}
+
+int check_against_policy(user, key, action) {
+    
+    1. gen search key p:user
+    2. for each entry with the p:user prefix, check if "key" matches
+    note: the key prefix will need to be passed into this function
+    3. Approve if atleast one policy matches, deny otherwise
+    
+    - All of these operations are reads!
+}
+
+
+int get_policy(login_t *login, const char *policy) {
+    void *buf;
+    size_t len;
+    key = "p:" + login->user
+    get(login, key, buf, &len);
+
+}
+
+get(login_t *login, const char *value, void *value, size_t *value_len) {
+    1. bind_user(login->user, login->password);
+        a. Bind to a user, this function will transparently search for key
+           p:<user> in the database and authenticate against any existing entries
+
+    2. Check against policy(login->user, key, get)
+
+    3. Preform action 
+
+}
+
+
+

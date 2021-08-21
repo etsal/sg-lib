@@ -25,6 +25,10 @@ cd deps/wolfssl/IDE/LINUX-SGX
 ./build_ratls.sh
 cd -
 
+# Patch tiny-regex-c so we can compile it in the enclave
+patch -p1 -d deps/tiny-regex-c < scripts/patch_tiny_regex_sgx.patch
+
+
 # Building the library (libsgtrusted.a & libsgtrusted.a)
 cd lib/libsg
 cd build && cmake .. && gmake
