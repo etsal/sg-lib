@@ -22,13 +22,13 @@ char *gen_default_user_policy(const char *user) {
   int num_defaults = sizeof(defaults) / sizeof(char *);
 
   char *buf;
-  int len = 0;
+  int i, len = 0;
 
   int *which = malloc(num_defaults * sizeof(int));
   memset(which, 0, num_defaults * sizeof(int));
 
   // Roughly get an estimate of policy buf size
-  for (int i=0; i<num_defaults; ++i) {
+  for (i=0; i<num_defaults; ++i) {
     int match_len;
     int ret = re_match("%s", defaults[i], &match_len);
     if (ret != -1) {
@@ -42,7 +42,7 @@ char *gen_default_user_policy(const char *user) {
   
   // Generate default policies for user
   int sofar = 0;
-  for (int i=0; i<num_defaults; ++i) {
+  for (i=0; i<num_defaults; ++i) {
     if (which[i] == 1) {
       snprintf(buf+sofar, len-sofar, defaults[i], user);
       sofar += strlen(defaults[i]) - 2 + user_len; // Subtract 2 for the %s
