@@ -1,0 +1,13 @@
+enclave {
+
+  from "test_policy.edl" import *;
+  trusted {
+  
+  };
+
+  untrusted {
+
+  };
+
+
+};
