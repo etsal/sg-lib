@@ -1,0 +1,13 @@
+enclave {
+  from "sg.edl" import *;
+
+  trusted {
+    public void ecall_test_policy();
+  };
+
+  untrusted {
+
+  };
+
+
+};

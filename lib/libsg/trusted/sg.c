@@ -66,10 +66,12 @@ static void gen_log_msg(int cmd, const char *key, int sg_ret) {
   buf[len++] = '\0';
 
   int ret = write_blob_log(buf);
-  if (ret) {
-    eprintf("\t+ (%s) Error failed to write to log ret=0x%x\n", __FUNCTION__,
-            ret);
-  }
+#ifdef DEBUG_SG
+//  if (ret) {
+//    eprintf("\t+ (%s) Error failed to write to log ret=0x%x\n", __FUNCTION__,
+//            ret);
+//  }
+#endif
 
   // eprintf("\t\t+ (%s) Created: %s\n", __FUNCTION__, buf);
 }
@@ -126,8 +128,7 @@ static configuration *parse_config(const char *config, size_t config_len) {
 
 static void init_keycert(sg_ctx_t *ctx) {
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n",
-          __FUNCTION__);
+//  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n", __FUNCTION__);
 #endif
 
   ctx->kc.der_key_len = DER_KEY_LEN;
@@ -217,15 +218,17 @@ void init_new_sg(sg_ctx_t *ctx) {
       enc_wolfSSL_Debugging_ON();
   #endif
   */
-  init_keycert(ctx);
 
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Initializing Key Value Store ...\n", __FUNCTION__);
+  eprintf("\t+ (%s) Initializing new sg_ctx ... \n", __FUNCTION__);
 #endif
+
+  init_keycert(ctx);
   init_new_db(&ctx->db);
 
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
+  eprintf("\t+ (%s) Initializing new sg_ctx ... complete\n", __FUNCTION__);
+ // eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
 #endif
 }
 
@@ -260,9 +263,9 @@ int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len) {
   gen_log_msg(SG_GET, key, ret);
 #ifdef DEBUG_SG
   if (ret) {
-    eprintf("\t+ (%s) Failed to entry with key %lu!\n", __FUNCTION__, key);
+    eprintf("\t+ (%s) Failed to 'get'  entry with key %s!\n", __FUNCTION__, key);
   } else {
-    eprintf("\t+ (%s) Successfully entry with key %lu!\n", __FUNCTION__, key);
+    eprintf("\t+ (%s) Successfully 'get' entry with key %s!\n", __FUNCTION__, key);
   }
 #endif
   return ret;
