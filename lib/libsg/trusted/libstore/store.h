@@ -9,7 +9,7 @@
 #define MAX_VALUE_LEN 4096
 
 typedef struct entry {
-    char *key;
+  char *key;
 	void *value;	
 	size_t value_len;
 	vvec_t versions; /* Version vector per entry */

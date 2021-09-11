@@ -20,7 +20,7 @@
 /* Remember: C automatically concats two string if they appear without anything in between? */
 const char *defaults[] = {
   POLICY_PREFIX"%s/g---\n",   // User can get their own policy file
-  CREDENTIALS_PREFIX"%s/g-p-\n",     // User can get and modify their own cred file 
+  CREDENTIALS_PREFIX"%s/gp--\n",     // User can get and modify their own cred file 
   DEFAULT_PREFIX"%s:.*/gpmd\n"   // User can get, put, modify, and delete their own home dir file
   DEFAULT_PREFIX".*/g---\n"       // User can get the files of all other user's home dir (and beyond)
 };
@@ -31,11 +31,11 @@ const char *defaults[] = {
 int verify_key_chars(const char *key) {
   int match_length;
   if (key == NULL)
-    return 1;
+    return INVALID_KEY;
   re_t pattern = re_compile("[:/<>]"); // TODO: more programmatic way
   int match_idx = re_matchp(pattern, key, &match_length);
   if (match_idx == -1) {
-    return 1;
+    return INVALID_KEY;
   }
   return 0;
 }
@@ -126,7 +126,7 @@ int check_against_policy(sg_ctx_t *ctx, const char *user, const char *resource_k
   }
 
   if (ret == -1) {
-    ret = ACTION_NOPERM;
+    ret = ACTION_NOPERM_POLICY;
 #ifdef DEBUG_POLICY_UTIL
     eprintf("\t\t+ (%s) Failed to find policy in '%s' for resource '%s'\n", __FUNCTION__, policy_key, access);
 #endif

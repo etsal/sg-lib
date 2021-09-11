@@ -255,6 +255,15 @@ int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len) {
 int put_sg(sg_ctx_t *ctx, const char *key, const void *value, size_t len) {
   int ret = put_db(&ctx->db, key, value, len);
   gen_log_msg(SG_PUT, key, ret);
+#ifdef DEBUG_SG
+/*
+if (ret) {
+    eprintf("\t+ (%s) Failed to 'put'  entry with key %s!\n", __FUNCTION__, key);
+  } else {
+    eprintf("\t+ (%s) Successfully 'put' entry with key %s!\n", __FUNCTION__, key);
+  }
+*/
+#endif
   return ret;
 }
 
@@ -262,11 +271,13 @@ int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len) {
   int ret = get_db(&ctx->db, key, value, len);
   gen_log_msg(SG_GET, key, ret);
 #ifdef DEBUG_SG
-  if (ret) {
+/*
+if (ret) {
     eprintf("\t+ (%s) Failed to 'get'  entry with key %s!\n", __FUNCTION__, key);
   } else {
     eprintf("\t+ (%s) Successfully 'get' entry with key %s!\n", __FUNCTION__, key);
   }
+*/
 #endif
   return ret;
 }

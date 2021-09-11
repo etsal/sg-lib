@@ -25,26 +25,25 @@ int compare_store(table_t *t1, table_t *t2) {
   if (t1->entries == NULL && t2->entries == NULL)
     return 0;
 
-  if (t1->entries == NULL || t2->entries == NULL) 
+  if (t1->entries == NULL || t2->entries == NULL)
     return 1;
 
   HASH_ITER(hh, t1->entries, e, tmp) {
     entry_t *found = NULL;
     HASH_FIND_STR(t2->entries, e->key, found);
-    if (found == NULL) 
+    if (found == NULL)
       return 1;
   }
 
   HASH_ITER(hh, t2->entries, e, tmp) {
     entry_t *found = NULL;
     HASH_FIND_STR(t1->entries, e->key, found);
-    if (found == NULL) 
+    if (found == NULL)
       return 1;
   }
 
   return 0;
 }
-
 
 /*
  if (!table->entries)
@@ -62,7 +61,6 @@ int compare_store(table_t *t1, table_t *t2) {
 
 
 */
-
 
 /*
  * If uid == 0, initialize an empty table
@@ -107,7 +105,7 @@ static void create_entry(entry_t **entry, const char *key, const void *value,
     *entry = NULL;
     return;
   }
-  memcpy((*entry)->key, key, strlen(key)+1);
+  memcpy((*entry)->key, key, strlen(key) + 1);
   memcpy((*entry)->value, value, value_len);
   //(*entry)->key_len = strlen(key) + 1;
   (*entry)->value_len = value_len;
@@ -137,12 +135,23 @@ int put_store(table_t *table, const char *key, const void *value,
   if (table->entries) {
     HASH_FIND_STR(table->entries, key, entry);
     if (entry) {
-      return 1;
+      memcpy(entry->key, key, strlen(key) + 1);
+      if (value_len > entry->value_len) {
+        free(entry->value);
+        entry->value = malloc(value_len);
+      }
+      memcpy(entry->value, value, value_len);
+
+      update_vvec(&table->versions, table->uid);   // Increment kv-store clock
+      ts = get_vvec(&table->versions, table->uid);
+      set_vvec(&entry->versions, table->uid, ts); // Increment this key's clock
+
+      return 0;
     }
   }
 
   create_entry(&entry, key, value, value_len);
-  
+
   if (!entry)
     return 1;
 
@@ -159,43 +168,13 @@ int put_store(table_t *table, const char *key, const void *value,
 }
 
 /* get_store()
- * COPIES value
- * @param *value : buffer for the value
- * @param *value_len : buffer length
- * @ret 1 on success, 0 on error
-int get_store(table_t *table, const char *key, void *value, size_t *value_len) {
-  entry_t *entry = NULL;
-  uint64_t ts = 0;
-
-  if (strlen(key) > MAX_KEY_LEN)
-    return 0;
-
-  if (!table->entries)
-    return 0;
-
-  HASH_FIND_STR(table->entries, key, entry);
-  if (!entry)
-    return 0;
-
-  if (*value_len < entry->value_len)
-    return 0;
-
-  memcpy(value, entry->value, entry->value_len);
-  *value_len = entry->value_len;
-
-  return 1;
-}
-*/
-
-/* get_store()
- * RETURNS ADDRESS OF value 
+ * RETURNS ADDRESS OF value
  * @param **value : a void ptr that will point to value
  * @ret 0 on success, 1 on error
- */
 int get_store(table_t *table, const char *key, void **value, size_t *len) {
   entry_t *entry = NULL;
   uint64_t ts = 0;
-  
+
   if (strlen(key) > MAX_KEY_LEN)
     return 1;
 
@@ -224,8 +203,48 @@ int get_store(table_t *table, const char *key, void **value, size_t *len) {
 
   return 0;
 }
+*/
 
+/* get_store()
+ * RETURNS COPY OF value
+ * @param **value : a void ptr that will point to value
+ * @ret 0 on success, 1 on error
+ */
+int get_store(table_t *table, const char *key, void **value, size_t *len) {
+  entry_t *entry = NULL;
+  uint64_t ts = 0;
 
+  if (strlen(key) > MAX_KEY_LEN)
+    return 1;
+
+  if (!table->entries)
+    return 1;
+
+  HASH_FIND_STR(table->entries, key, entry);
+  if (!entry) {
+#ifdef DEBUG_STORE
+    eprintf("++ (%s) Could not find entry with key %s\n", __FUNCTION__, key);
+#endif
+    return 1;
+  }
+
+#ifdef DEBUG_STORE
+  eprintf("++ (%s) Found entry with key %s\n", __FUNCTION__, key);
+#endif
+
+  if (value == NULL) {
+    *value = NULL;
+    return 0;
+  }
+
+  assert(*value != NULL); // Must pass value len
+
+  *value = malloc(entry->value_len + 1);
+  memcpy(*value, entry->value, entry->value_len);
+  *len = entry->value_len;
+
+  return 0;
+}
 
 /*
  * Does not increment the local version vector for an insert
@@ -367,7 +386,8 @@ static void print_entry(entry_t *entry) {
   int print_len = (entry->value_len < 10) ? entry->value_len : 10;
   eprintf("(%s, ", entry->key);
   eprintf("%s", hexstring(entry->value, print_len));
-  if (print_len != entry->value_len) printf("...");
+  if (print_len != entry->value_len)
+    printf("...");
   printf(")\t");
 }
 
@@ -440,7 +460,8 @@ void protobuf_free_packed_store(Table *t) {
 void protobuf_unpack_store(table_t *table, Table *t) {
 
   assert(table != NULL && t != NULL);
-  if (table != NULL) free_store(table);
+  if (table != NULL)
+    free_store(table);
 
   table->uid = t->uid;
 

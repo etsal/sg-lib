@@ -37,21 +37,10 @@ int verify_db(db_ctx_t *db)
 }
 
 int put_db(db_ctx_t *db, const char *key, const void *value, size_t len) {
-#ifdef DEBUG_DB
-  eprintf("\t+ (%s) with key %s ... ", __FUNCTION__, key);
-  int ret = put_store(&db->table, key, value, len); 
-  eprintf("returned %s(%d)\n", ret?"FAILED":"SUCCESS", ret); 
-  //print_store(&db->table);
-  return ret;
-#else
   return put_store(&db->table, key, value, len);
-#endif
 }
 
 int get_db(db_ctx_t *db, const char *key, void **value, size_t *len) {
-//  int ret = get_store(&db->table, key, value, len); 
-//  print_store(&db->table);
-//  return ret;
   return get_store(&db->table, key, value, len);
 }
 

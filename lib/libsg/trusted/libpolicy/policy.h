@@ -24,17 +24,18 @@ typedef struct {
 
 
 // Initializes ctx
-void init_new_policy(sg_ctx_t *ctx); // Calls sg_new_init
+void init_sg_with_policy(sg_ctx_t *ctx); // Calls sg_new_init
 
 int put(sg_ctx_t *ctx, const login_t *login, const char *key, const void *value, size_t len);
 int get(sg_ctx_t *ctx, const login_t *login, const char *key, void **value, size_t *len);
 
 /* Appends to the policy file */
 int put_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, const char *policy);
-//int get_policy();
+int get_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, char **policy);
+int append_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, const char *policy);
 
 int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user);
-//int get_user();
+int get_user(sg_ctx_t *ctx, const login_t *actor, const char *user_str, login_t **user);
 
 login_t *create_login(const char *user, const char *password);
 
