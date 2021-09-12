@@ -36,13 +36,11 @@ int append_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, cons
 
 int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user);
 int get_user(sg_ctx_t *ctx, const login_t *actor, const char *user_str, login_t **user);
+int auth_user(sg_ctx_t *ctx, const login_t *actor);
 
 login_t *create_login(const char *user, const char *password);
 
 // Admin functions
 //int auth_user();
-
-//char *generate_action(const char *op, const char *resource, const char *user, char *buf, size_t len);
-//int validate_action(policy_ctx_t *p, const char *op, const char *resource, const char *user);
 
 #endif

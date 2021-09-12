@@ -20,86 +20,9 @@ extern ra_tls_options_t global_opts;
 
 static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath);
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath);
-static char *iota_u64(uint64_t value, char *str, size_t len);
 static void init_keycert(sg_ctx_t *ctx);
-
-static void gen_log_msg(int cmd, const char *key, int sg_ret) {
-
-  char buf[1024];
-  size_t len = 0;
-
-  memset(buf, 0, 1024);
-
-  switch (cmd) {
-  case SG_PUT:
-    memcpy(buf, "PUT", 3 * sizeof(char));
-    len += 3;
-    break;
-  case SG_GET:
-    memcpy(buf, "GET", 3 * sizeof(char));
-    len += 3;
-    break;
-  case SG_SAVE:
-    memcpy(buf, "SAVE", 4 * sizeof(char));
-    len += 4;
-    break;
-  }
-
-  buf[len++] = ' ';
-  buf[len++] = '"';
-
-  memcpy(buf + len, key, strlen(key) * sizeof(char));
-  len += strlen(key);
-
-  buf[len++] = '"';
-  buf[len++] = ' ';
-
-  if (sg_ret) {
-    memcpy(buf + len, "FAIL", 4 * sizeof(char));
-    len += 4;
-  } else {
-    memcpy(buf + len, "SUCCESS", 7 * sizeof(char));
-    len += 7;
-  }
-
-  buf[len++] = '\n';
-  buf[len++] = '\0';
-
-  int ret = write_blob_log(buf);
-#ifdef DEBUG_SG
-//  if (ret) {
-//    eprintf("\t+ (%s) Error failed to write to log ret=0x%x\n", __FUNCTION__,
-//            ret);
-//  }
-#endif
-
-  // eprintf("\t\t+ (%s) Created: %s\n", __FUNCTION__, buf);
-}
-
-static char *iota_u64(uint64_t value, char *str, size_t len) {
-  uint64_t tmp = value;
-  int count = 0;
-
-  while (1) {
-    count++;
-    tmp = tmp / 10;
-    if (!tmp)
-      break;
-  }
-
-  if (count > len)
-    return NULL;
-  str[count] = '\0';
-
-  tmp = value;
-  for (int i = 0; i < count; ++i) {
-    int leftover = tmp % 10;
-    tmp = tmp / 10;
-    str[count - (i + 1)] = (char)leftover + 48;
-  }
-  return str;
-}
-
+static configuration *parse_config(const char *config, size_t config_len);
+ 
 static configuration *parse_config(const char *config, size_t config_len) {
   int cur = 0;
   configuration *c = malloc(sizeof(configuration));
@@ -150,6 +73,7 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   int ret;
 
   memset(ctx, 0, sizeof(sg_ctx_t));
+  sgx_thread_mutex_init(&ctx->table_lock, NULL);
 
   // Deserialize configuration structure and save it to the sgx context
   c = unpack_config(config, config_len);
@@ -186,8 +110,9 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
     }
 
     // Verify kvstore
-    if (!verify_db(&ctx->db)) {
-      init_new_db(&ctx->db);
+    if (!is_empty_store(&ctx->table)) {
+      init_store(&ctx->table, 1); // TODO: specify UID
+      //init_new_db(&ctx->db);
     }
 
     eprintf("\t+ (%s) Successfully verified keycert and db\n", __FUNCTION__);
@@ -224,7 +149,8 @@ void init_new_sg(sg_ctx_t *ctx) {
 #endif
 
   init_keycert(ctx);
-  init_new_db(&ctx->db);
+  init_store(&ctx->table, 1); //TODO: specify uid 
+  //init_new_db(&ctx->db);
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Initializing new sg_ctx ... complete\n", __FUNCTION__);
@@ -238,7 +164,7 @@ int put_u64_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len) {
   int ret;
   if (iota_u64(key, key_buf, 22) == NULL)
     return 1;
-  ret = put_db(&ctx->db, key_buf, value, len);
+  ret = put_store(&ctx->table, key_buf, value, len);
   return ret;
 }
 
@@ -247,13 +173,13 @@ int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len) {
   int ret;
   if (iota_u64(key, key_buf, 22) == NULL)
     return 1;
-  ret = get_db(&ctx->db, key_buf, value, len);
+  ret = get_store(&ctx->table, key_buf, value, len);
   return ret;
 }
 
 /* 1 on error, 0 on success */
 int put_sg(sg_ctx_t *ctx, const char *key, const void *value, size_t len) {
-  int ret = put_db(&ctx->db, key, value, len);
+  int ret = put_store(&ctx->table, key, value, len);
   gen_log_msg(SG_PUT, key, ret);
 #ifdef DEBUG_SG
 /*
@@ -268,7 +194,7 @@ if (ret) {
 }
 
 int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len) {
-  int ret = get_db(&ctx->db, key, value, len);
+  int ret = get_store(&ctx->table, key, value, len);
   gen_log_msg(SG_GET, key, ret);
 #ifdef DEBUG_SG
 /*
@@ -298,7 +224,36 @@ int load_sg(sg_ctx_t *ctx, const char *filepath) {
 }
 
 void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
-  db_print(&ctx->db, format);
+//  db_print(&ctx->db, format);
+}
+
+
+/* get_update_size Returns size of update in bytes
+ * also creates and stores the update to the ctx 
+ *
+ */
+int get_update_size(sg_ctx_t *ctx) {
+
+  if (is_empty_store(&ctx->table)) {
+    ctx->update_buf_len = 0;
+  }
+  else {
+    free(ctx->update_buf);
+    ctx->update_buf = NULL;
+    serialize_store(&ctx->table, &ctx->update_buf, &ctx->update_buf_len);
+  }
+  return ctx->update_buf_len;
+
+}
+
+void get_update(sg_ctx_t *ctx, uint8_t *buf, size_t len) {
+  if (len < ctx->update_buf_len) {
+    memset(buf, 0, len);
+    return;
+  }
+  if (ctx->update_buf_len > 0) {
+    memcpy(buf, ctx->update_buf, ctx->update_buf_len);
+  }
 }
 
 static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath) {
@@ -312,7 +267,7 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath) {
   keycert__init(state.kc);
   table__init(state.t);
   protobuf_pack_keycert(&ctx->kc, state.kc);
-  protobuf_pack_store(&ctx->db.table, state.t);
+  protobuf_pack_store(&ctx->table, state.t);
 
   size_t len = state_sg__get_packed_size(&state);
   uint8_t *buf = malloc(len);
@@ -365,7 +320,7 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
     return ER_PROTOBUF;
   }
 
-  protobuf_unpack_store(&ctx->db.table, state->t);
+  protobuf_unpack_store(&ctx->table, state->t);
   protobuf_unpack_keycert(&ctx->kc, state->kc);
 
   table__free_unpacked(state->t, NULL);

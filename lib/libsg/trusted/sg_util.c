@@ -1,13 +1,93 @@
+#include "string.h"
 #include <sgx_tseal.h>
 
 #include "sg_util.h"
+#include "sg_log.h"
 #include "errlist.h"
 #include "xmem.h"
 #include "sg_common.h"
 #include "fileio_t.h"
 
-//#define DEBUG_SG_UTIL 1
+char *iota_u64(uint64_t value, char *str, size_t len) {
+  uint64_t tmp = value;
+  int count = 0;
 
+  while (1) {
+    count++;
+    tmp = tmp / 10;
+    if (!tmp)
+      break;
+  }
+
+  if (count > len)
+    return NULL;
+  str[count] = '\0';
+
+  tmp = value;
+  for (int i = 0; i < count; ++i) {
+    int leftover = tmp % 10;
+    tmp = tmp / 10;
+    str[count - (i + 1)] = (char)leftover + 48;
+  }
+  return str;
+}
+
+
+
+void gen_log_msg(int cmd, const char *key, int sg_ret) {
+
+  char buf[1024];
+  size_t len = 0;
+
+  memset(buf, 0, 1024);
+
+  switch (cmd) {
+  case 0:
+    memcpy(buf, "PUT", 3 * sizeof(char));
+    len += 3;
+    break;
+  case 1:
+    memcpy(buf, "GET", 3 * sizeof(char));
+    len += 3;
+    break;
+  case 2:
+    memcpy(buf, "SAVE", 4 * sizeof(char));
+    len += 4;
+    break;
+  }
+
+  buf[len++] = ' ';
+  buf[len++] = '"';
+
+  memcpy(buf + len, key, strlen(key) * sizeof(char));
+  len += strlen(key);
+
+  buf[len++] = '"';
+  buf[len++] = ' ';
+
+  if (sg_ret) {
+    memcpy(buf + len, "FAIL", 4 * sizeof(char));
+    len += 4;
+  } else {
+    memcpy(buf + len, "SUCCESS", 7 * sizeof(char));
+    len += 7;
+  }
+
+  buf[len++] = '\n';
+  buf[len++] = '\0';
+
+  int ret = write_blob_log(buf);
+#ifdef DEBUG_SG
+//  if (ret) {
+//    eprintf("\t+ (%s) Error failed to write to log ret=0x%x\n", __FUNCTION__,
+//            ret);
+//  }
+#endif
+// eprintf("\t\t+ (%s) Created: %s\n", __FUNCTION__, buf);
+}
+
+
+//#define DEBUG_SG_UTIL 1
 /* 0 on success, >0 on error */
 int
 seal(const char *filename, uint8_t *buf, size_t len)

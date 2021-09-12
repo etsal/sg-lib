@@ -232,7 +232,7 @@ int push_updates_sg(sg_ctx_t *ctx) {
   int ret;
   uint32_t len;
 
-  db_get_update_len(&ctx->db, &update_len);
+  update_len = get_update_size(ctx);
   if (!update_len) {
 #ifdef DEBUG_SG
     eprintf("\t+ (%s) ERROR : Update is of length %d\n", __FUNCTION__,
@@ -241,7 +241,7 @@ int push_updates_sg(sg_ctx_t *ctx) {
     return 1;
   }
   update = malloc(update_len);
-  db_get_update(&ctx->db, update, update_len);
+  get_update(ctx, update, update_len);
 
   for (int i = 0; i < num_hosts; ++i) {
     if (client_connections[i]->ignore)

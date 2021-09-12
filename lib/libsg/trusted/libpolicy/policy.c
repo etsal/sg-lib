@@ -103,6 +103,11 @@ int bind_user(sg_ctx_t *ctx, const login_t *login) {
   return ret;
 }
 
+
+int auth_user(sg_ctx_t *ctx, const login_t *actor) {
+  return bind_user(ctx, actor);
+}
+
 static int auth_verify_valid(int action, sg_ctx_t *ctx, const login_t *login,
                              const char *key) {
   int ret;
@@ -225,7 +230,7 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user) {
    */
 
 #ifdef DEBUG_POLICY
-  eprintf("+ (%s) complete with ret = %d\n", __FUNCTION__, ret);
+//  eprintf("+ (%s) complete with ret = %d\n", __FUNCTION__, ret);
 #endif
   return ret;
 }
