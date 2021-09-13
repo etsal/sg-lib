@@ -1,4 +1,4 @@
 #!/bin/bash
 
-gcc48 -fPIC -shared -o nss_test.so.1 nss_test.c
+gcc48 -fPIC -shared -o nss_sg.so.1 nss_sg.c
 
