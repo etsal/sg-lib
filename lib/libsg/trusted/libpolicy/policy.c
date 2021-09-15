@@ -6,9 +6,9 @@
 #include "tiny-regex-c/re.h"
 
 //#define DEBUG_POLICY 1
-#ifdef DEBUG_POLICY
+//#ifdef DEBUG_POLICY
 #include "sg_common.h"
-#endif
+//#endif
 
 const char admin_policy[] = ".*\n";
 
@@ -297,8 +297,14 @@ int get_user_by_id(sg_ctx_t *ctx, const login_t *actor, uint32_t uid,
              login_t **user) {
   char *key;
   size_t len;
+  uint32_t id = uid;
 
-  char *re_resource = gen_regex_key(CREDENTIAL, NULL, &uid);
+  eprintf("\t + (%s) start\n", __FUNCTION__);
+
+  char *re_resource = gen_regex_key(CREDENTIAL, NULL, &id);
+
+  eprintf("\t + (%s) %s\n", __FUNCTION__, re_resource);
+
   int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
   free(re_resource);
 

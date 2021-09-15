@@ -10,7 +10,7 @@
 #include "tiny-regex-c/re.h"
 #include "sg.h"
 
-//#define DEBUG_POLICY_UTIL 1
+#define DEBUG_POLICY_UTIL 1
 #ifdef DEBUG_POLICY_UTIL
 #include "sg_common.h"
 #endif
@@ -155,7 +155,6 @@ char *gen_regex_key(int type, const char *user, uint32_t *uid) {
     assert(1);
   case CREDENTIAL:
     prefix = CREDENTIALS_PREFIX;
-    assert(strlen(tmp) > 0);
     break;
   case DEFAULT:
     assert(1);
@@ -166,8 +165,11 @@ char *gen_regex_key(int type, const char *user, uint32_t *uid) {
   if (user != NULL) {
     strncpy(tmp, user, strlen(user)+1);
   } else if (uid != NULL) {
-    snprintf(tmp, USERNAME_MAX-1, "%d", uid);
-  } else {
+    snprintf(tmp, USERNAME_MAX-1, "%u", *uid);
+#ifdef DEBUG_POLICY_UTIL
+    eprintf("\t + (%s) expecting %d, tmp %s\n", __FUNCTION__, *uid, tmp);
+#endif
+} else {
     assert(1);
   }
 
@@ -277,7 +279,7 @@ char *gen_resource_key(int type, const login_t *user, const char *key) {
   buf[sofar++] = '\0';
 
 #ifdef DEBUG_POLICY_UTIL
-  eprintf("\t\t+ (%s) resource key: '%s'\n", __FUNCTION__, buf);
+  //eprintf("\t\t+ (%s) resource key: '%s'\n", __FUNCTION__, buf);
 #endif
 
   return buf;
