@@ -2,11 +2,13 @@
 #include "sg_common.h"
 
 void basic_setup(sg_ctx_t *ctx) {
-  login_t *admin_login = create_login("admin", "admin");
-  login_t *alice_login = create_login("alice", "password");
-  login_t *bob_login = create_login("bob", "password");
 
   init_sg_with_policy(ctx);
+
+  login_t *admin_login = create_login(ctx, "admin", "admin");
+  login_t *alice_login = create_login(ctx, "alice", "password");
+  login_t *bob_login = create_login(ctx, "bob", "password");
+
 
   int ret = put_user(ctx, admin_login, alice_login);
   assert(ret == 0); // This should succeed
@@ -14,7 +16,7 @@ void basic_setup(sg_ctx_t *ctx) {
   ret = put_user(ctx, admin_login, bob_login);
   assert(ret == 0); // This should succeed
 
-  eprintf("Successfully added users 'alice' and 'bob'\n");
+  eprintf("+ Basic setup complete ... Successfully added users 'alice' and 'bob'\n");
 }
 
 // Non-admin attempts to modify self policy (alice modify alice)
@@ -25,20 +27,25 @@ void basic_setup(sg_ctx_t *ctx) {
 void test_put_get_policy() {
   int ret;
   sg_ctx_t my_ctx;
-  login_t *admin_login = create_login("admin", "admin");
-  login_t *alice_login = create_login("alice", "password");
-  login_t *bob_login = create_login("bob", "password");
-  login_t *claire_login = create_login("claire", "password");
-  char new_policy_entry[] = "home:bob/gp--";
 
   basic_setup(&my_ctx);
-  eprintf("\nBasic setup done!\n\n");
+ 
+  my_ctx.next_uid = 1;
 
+  login_t *admin_login = create_login(&my_ctx, "admin", "admin");
+  login_t *alice_login = create_login(&my_ctx, "alice", "password");
+  login_t *bob_login = create_login(&my_ctx, "bob", "password");
+  login_t *claire_login = create_login(&my_ctx, "claire", "password");
+  char new_policy_entry[] = "home:bob/gp--";
 
-  // (1) Alice puts in  bob's home - FAIL
+  eprintf("+ Generated logins\n");
+
+ // (1) Alice puts in  bob's home - FAIL
   ret = put(&my_ctx, alice_login, "home:bob/test", "hello world", strlen("hello world"));
-  assert(ret == ACTION_NOPERM_POLICY);
-  eprintf("%d\n-\n", ret);
+  if (ret != ACTION_NOPERM_POLICY) {
+    eprintf("+ Test failed with %d\n", ret);
+    assert(1);
+  }
 
   // (2) Non-admin attempts to modify self policy (alice modify alice) - FAIL
   ret = append_policy(&my_ctx, alice_login, alice_login, new_policy_entry);
@@ -69,6 +76,7 @@ void test_put_get_policy() {
   eprintf("%d\n-\n", ret);
 }
 
+/*
 void test_put_get_user() {
   sg_ctx_t my_ctx;
   login_t *admin_login = create_login("admin", "admin");
@@ -82,11 +90,6 @@ void test_put_get_user() {
   eprintf("put_user() returned %d\n", ret);
   assert(ret == 0); // This should succeed
   eprintf("\n\n");
-  /*
-    ret = put_user(&ctx, admin_login, alice_login);
-    eprintf("put_user() returned %d\n", ret);
-    assert(ret != 0); // This should succeed
-  */
 
   // This should fail at the authorization step
   ret = put_user(&my_ctx, alice_login, alice_login);
@@ -102,6 +105,7 @@ void test_put_get_user() {
 
   return;
 }
+*/
 
 void ecall_test_policy() { 
 //  test_put_get_user(); 

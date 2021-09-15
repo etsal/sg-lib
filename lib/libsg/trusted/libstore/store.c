@@ -5,6 +5,7 @@
 #include "sg_common.h"
 #include "store.h"
 #include "store.pb-c.h"
+#include "tiny-regex-c/re.h"
 #ifdef __ENCLAVE__
 #include "sg_stdfunc.h"
 #endif
@@ -142,7 +143,7 @@ int put_store(table_t *table, const char *key, const void *value,
       }
       memcpy(entry->value, value, value_len);
 
-      update_vvec(&table->versions, table->uid);   // Increment kv-store clock
+      update_vvec(&table->versions, table->uid); // Increment kv-store clock
       ts = get_vvec(&table->versions, table->uid);
       set_vvec(&entry->versions, table->uid, ts); // Increment this key's clock
 
@@ -237,11 +238,61 @@ int get_store(table_t *table, const char *key, void **value, size_t *len) {
     return 0;
   }
 
-  assert(*value != NULL); // Must pass value len
-
   *value = malloc(entry->value_len + 1);
   memcpy(*value, entry->value, entry->value_len);
   *len = entry->value_len;
+
+  return 0;
+}
+
+/* search_store()
+ * RETURNS COPY OF value
+ * @param **value : a void ptr that will point to value
+ * @ret 0 on success, 1 on error
+ */
+int search_store(table_t *table, const char *regex, char **key, void **value,
+                 size_t *len) {
+  entry_t *entry = NULL, *tmp = NULL;
+  uint64_t ts = 0;
+  int match_len, match_idx = -1;
+
+  re_t pattern = re_compile(regex);
+
+  if (!table->entries)
+    return 1;
+
+  HASH_ITER(hh, table->entries, entry, tmp) {
+    match_idx = re_matchp(pattern, entry->key, &match_len);
+    if (match_idx != -1) {
+      break;
+    }
+  }
+
+  // Did not find any keys that match the regex
+  if (match_idx == -1) {
+#ifdef DEBUG_STORE
+    eprintf("++ (%s) Could not match regex %s with any key\n", __FUNCTION__,
+            regex);
+#endif
+    return 1;
+  }
+
+#ifdef DEBUG_STORE
+  eprintf("++ (%s) Matched regex %s to entry with key %s\n", __FUNCTION__,
+          regex, entry->key);
+#endif
+
+  if (key != NULL) {
+    *key = malloc(strlen(entry->key)+1);
+    memcpy(*key, entry->key, strlen(entry->key)+1);
+  }
+
+  // Found key, but only return boolean
+  if (value != NULL) {
+    *value = malloc(entry->value_len + 1);
+    memcpy(*value, entry->value, entry->value_len);
+    *len = entry->value_len;
+  }
 
   return 0;
 }

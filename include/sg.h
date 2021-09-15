@@ -17,6 +17,9 @@ typedef struct {
 
   sgx_thread_mutex_t table_lock;
   configuration *config;
+
+  uint32_t next_uid; // Used only with policy
+
 } sg_ctx_t;
 
 typedef enum { SG_PUT, SG_GET, SG_SAVE } sg_cmd;
@@ -38,6 +41,7 @@ int send_msg_sg(sg_ctx_t *ctx, const char *msg);
 int put_sg(sg_ctx_t *ctx, const char *key, const void *value,
            size_t len); // returns 0 on success
 int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len);
+int search_sg(sg_ctx_t *ctx, const char *regex, char **key, void **value, size_t *len);
 // int put_u64_sg(sg_ctx_t *ctx, uint64_t key, const void *value, size_t len);
 // int get_u64_sg(sg_ctx_t *ctx, uint64_t key, void **value, size_t *len);
 

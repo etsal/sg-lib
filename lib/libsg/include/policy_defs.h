@@ -14,6 +14,7 @@ typedef enum { GET, PUT, MODIFY, DELETE } action_type;
 typedef struct {
   char user[USERNAME_MAX];
   char password[PASSWORD_MAX];
+  uint32_t uid;
 } login_t;
 
 

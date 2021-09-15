@@ -43,7 +43,7 @@ int verify_key_chars(const char *key) {
 /* Attempts to match the access_string against an existing policy
  * return 0 on success, >0 on error
  */
-int check_against_policy(sg_ctx_t *ctx, const char *user, const char *resource_key,
+int check_against_policy(sg_ctx_t *ctx, const login_t *user, const char *resource_key,
                                 int action) {
   int ret;
   const char *value;
@@ -138,17 +138,91 @@ int check_against_policy(sg_ctx_t *ctx, const char *user, const char *resource_k
   return ret;
 }
 
+ /*
+ */
+char *gen_regex_key(int type, const char *user, uint32_t *uid) {
+  const char *prefix;
+  char *buf;
+  size_t len, extra;
+  unsigned int sofar;
+
+  char *regex = ".*";
+  char tmp[USERNAME_MAX];
+  tmp[0] = '\0';
+
+  switch (type) {
+  case POLICY:
+    assert(1);
+  case CREDENTIAL:
+    prefix = CREDENTIALS_PREFIX;
+    assert(strlen(tmp) > 0);
+    break;
+  case DEFAULT:
+    assert(1);
+  default:
+    assert(1);
+  }
+
+  if (user != NULL) {
+    strncpy(tmp, user, strlen(user)+1);
+  } else if (uid != NULL) {
+    snprintf(tmp, USERNAME_MAX-1, "%d", uid);
+  } else {
+    assert(1);
+  }
+
+  // Same: strlen(prefix) + strlen(tmp) + 1 + strlen(regex) + 1 ;
+  len = strlen(prefix) + strlen(regex) + 1 + strlen(tmp) + 1 ;
+  buf = malloc(len * sizeof(char));
+
+  sofar = 0;
+  strncpy(buf, prefix, strlen(prefix));
+  sofar += strlen(prefix);
+
+  if (user != NULL) {
+    // "cred:user:.*" 
+    strncpy(buf + sofar, tmp, strlen(tmp));
+    sofar += strlen(tmp);
+    buf[sofar++] = ':';
+    strncpy(buf + sofar, regex, strlen(regex)); 
+    sofar += strlen(regex);
+  } else if (uid != NULL) {
+    // "cred:.*:uid"
+    strncpy(buf + sofar, regex, strlen(regex)); 
+    sofar += strlen(regex);
+    buf[sofar++] = ':';
+    strncpy(buf + sofar, tmp, strlen(tmp));
+    sofar += strlen(tmp);
+  } else {
+    assert(1);
+  }
+  
+  buf[sofar++] = '\0';
+
+#ifdef DEBUG_POLICY_UTIL
+//  eprintf("\t\t+ (%s) resource key: '%s'\n", __FUNCTION__, buf);
+#endif
+
+  return buf;
+}
+
+
+
+
 /* Generates the correct key in order to preform the desired operation
  * allocates memory
  * TODO: remove DEFAULT it is user's responsibility to provide correct
  * TODO: avoid mallocing here
  * resource_key
  */
-char *gen_resource_key(int type, const char *user, const char *key) {
+char *gen_resource_key(int type, const login_t *user, const char *key) {
   const char *prefix;
   char *buf;
-  size_t len;
+  size_t len, extra;
   unsigned int sofar;
+  char tmp[12];
+
+  tmp[0] = '\0';
 
   switch (type) {
   case POLICY:
@@ -156,6 +230,8 @@ char *gen_resource_key(int type, const char *user, const char *key) {
     break;
   case CREDENTIAL:
     prefix = CREDENTIALS_PREFIX;
+    snprintf(tmp, 11, "%d", user->uid);
+    assert(strlen(tmp) > 0);
     break;
   case DEFAULT:
     prefix = DEFAULT_PREFIX;
@@ -169,7 +245,11 @@ char *gen_resource_key(int type, const char *user, const char *key) {
     break;
   }
 
-  len = strlen(prefix) + strlen(user) + 1 + 1;
+  len = strlen(prefix) + strlen(user->user) + 1;
+  if (strlen(tmp) > 0) {
+    len += strlen(tmp) + 1;
+  }
+  
   if (type == DEFAULT) {
     len += strlen(key);
   }
@@ -180,8 +260,14 @@ char *gen_resource_key(int type, const char *user, const char *key) {
   strncpy(buf, prefix, strlen(prefix));
   sofar += strlen(prefix);
 
-  strncpy(buf + sofar, user, strlen(user));
-  sofar += strlen(user);
+  strncpy(buf + sofar, user->user, strlen(user->user));
+  sofar += strlen(user->user);
+
+  if (strlen(tmp) > 0) {
+    buf[sofar++] = ':';
+    strncpy(buf + sofar, tmp, strlen(tmp));
+    sofar += strlen(tmp);
+  }
 
   if (type == DEFAULT) {
     strncpy(buf + sofar, key, strlen(key));
@@ -191,7 +277,7 @@ char *gen_resource_key(int type, const char *user, const char *key) {
   buf[sofar++] = '\0';
 
 #ifdef DEBUG_POLICY_UTIL
-//  eprintf("\t\t+ (%s) resource key: '%s'\n", __FUNCTION__, buf);
+  eprintf("\t\t+ (%s) resource key: '%s'\n", __FUNCTION__, buf);
 #endif
 
   return buf;

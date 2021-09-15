@@ -75,6 +75,10 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   memset(ctx, 0, sizeof(sg_ctx_t));
   sgx_thread_mutex_init(&ctx->table_lock, NULL);
 
+#ifdef __USE_POLICY__
+  next_uid = 0;
+#endif
+
   // Deserialize configuration structure and save it to the sgx context
   c = unpack_config(config, config_len);
   ctx->config = c;
@@ -205,6 +209,11 @@ if (ret) {
   }
 */
 #endif
+  return ret;
+}
+
+int search_sg(sg_ctx_t *ctx,  const char *regex, char **key, void **value, size_t *len) {
+  int ret = search_store(&ctx->table, regex, key, value, len);
   return ret;
 }
 

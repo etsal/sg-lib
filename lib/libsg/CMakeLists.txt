@@ -116,7 +116,7 @@ add_library(${TRUSTED_LIB} STATIC ${TRUSTED_SRCS})
 add_library(${UNTRUSTED_LIB} STATIC ${UNTRUSTED_SRCS})
 
 set_target_properties(${TRUSTED_LIB} PROPERTIES COMPILE_FLAGS "${ENCLAVE_C_FLAGS} ${WOLFSSL_C_FLAGS} -D__ENCLAVE__")
-set_target_properties(${UNTRUSTED_LIB} PROPERTIES COMPILE_FLAGS "-std=c99 -fPIC -Wno-attributes ${WOLFSSL_C_FLAGS} -D__APP__")
+set_target_properties(${UNTRUSTED_LIB} PROPERTIES COMPILE_FLAGS "-std=c99 -fPIC -Wno-attributes ${WOLFSSL_C_FLAGS} -D__APP__ -D__USE_POLICY__")
 
 target_include_directories(${TRUSTED_LIB} PUBLIC ${TRUSTED_INCLUDE})
 target_include_directories(${UNTRUSTED_LIB} PUBLIC ${UNTRUSTED_INCLUDE})

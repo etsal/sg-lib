@@ -27,8 +27,6 @@ typedef struct request_msg {
   uint8_t value[MAX_VALUE_LEN];
 } request_msg_t;
 
-
-
 typedef struct response_msg {
   uint8_t ret;
   uint32_t value_len;

@@ -5,7 +5,7 @@
 #include "policy_util.h"
 #include "tiny-regex-c/re.h"
 
-#define DEBUG_POLICY 1
+//#define DEBUG_POLICY 1
 #ifdef DEBUG_POLICY
 #include "sg_common.h"
 #endif
@@ -18,18 +18,18 @@ const char admin_policy[] = ".*\n";
  */
 void init_sg_with_policy(sg_ctx_t *ctx) {
   login_t login;
-  const char *cred_key = CREDENTIALS_PREFIX "admin";
-  login_t *value = create_login("admin", "admin");
+  const char *cred_key = CREDENTIALS_PREFIX "admin:0";
+  login_t *value = create_login(ctx, "admin", "admin");
   assert(value != NULL);
 
 #ifdef DEBUG_POLICY
-//  eprintf("\t+ (%s) Initializing new sg\n", __FUNCTION__);
+  eprintf("\t+ (%s) Initializing new sg\n", __FUNCTION__);
 #endif
 
   init_new_sg(ctx);
 
 #ifdef DEBUG_POLICY
-//  eprintf("\t+ (%s) Putting admin credentials\n", __FUNCTION__);
+  eprintf("\t+ (%s) Putting admin credentials\n", __FUNCTION__);
 #endif
 
   // Add admin credentials
@@ -38,7 +38,7 @@ void init_sg_with_policy(sg_ctx_t *ctx) {
   assert(ret == 0);
 
 #ifdef DEBUG_POLICY
-//  eprintf("\t+ (%s) Putting admin policies\n", __FUNCTION__);
+  eprintf("\t+ (%s) Putting admin policies\n", __FUNCTION__);
 #endif
 
   // Admin's policy
@@ -47,7 +47,7 @@ void init_sg_with_policy(sg_ctx_t *ctx) {
   assert(ret == 0);
 
 #ifdef DEBUG_POLICY
-//  eprintf("\t+ (%s) Done\n", __FUNCTION__);
+  eprintf("\t+ (%s) Done\n", __FUNCTION__);
 #endif
 
   return;
@@ -57,7 +57,7 @@ void init_sg_with_policy(sg_ctx_t *ctx) {
  * @param user
  * @param password
  */
-login_t *create_login(const char *user, const char *password) {
+login_t *create_login(sg_ctx_t *ctx, const char *user, const char *password) {
 
   if (strlen(user) + 1 > USERNAME_MAX || strlen(password) + 1 > PASSWORD_MAX) {
     return NULL;
@@ -67,6 +67,22 @@ login_t *create_login(const char *user, const char *password) {
 
   memcpy(login->user, user, strlen(user) + 1);
   memcpy(login->password, password, strlen(password) + 1);
+  login->uid = ctx->next_uid++;
+
+  int len = strlen("admin") < strlen(user) ? 5 : strlen(user);
+  if (strncmp("admin", user, len) == 0) {
+    if (login->uid != 0) {
+    
+    }
+    login->uid = 0;
+  } else {
+#ifdef DEBUG_POLICY
+    if (login->uid == 0) {
+      eprintf("Setting uid of %s to 0 ... aborting\n");
+      exit(1);
+    }
+#endif
+  }
 
   return login;
 }
@@ -78,11 +94,18 @@ int bind_user(sg_ctx_t *ctx, const login_t *login) {
   size_t len;
   char *cred_key;
 
-  cred_key = gen_resource_key(CREDENTIAL, login->user, NULL);
+  cred_key = gen_resource_key(CREDENTIAL, login, NULL);
+
+#ifdef DEBUG_POLICY
+  eprintf("\t + (%s) cred_key %s\n", __FUNCTION__, cred_key);
+#endif
 
   ret = get_sg(ctx, cred_key, (void **)&saved, &len);
   if (ret) {
     free(cred_key);
+#ifdef DEBUG_POLICY
+    eprintf("\t + (%s) get_sg failed\n", __FUNCTION__);
+#endif
     return USER_NOEXIST;
   }
 
@@ -133,7 +156,7 @@ static int auth_verify_valid(int action, sg_ctx_t *ctx, const login_t *login,
 #endif
 
   /* Validate action against policy */
-  ret = check_against_policy(ctx, login->user, key, action);
+  ret = check_against_policy(ctx, login, key, action);
 #ifdef DEBUG_POLICY
   char *action_str;
   switch(action) {
@@ -172,8 +195,8 @@ int put(sg_ctx_t *ctx, const login_t *login, const char *key, const void *value,
 
   /* Do the action */
 #ifdef DEBUG_POLICY
-//  eprintf("+ (%s) Putting key '%s' value '%s' len %d\n", __FUNCTION__, key,
-//          value, len);
+  eprintf("+ (%s) Putting key '%s' value '%s' len %d\n", __FUNCTION__, key,
+          value, len);
 #endif
   ret = put_sg(ctx, key, value, len);
   if (ret) {
@@ -202,20 +225,39 @@ int get(sg_ctx_t *ctx, const login_t *login, const char *key, void **value,
 }
 
 /*
+int search(sg_ctx_t *ctx, const login_t *login, const char **key, void **value, size_t *len) {
+
+  return 0;
+}
+*/
+
+
+/*
  * Wrapper for put that only puts users
  * Authenticates as actor
  * installs new user
  * then install policies for user
+ *
+ * Generates a key "cred:<new_user->user>:uid" and stores login_t the
+ * login information as the value
  */
 int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user) {
 
-  char *resource = gen_resource_key(CREDENTIAL, new_user->user, NULL);
+#ifdef DEBUG_POLICY
+  eprintf("\t + (%s) start\n", __FUNCTION__);
+#endif
+
+  char *resource = gen_resource_key(CREDENTIAL, new_user, NULL);
+
+#ifdef DEBUG_POLICY
+  eprintf("\t + (%s) resource %s\n", __FUNCTION__, resource);
+#endif
+
   int ret = put(ctx, actor, resource, new_user, sizeof(login_t));
   free(resource);
   if (ret) {
     return ret;
   }
-
   char *policy = gen_default_user_policy(new_user->user);
   if (policy == NULL) {
     return ret;
@@ -236,17 +278,29 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user) {
 }
 
 /* Allocates memory for user */
-int get_user(sg_ctx_t *ctx, const login_t *actor, const char *user_str,
+int get_user_by_name(sg_ctx_t *ctx, const login_t *actor, const char *name,
              login_t **user) {
-
+  char *key;
   size_t len;
-  char *resource = gen_resource_key(CREDENTIAL, user_str, NULL);
-  int ret = get(ctx, actor, resource, (void **)user, &len);
-  free(resource);
 
-#ifdef DEBUG_POLICY
-  eprintf("+ (%s) complete with ret = %d\n", __FUNCTION__, ret);
-#endif
+  char *re_resource = gen_regex_key(CREDENTIAL, name, NULL);
+  int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
+  free(re_resource);
+
+  /* Optionally we can check here that we were allowed to preform the search */
+
+  return ret;
+}
+
+/* Allocates memory for user */
+int get_user_by_id(sg_ctx_t *ctx, const login_t *actor, uint32_t uid,
+             login_t **user) {
+  char *key;
+  size_t len;
+
+  char *re_resource = gen_regex_key(CREDENTIAL, NULL, &uid);
+  int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
+  free(re_resource);
 
   return ret;
 }
@@ -258,7 +312,7 @@ int get_user(sg_ctx_t *ctx, const login_t *actor, const char *user_str,
  */
 int put_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user,
                const char *policy) {
-  char *resource = gen_resource_key(POLICY, user->user, NULL);
+  char *resource = gen_resource_key(POLICY, user, NULL);
   int ret = put(ctx, actor, resource, policy, strlen(policy) + 1);
   free(resource);
 
@@ -301,7 +355,7 @@ int append_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user,
 int get_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user,
                char **policy) {
   size_t len;
-  char *resource = gen_resource_key(POLICY, user->user, NULL);
+  char *resource = gen_resource_key(POLICY, user, NULL);
   int ret = get(ctx, actor, resource, (void **)policy, &len);
 
   free(resource);

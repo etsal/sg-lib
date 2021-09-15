@@ -26,6 +26,9 @@ typedef struct table {
 void init_store(table_t *table, uint64_t uid);
 int put_store(table_t *table, const char *key, const void *value, size_t value_len);
 int get_store(table_t *table, const char *key, void **value, size_t *len);
+// Returns first match while iterating
+int search_store(table_t *table, const char *regex, char **key, void **value, size_t *len);
+
 void free_store(table_t *table);
 int is_empty_store(table_t *table);
 int compare_store(table_t *t1, table_t *t2); // Compares keys not values/vv, returns 0 if t1 == t2

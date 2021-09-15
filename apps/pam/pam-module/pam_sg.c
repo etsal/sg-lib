@@ -40,11 +40,12 @@ bool auth_user(const char *user, const char *password) {
 
   ret = ipc_request(&status, AUTH_REQUEST, user, password);
   if (ret == 0 && status == 0) {
-      authenticated = true;
+    authenticated = true;
   }
 
-  //printf("%s : ret %d, status %d, auth %d\n", __FUNCTION__, ret, status, authenticated);
-  
+  // printf("%s : ret %d, status %d, auth %d\n", __FUNCTION__, ret, status,
+  // authenticated);
+
   return authenticated;
 
   /*
@@ -170,6 +171,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
 
   /* Auth user by calling auth_user provided by sg_daemon
    * must preform IPC with sg_daemon to pass and recieve requests
+   * Sends: username + password, expects boolean
    */
 }
 
@@ -193,7 +195,68 @@ PAM_EXTERN int pam_sm_close_session(pam_handle_t *pamh, int flags, int argc,
   return PAM_SERVICE_ERR;
 }
 
+/*
+ * The PAM library calls this function twice. The first time with
+ * PAM_PRELIM_CHECK and then, if the modules does not return PAM_TRY_AGAIN,
+ * subsequently iwth PAM_UPDATE_AUTHTOK. Only on the second call does the
+ * authorization token change
+ *
+ * If we are not root, we must authenticate old password
+ * -> this seems to be how the pam_unix.so and pam_ldap.so preform this function
+ *
+ */
 PAM_EXTERN int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc,
                                 const char **argv) {
+  const char *user, *old_pass, *new_pass;
+  int retval;
+
+  retval = pam_get_user(pamh, &user, NULL);
+  if (retval != PAM_SUCCESS) {
+    return (retval);
+  }
+
+  fprintf(stderr, "Got user :%s\n", user);
+
+  if (flags & PAM_PRELIM_CHECK) {
+    fprintf(stderr, "PRELIM round\n");
+
+    if (getuid() == 0) {
+      /* root doesn't need old password */
+      return (pam_set_item(pamh, PAM_OLDAUTHTOK, ""));
+    } else {
+      retval = pam_get_authtok(pamh, PAM_OLDAUTHTOK, &old_pass, NULL);
+      if (retval != PAM_SUCCESS)
+        return (retval);
+    }
+
+    // Got old password
+    fprintf(stderr, "Old password: %s\n", old_pass);
+    
+    // Verify old password
+
+
+    return (retval);
+  } else if (flags & PAM_UPDATE_AUTHTOK) {
+    fprintf(stderr, "UPDATE round\n");
+
+    retval = pam_get_authtok(pamh, PAM_OLDAUTHTOK, &old_pass, NULL);
+    if (retval != PAM_SUCCESS)
+      return (retval);
+    fprintf(stderr, "Got old password\n");
+
+    for (;;) {
+      retval = pam_get_authtok(pamh, PAM_AUTHTOK, &new_pass, NULL);
+      if (retval != PAM_TRY_AGAIN)
+        break;
+      pam_error(pamh, "Mismatch; try again, EOF to quit.");
+    }
+    fprintf(stderr, "Got new password\n");
+    if (retval != PAM_SUCCESS) {
+      PAM_VERBOSE_ERROR("Unable to get new password");
+      return retval;
+    }
+
+    // Update password
+  }
   return PAM_SERVICE_ERR;
 }

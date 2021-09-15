@@ -28,6 +28,7 @@ void init_sg_with_policy(sg_ctx_t *ctx); // Calls sg_new_init
 
 int put(sg_ctx_t *ctx, const login_t *login, const char *key, const void *value, size_t len);
 int get(sg_ctx_t *ctx, const login_t *login, const char *key, void **value, size_t *len);
+//int search(sg_ctx_t *ctx, const login_t *login, const char *regex, char **value, void **value, size_t *len);
 
 /* Appends to the policy file */
 int put_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, const char *policy);
@@ -35,10 +36,11 @@ int get_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, char **
 int append_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, const char *policy);
 
 int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user);
-int get_user(sg_ctx_t *ctx, const login_t *actor, const char *user_str, login_t **user);
+int get_user_by_name(sg_ctx_t *ctx, const login_t *actor, const char *name, login_t **user);
+int get_user_by_id(sg_ctx_t *ctx, const login_t *actor, uint32_t uid, login_t **user);
 int auth_user(sg_ctx_t *ctx, const login_t *actor);
 
-login_t *create_login(const char *user, const char *password);
+login_t *create_login(sg_ctx_t *ctx, const char *user, const char *password);
 
 // Admin functions
 //int auth_user();
