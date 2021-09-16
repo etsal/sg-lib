@@ -24,6 +24,10 @@ You can find the bash script `install_instructions.sh` in the `scripts` director
     cd deps/wolfssl/IDE/LINUX-SGX
     ./build_ratls.sh
     cd -
+### Tiny Regex
+    patch -p1 -d deps/tiny-regex-c < scripts/patch_tiny_regex_sgx.patch
+
+
 
 ## Code
 ### Before starting
