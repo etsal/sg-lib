@@ -39,10 +39,15 @@ int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
   size_t buffsize = va_arg(ap, size_t);
   int *result = va_arg(ap, int *);
 
+  struct passwd **tmp = (struct passwd **) rv;
+
+  printf("+ (nss_sg_getpwnam_r) start\n", __FUNCTION__);
+
   // Call to sgd get_by_user
   int ret = sgd_send_request(result, GET_REQUEST, name, NULL);
   if (ret) {
     printf("sgd_send_request failed with %d\n", ret);
+    *tmp = NULL;
     return NS_UNAVAIL;
   }
   // Fill in struct passwd
