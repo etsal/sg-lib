@@ -7,6 +7,9 @@
 
 extern int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap);
 
+//extern int nss_sg_getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t buffsize, struct passwd **result);
+
+
 extern int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap);
 
 extern int nss_sg_getpwent_r(void *rv, void *mdata, va_list ap);

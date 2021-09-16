@@ -13,6 +13,7 @@
 //#include <sys/file.h>
 
 //#include "ndb.h"
+#include "sgd_request.h"
 #include "nss_sg.h"
 
 /*
@@ -21,19 +22,67 @@
  *             setpwent(3), endpwent(3)
  */
 
+/*
+ * @param void *rv : holds the value struct passwd **result
+ * @param void *mdata: consists of the following
+ * 	const char *name
+ * 	struct passwd *pwd
+ * 	char *buffer
+ * 	size_t buffsize
+ * 	int* result (should be 'struct passwd **result' but its not)
+ *
+ */
 int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
   char *name = va_arg(ap, char *);
-  struct passwd *pbuf = va_arg(ap, struct passwd *);
-  char *buf = va_arg(ap, char *);
-  size_t bsize = va_arg(ap, size_t);
-  int *res = va_arg(ap, int *);
-  char *cp;
-  char *nbuf = NULL;
-  int rc;
-  printf("%s : called\n", __FUNCTION__);
-  return NS_UNAVAIL;
-}
+  struct passwd *pwd = va_arg(ap, struct passwd *);
+  char *buffer = va_arg(ap, char *);
+  size_t buffsize = va_arg(ap, size_t);
+  int *result = va_arg(ap, int *);
 
+  // Call to sgd get_by_user
+  int ret = sgd_send_request(result, GET_REQUEST, name, NULL);
+  if (ret) {
+    printf("sgd_send_request failed with %d\n", ret);
+    return NS_UNAVAIL;
+  }
+  // Fill in struct passwd
+  // Set flags accordingly
+
+
+  return NS_SUCCESS; //NS_UNAVAIL;
+}
+ /* 
+  printf("%s : called\n", __FUNCTION__);
+  printf("\t name %s bsize %d\n", name, buffsize);
+
+  int sofar = 0;
+  memcpy(buffer, "root", strlen("root")+1);
+  sofar += strlen("root")+1;
+
+  memcpy(buffer + sofar, "XXX", strlen("XXX")+1);
+  sofar += strlen("XXX")+1;
+
+  printf("buffer : %s\n", buffer);
+  printf("buffer + sofar : %s\n", buffer+5);
+
+  pwd->pw_name = buffer;
+  pwd->pw_passwd = buffer + 5;
+  pwd->pw_class = NULL;
+  pwd->pw_gecos = NULL;
+  pwd->pw_dir = NULL;
+  pwd->pw_shell = NULL;
+  pwd->pw_uid = 0;
+
+  *result = NS_SUCCESS; // set to return value
+  
+  struct passwd **tmp = (struct passwd **)rv;
+  *tmp = pwd;
+
+  printf("rv %x pwdptr %x result %x\n", rv, pwd, result);
+
+  return NS_SUCCESS; //NS_UNAVAIL;
+}
+*/
 int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap) {
   char *name = va_arg(ap, char *);
   struct passwd *pbuf = va_arg(ap, struct passwd *);
@@ -44,6 +93,7 @@ int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap) {
   char *nbuf = NULL;
   int rc;
   printf("%s : called\n", __FUNCTION__);
+  printf("\t name %s\n", name);
   return NS_UNAVAIL;
 }
 
@@ -53,18 +103,21 @@ int nss_sg_getpwent_r(void *rv, void *mdata, va_list ap) {
   size_t bsize = va_arg(ap, size_t);
   int *res = va_arg(ap, int *);
   printf("%s : called\n", __FUNCTION__);
+ 
   return NS_UNAVAIL;
 }
 
 int nss_sg_setpwent(void *rv, void *mdata, va_list ap) {
   int stayopen = va_arg(ap, int);
   printf("%s : called\n", __FUNCTION__);
-  return NS_UNAVAIL;
+ 
+  return NS_SUCCESS; //NS_UNAVAIL;
 }
 
 int nss_sg_endpwent(void *rv, void *mdata, va_list ap) {
   printf("%s : called\n", __FUNCTION__);
-  return NS_UNAVAIL;
+ 
+  return NS_SUCCESS; //NS_UNAVAIL;
 }
 
 //#ifdef __FreeBSD__
