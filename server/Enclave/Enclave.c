@@ -4,6 +4,7 @@
 #include "sg.h"
 #include "sg_common.h"
 #include "sgd_message.h"
+#include "policy.h"
 
 sg_ctx_t sg_ctx;
 
@@ -28,6 +29,17 @@ void ecall_process_request(uint8_t *data, size_t data_len, struct response_msg *
   
   int ret;
   switch(msg->cmd) {
+    case GET_USER_BY_NAME:
+      ret = get_user_by_name(&sg_ctx, msg->key, (login_t **)&value); 
+      resp->ret = ret;
+      if (sizeof(login_t) < resp->value_len_max) {
+        memcpy(resp->value, (login_t *)value, sizeof(login_t));
+	resp->value_len = sizeof(login_t);
+      } else {
+        resp->value_len = 0;
+	resp->ret = 1; // TODO set better return value 
+      }
+      break; 
     case PUT_REQUEST:
       assert(msg->value_len < MAX_VALUE_LEN);
       ret = put_sg(&sg_ctx, msg->key, msg->value, msg->value_len);

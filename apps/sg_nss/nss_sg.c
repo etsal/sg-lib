@@ -43,8 +43,8 @@ int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
 
   printf("+ (nss_sg_getpwnam_r) start\n", __FUNCTION__);
 
-  // Call to sgd get_by_user
-  int ret = sgd_send_request(result, GET_REQUEST, name, NULL);
+  // Synchronous call to sgd : get_by_user
+  int ret = sgd_send_request(result, GET_USER_BY_NAME, name, NULL);
   if (ret) {
     printf("sgd_send_request failed with %d\n", ret);
     *tmp = NULL;

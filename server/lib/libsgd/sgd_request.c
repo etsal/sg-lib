@@ -23,7 +23,6 @@ struct ipc_conn {
 static int make_connection(struct ipc_conn *conn);
 static struct request_msg *prepare_request(request_type type, const char *key,
                                            const void *value, size_t value_len);
-
 static int make_connection(struct ipc_conn *conn) {
   struct sockaddr_un addr;
 
@@ -58,7 +57,7 @@ static struct request_msg *prepare_request(request_type type, const char *key,
                                            size_t value_len) {
   struct request_msg *msg;
  
-  assert(type == PUT_REQUEST || type == GET_REQUEST);
+  //assert(type == PUT_REQUEST || type == GET_REQUEST);
   msg = malloc(sizeof(struct request_msg));
   memset(msg, 0, sizeof(struct request_msg));
   
@@ -96,7 +95,7 @@ int sgd_send_request(int *sg_ret, request_type type, const char *key,
   size_t num_frames;
   int ret;
 
-  assert(type == PUT_REQUEST || type == GET_REQUEST);
+  //assert(type == PUT_REQUEST || type == GET_REQUEST);
 
 #ifdef DEBUG_SG
   printf("+ (%s) start\n", __FUNCTION__);
@@ -106,16 +105,18 @@ int sgd_send_request(int *sg_ret, request_type type, const char *key,
   conn.socket_path = socket_path;
   ret = make_connection(&conn);
   if (ret) {
+#ifdef DEBUG_SG
+    printf("+ (%s) make_connection() failed\n", __FUNCTION__);
+#endif	  
     return ret;
   }
 
-#ifdef DEBUG_SG
-  printf("+ (%s) make_connection() successful\n", __FUNCTION__);
-#endif
-
   // Prepare the request message
   request = prepare_request(type, key, NULL, 0);
-  if (request == NULL) {
+  if (request == NULL) {	
+#ifdef DEBUG_SG
+    erintf("+ (%s) prepare_request() failed\n", __FUNCTION__);
+#endif
     close(conn.fd);
     return EX_CANTCREAT;
   }
@@ -125,6 +126,9 @@ int sgd_send_request(int *sg_ret, request_type type, const char *key,
                        &frames, &num_frames);
   free(request);
   if (ret) {
+#ifdef DEBUG_SG
+    printf("+ (%s) prepare_frame() failed\n", __FUNCTION__);
+#endif
     close(conn.fd);
     return EX_CANTCREAT;
   }

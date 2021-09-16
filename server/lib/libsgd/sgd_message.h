@@ -8,7 +8,13 @@
 #define MAX_VALUE_LEN 4096
 #define MAX_FILEPATH 128
 
-typedef enum {PUT_REQUEST, GET_REQUEST, SAVE_REQUEST} request_type;
+typedef enum {
+	PUT_REQUEST, 
+	GET_REQUEST, 
+	SAVE_REQUEST,
+	GET_USER_BY_ID,
+	GET_USER_BY_NAME
+} request_type;
 /*
 typedef struct request_msg {
   uint8_t cmd;
