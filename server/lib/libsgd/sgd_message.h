@@ -42,7 +42,7 @@ typedef struct response_msg {
 
 void print_request_msg(request_msg_t *msg);
 
-request_msg_t *gen_msg_request(uint8_t cmd, char *key, uint8_t *value,
+struct request_msg *gen_request_msg(uint8_t cmd, char *key, uint8_t *value,
                             uint32_t value_len);
 
 struct response_msg *init_response_msg(); // Allocates memory

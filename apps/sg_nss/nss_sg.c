@@ -16,11 +16,43 @@
 #include "sgd_request.h"
 #include "nss_sg.h"
 
+#include "../../lib/libsg/include/policy_defs.h"
+
 /*
  * IMPLEMENTED:
  *   passwd    getpwent(3), getpwent_r(3), getpwnam_r(3), getpwuid_r(3),
  *             setpwent(3), endpwent(3)
  */
+
+static int login_to_passwd(struct passwd *pwd, char *buf, size_t len, login_t *login) {
+  int sofar = 0;
+
+  sofar += strlen(login->user)+1;
+  if (sofar > len) {
+    return 1;
+  }
+  memcpy(buf, login->user, strlen(login->user)+1);
+  pwd->pw_name = buf;
+
+  sofar += strlen(login->password)+1;
+  if (sofar > len) {
+    return 1;
+  }
+  memcpy(buf + sofar, login->password, strlen(login->password)+1);
+  pwd->pw_passwd = buf + sofar;
+
+  pwd->pw_uid = login->uid;
+  pwd->pw_gid = 0;
+  pwd->pw_change = 0;
+  pwd->pw_class = NULL;
+  pwd->pw_gecos = NULL;
+  pwd->pw_dir = NULL;
+  pwd->pw_shell = NULL;
+  pwd->pw_expire = 0;
+  pwd->pw_fields = 0;
+
+  return 0;
+}
 
 /*
  * @param void *rv : holds the value struct passwd **result
@@ -40,66 +72,63 @@ int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
   int *result = va_arg(ap, int *);
 
   struct passwd **tmp = (struct passwd **) rv;
+  *tmp = NULL;
 
-  printf("+ (nss_sg_getpwnam_r) start\n", __FUNCTION__);
+  struct request_msg *request = gen_request_msg(GET_USER_BY_NAME, name, NULL, 0);
+  struct response_msg *response = init_response_msg();
 
   // Synchronous call to sgd : get_by_user
-  int ret = sgd_send_request(result, GET_USER_BY_NAME, name, NULL);
+  int ret = sgd_sync_make_request(request, response);
   if (ret) {
     printf("sgd_send_request failed with %d\n", ret);
-    *tmp = NULL;
+    free(response);
+    free(request);
     return NS_UNAVAIL;
   }
-  // Fill in struct passwd
-  // Set flags accordingly
 
-
-  return NS_SUCCESS; //NS_UNAVAIL;
-}
- /* 
-  printf("%s : called\n", __FUNCTION__);
-  printf("\t name %s bsize %d\n", name, buffsize);
-
-  int sofar = 0;
-  memcpy(buffer, "root", strlen("root")+1);
-  sofar += strlen("root")+1;
-
-  memcpy(buffer + sofar, "XXX", strlen("XXX")+1);
-  sofar += strlen("XXX")+1;
-
-  printf("buffer : %s\n", buffer);
-  printf("buffer + sofar : %s\n", buffer+5);
-
-  pwd->pw_name = buffer;
-  pwd->pw_passwd = buffer + 5;
-  pwd->pw_class = NULL;
-  pwd->pw_gecos = NULL;
-  pwd->pw_dir = NULL;
-  pwd->pw_shell = NULL;
-  pwd->pw_uid = 0;
-
-  *result = NS_SUCCESS; // set to return value
-  
-  struct passwd **tmp = (struct passwd **)rv;
+  login_to_passwd(pwd, buffer, buffsize, (login_t *)response->value);
   *tmp = pwd;
 
-  printf("rv %x pwdptr %x result %x\n", rv, pwd, result);
+  free(response);
+  free(request);
 
+  printf("+ (%s) complete\n", __FUNCTION__);
   return NS_SUCCESS; //NS_UNAVAIL;
 }
-*/
+
 int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap) {
-  char *name = va_arg(ap, char *);
-  struct passwd *pbuf = va_arg(ap, struct passwd *);
+  int uid = va_arg(ap, int);
+  struct passwd *pwd = va_arg(ap, struct passwd *);
   char *buf = va_arg(ap, char *);
   size_t bsize = va_arg(ap, size_t);
   int *res = va_arg(ap, int *);
-  char *cp;
-  char *nbuf = NULL;
-  int rc;
-  printf("%s : called\n", __FUNCTION__);
-  printf("\t name %s\n", name);
-  return NS_UNAVAIL;
+
+  struct passwd **tmp = (struct passwd **) rv;
+  *tmp = NULL;
+
+  char uid_str[12];
+  snprintf(uid_str, 11, "%d", uid);
+	
+  struct request_msg *request = gen_request_msg(GET_USER_BY_ID, uid_str, NULL, 0);
+  struct response_msg *response = init_response_msg();
+
+  // Synchronous call to sgd : get_by_user
+  int ret = sgd_sync_make_request(request, response);
+  if (ret) {
+    printf("sgd_send_request failed with %d\n", ret);
+    free(response);
+    free(request);
+    return NS_UNAVAIL;
+  }
+
+  login_to_passwd(pwd, buf, bsize, (login_t *)response->value);
+  *tmp = pwd;
+
+  free(response);
+  free(request);
+
+  printf("+ (%s) complete\n", __FUNCTION__);
+  return NS_SUCCESS; //NS_UNAVAIL;
 }
 
 int nss_sg_getpwent_r(void *rv, void *mdata, va_list ap) {

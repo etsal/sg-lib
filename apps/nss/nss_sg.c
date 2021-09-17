@@ -35,7 +35,7 @@ int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
 }
 
 int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap) {
-  char *name = va_arg(ap, char *);
+  int name = va_arg(ap, int);
   struct passwd *pbuf = va_arg(ap, struct passwd *);
   char *buf = va_arg(ap, char *);
   size_t bsize = va_arg(ap, size_t);
