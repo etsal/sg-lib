@@ -13,7 +13,8 @@ typedef enum {
 	GET_REQUEST, 
 	SAVE_REQUEST,
 	GET_USER_BY_ID,
-	GET_USER_BY_NAME
+	GET_USER_BY_NAME,
+  AUTH_USER
 } request_type;
 /*
 typedef struct request_msg {
@@ -46,5 +47,7 @@ struct request_msg *gen_request_msg(uint8_t cmd, char *key, uint8_t *value,
                             uint32_t value_len);
 
 struct response_msg *init_response_msg(); // Allocates memory
+
+void clear_response_msg(struct response_msg *msg);
 
 #endif

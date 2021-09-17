@@ -1,9 +1,11 @@
 #include "sg.h"
+#include "policy.h"
 
 extern sg_ctx_t sg_ctx;
 
 int ecall_init_sg(void *config, size_t config_len) {
-  init_sg(&sg_ctx, config, config_len);
+  //init_sg_with_policy(&sg_ctx, config, config_len);
+  init_sg_with_policy(&sg_ctx);
   return 0;
 }
 

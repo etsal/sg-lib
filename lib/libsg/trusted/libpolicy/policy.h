@@ -2,6 +2,7 @@
 #define __POLICY_H__
 
 #include "sg.h"
+//#include "config.h"
 #include "policy_errlist.h"
 #include "policy_defs.h"
 /*

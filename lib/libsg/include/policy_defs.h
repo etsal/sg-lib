@@ -15,6 +15,14 @@ typedef struct {
   char user[USERNAME_MAX];
   char password[PASSWORD_MAX];
   uint32_t uid;
+  // uint32_t gid;
+  // uint64_t change;
+  // char * class;
+  // char * gecos;
+  // char *dir;
+  // char *shell;
+  // uint64_t expire;
+  // int fields;
 } login_t;
 
 

@@ -8,10 +8,13 @@
 
 #include "sgx_urts.h"
 
-#include "sgd_message.h"
-#include "sgd_frame.h"
-#include "sg_interface.h"
 #include "Enclave_u.h"
+#include "sg_interface.h"
+#include "sgd_frame.h"
+#include "sgd_message.h"
+
+#define DEBUG_PROCESS 1
+
 // char *socket_path = "./socket";
 char *socket_path = "/tmp/sg";
 
@@ -39,15 +42,14 @@ struct request_msg *msg;
   }
 
   if (status || ret) {
-  // Error 
-  } 
+  // Error
+  }
 
  // printf("%s %s\n", msg->key, msg->value);
- */ 
-
+ */
 }
 
-void* process() {
+void *process() {
   struct sockaddr_un addr;
   char buf[100];
   sg_frame_t frame;
@@ -87,9 +89,11 @@ void* process() {
     }
   loop:
     while ((rc = read(cl, &frame, sizeof(sg_frame_t))) > 0) {
-      //print_sg_frame(&frame);
+      // print_sg_frame(&frame);
       if (process_frame(&frame, &frame_ctx)) {
+#ifdef DEBUG_PROCESS
         printf("All frames recieved\n");
+#endif
         break;
       }
     }
@@ -104,32 +108,38 @@ void* process() {
     }
     // printf("TODO: process frame_ctx-> data, and write result back to
     // client\n");
+#ifdef DEBUG_PROCESS
     printf("request recieved (len %d) : '", frame_ctx.data_len);
-    for(int i=0; i<frame_ctx.data_len; ++i) printf("%c", frame_ctx.data[i]);
+    for (int i = 0; i < frame_ctx.data_len; ++i)
+      printf("%c", frame_ctx.data[i]);
     printf("'\n");
-
+#endif
     ret = 0;
     // enclave will cast it to struct request_msg
-    // ret contains the return value of the sg_XX function, this will be returned to the client
-    //status = ecall_process_request(global_eid, &ret, frame_ctx.data, frame_ctx.data_len); 
+    // ret contains the return value of the sg_XX function, this will be
+    // returned to the client
+    // status = ecall_process_request(global_eid, &ret, frame_ctx.data,
+    // frame_ctx.data_len);
 
-
-    status = ecall_process_request(global_eid, frame_ctx.data, frame_ctx.data_len, response);
+    status = ecall_process_request(global_eid, frame_ctx.data,
+                                   frame_ctx.data_len, response);
     if (status) {
       perror("sgx");
       return NULL;
     }
 
-
-printf("\t+ (%s) After ecall_process_request() response->ret = %d\n", __FUNCTION__, response->ret);
-
+#ifdef DEBUG_PROCESS
+    printf("\t+ (%s) After ecall_process_request() response->ret = %d\n",
+           __FUNCTION__, response->ret);
+#endif
     fflush(stdout);
     fflush(stderr);
 
-    if (write(cl, response, sizeof(struct response_msg)) != sizeof(struct response_msg)) {
+    if (write(cl, response, sizeof(struct response_msg)) !=
+        sizeof(struct response_msg)) {
       perror("write error");
     }
-  
+
     clear_sg_frame_ctx(&frame_ctx);
   }
   free(response);

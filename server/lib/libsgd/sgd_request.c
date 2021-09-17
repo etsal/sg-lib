@@ -117,7 +117,7 @@ int sgd_send_request(int *sg_ret, request_type type, const char *key,
   request = prepare_request(type, key, NULL, 0);
   if (request == NULL) {
 #ifdef DEBUG_SG
-    erintf("+ (%s) prepare_request() failed\n", __FUNCTION__);
+    printf("+ (%s) prepare_request() failed\n", __FUNCTION__);
 #endif
     close(conn.fd);
     return EX_CANTCREAT;
@@ -277,7 +277,7 @@ int sgd_send_requestV2(int *sg_ret, struct request_msg *request) {
 
 
 
-int sgd_sync_make_request(struct request_msg *request,
+int sgd_sync_make_request(int *sg_ret, struct request_msg *request,
                      struct response_msg *response) {
   struct ipc_conn conn;
   sg_frame_t **frames;
@@ -327,7 +327,7 @@ int sgd_sync_make_request(struct request_msg *request,
 
   // Read the response & set the return value
   if ((ret = read(conn.fd, response, sizeof(struct response_msg))) > 0) {
-    //*sg_ret = response->ret;
+    *sg_ret = response->ret;
     ret = 0;
   } else if (ret == -1) {
     ret = errno;

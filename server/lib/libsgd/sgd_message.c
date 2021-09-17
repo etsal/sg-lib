@@ -12,6 +12,10 @@ struct response_msg *init_response_msg() {
   return msg;
 }
 
+void clear_response_msg(struct response_msg *msg) {
+  memset(msg, 0, sizeof(struct response_msg));
+  msg->value_len_max = MAX_VALUE_LEN; 
+}
 
 void print_request_msg(struct request_msg *msg) {
 #ifndef __ENCLAVE__

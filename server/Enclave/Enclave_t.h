@@ -44,6 +44,7 @@ sgx_status_t SGX_CDECL ocall_exit(int s);
 sgx_status_t SGX_CDECL ocall_eprintf(const char* str);
 sgx_status_t SGX_CDECL ocall_lprintf(const char* str);
 sgx_status_t SGX_CDECL ocall_sleep(int time);
+sgx_status_t SGX_CDECL ocall_atoi(const char* str, int* str_int);
 sgx_status_t SGX_CDECL ocall_access(int* retval, const char* filename);
 sgx_status_t SGX_CDECL ocall_store(int* retval, const char* filename, const uint8_t* buf, size_t len);
 sgx_status_t SGX_CDECL ocall_load_len(int* retval, const char* filename, size_t* len);

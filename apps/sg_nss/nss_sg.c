@@ -71,20 +71,25 @@ int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
   size_t buffsize = va_arg(ap, size_t);
   int *result = va_arg(ap, int *);
 
+  int sg_ret;
+
   struct passwd **tmp = (struct passwd **) rv;
   *tmp = NULL;
+
 
   struct request_msg *request = gen_request_msg(GET_USER_BY_NAME, name, NULL, 0);
   struct response_msg *response = init_response_msg();
 
   // Synchronous call to sgd : get_by_user
-  int ret = sgd_sync_make_request(request, response);
+  int ret = sgd_sync_make_request(&sg_ret, request, response);
   if (ret) {
     printf("sgd_send_request failed with %d\n", ret);
     free(response);
     free(request);
     return NS_UNAVAIL;
   }
+
+  // TODO check sg_ret
 
   login_to_passwd(pwd, buffer, buffsize, (login_t *)response->value);
   *tmp = pwd;
@@ -102,6 +107,8 @@ int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap) {
   char *buf = va_arg(ap, char *);
   size_t bsize = va_arg(ap, size_t);
   int *res = va_arg(ap, int *);
+  
+  int sg_ret;
 
   struct passwd **tmp = (struct passwd **) rv;
   *tmp = NULL;
@@ -113,7 +120,7 @@ int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap) {
   struct response_msg *response = init_response_msg();
 
   // Synchronous call to sgd : get_by_user
-  int ret = sgd_sync_make_request(request, response);
+  int ret = sgd_sync_make_request(&sg_ret, request, response);
   if (ret) {
     printf("sgd_send_request failed with %d\n", ret);
     free(response);

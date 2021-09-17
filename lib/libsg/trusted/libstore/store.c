@@ -262,6 +262,7 @@ int search_store(table_t *table, const char *regex, char **key, void **value,
     return 1;
 
   HASH_ITER(hh, table->entries, entry, tmp) {
+    eprintf("\t\t + (%s) Entry found %s\n", __FUNCTION__, entry->key);
     match_idx = re_matchp(pattern, entry->key, &match_len);
     if (match_idx != -1) {
       break;

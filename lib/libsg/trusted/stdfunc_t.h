@@ -20,6 +20,7 @@ sgx_status_t SGX_CDECL ocall_exit(int s);
 sgx_status_t SGX_CDECL ocall_eprintf(const char* str);
 sgx_status_t SGX_CDECL ocall_lprintf(const char* str);
 sgx_status_t SGX_CDECL ocall_sleep(int time);
+sgx_status_t SGX_CDECL ocall_atoi(const char *str, int *str_int);
 
 #ifdef __cplusplus
 }

@@ -22,4 +22,6 @@ int printf(const char *fmt, ...);
 
 int close(int fd);
 
+int atoi(const char *str);
+
 #endif // __SG_STDFUNC_H__

@@ -33,6 +33,7 @@ void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_exit, (int s));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_eprintf, (const char* str));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_lprintf, (const char* str));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_sleep, (int time));
+void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_atoi, (const char* str, int* str_int));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_access, (const char* filename));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_store, (const char* filename, const uint8_t* buf, size_t len));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_load_len, (const char* filename, size_t* len));

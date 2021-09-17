@@ -5,7 +5,7 @@
 #include "policy_util.h"
 #include "tiny-regex-c/re.h"
 
-//#define DEBUG_POLICY 1
+#define DEBUG_POLICY 1
 //#ifdef DEBUG_POLICY
 #include "sg_common.h"
 //#endif
@@ -18,8 +18,8 @@ const char admin_policy[] = ".*\n";
  */
 void init_sg_with_policy(sg_ctx_t *ctx) {
   login_t login;
-  const char *cred_key = CREDENTIALS_PREFIX "admin:0";
-  login_t *value = create_login(ctx, "admin", "admin");
+  const char *cred_key = CREDENTIALS_PREFIX "root:0";
+  login_t *value = create_login(ctx, "root", "root");
   assert(value != NULL);
 
 #ifdef DEBUG_POLICY
@@ -42,7 +42,7 @@ void init_sg_with_policy(sg_ctx_t *ctx) {
 #endif
 
   // Admin's policy
-  const char *policy_key = POLICY_PREFIX "admin";
+  const char *policy_key = POLICY_PREFIX "root";
   ret = put_sg(ctx, policy_key, admin_policy, strlen(admin_policy) + 1);
   assert(ret == 0);
 
@@ -69,8 +69,8 @@ login_t *create_login(sg_ctx_t *ctx, const char *user, const char *password) {
   memcpy(login->password, password, strlen(password) + 1);
   login->uid = ctx->next_uid++;
 
-  int len = strlen("admin") < strlen(user) ? 5 : strlen(user);
-  if (strncmp("admin", user, len) == 0) {
+  int len = strlen("root") < strlen(user) ? 5 : strlen(user);
+  if (strncmp("root", user, len) == 0) {
     if (login->uid != 0) {
     
     }
@@ -284,6 +284,9 @@ int get_user_by_name(sg_ctx_t *ctx, const char *name,
   size_t len;
 
   char *re_resource = gen_regex_key(CREDENTIAL, name, NULL);
+#ifdef DEBUG_POLICY
+  eprintf("\t+ (%s) searching with key %s\n", __FUNCTION__, re_resource);
+#endif
   int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
   free(re_resource);
 
