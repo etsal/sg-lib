@@ -22,6 +22,9 @@
  * IMPLEMENTED:
  *   passwd    getpwent(3), getpwent_r(3), getpwnam_r(3), getpwuid_r(3),
  *             setpwent(3), endpwent(3)
+ *
+ * Note: I believe that the re-entrant functions are correctly implemented because
+ * the sgd serializes the requests, so we can place calls in some serial order
  */
 
 static int login_to_passwd(struct passwd *pwd, char *buf, size_t len, login_t *login) {
@@ -75,7 +78,6 @@ int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
 
   struct passwd **tmp = (struct passwd **) rv;
   *tmp = NULL;
-
 
   struct request_msg *request = gen_request_msg(GET_USER_BY_NAME, name, NULL, 0);
   struct response_msg *response = init_response_msg();
