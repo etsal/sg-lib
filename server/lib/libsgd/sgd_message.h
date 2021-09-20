@@ -14,7 +14,9 @@ typedef enum {
 	SAVE_REQUEST,
 	GET_USER_BY_ID,
 	GET_USER_BY_NAME,
-  AUTH_USER
+  AUTH_USER,
+  BIND_USER,
+  PUT_USER
 } request_type;
 /*
 typedef struct request_msg {
@@ -26,6 +28,7 @@ typedef struct request_msg {
 */
 typedef struct request_msg {
   uint8_t cmd;
+  uint32_t nonce;
   union {
     char key[MAX_KEY_LEN];
     char filepath[MAX_FILEPATH];
@@ -36,6 +39,7 @@ typedef struct request_msg {
 
 typedef struct response_msg {
   uint8_t ret;
+  uint32_t nonce;
   uint32_t value_len;
   uint32_t value_len_max;
   uint8_t value[MAX_VALUE_LEN];

@@ -12,6 +12,8 @@ typedef struct {
   ratls_ctx_t ratls; // RA-TLS Context (Wolfssl stuff)
   table_t table;     // KV Store
 
+  entry_t *iterator;
+
   size_t update_buf_len;
   uint8_t *update_buf;
 

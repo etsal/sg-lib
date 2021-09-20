@@ -1,3 +1,4 @@
+#include <sgx_trts.h> // sgx_read_rand
 #include <string.h>
 
 #include "Enclave_t.h"
@@ -8,6 +9,8 @@
 #include "sgd_message.h"
 
 sg_ctx_t sg_ctx;
+uint32_t last_nonce = 0;
+login_t saved_login; // This is really sketchy...
 
 void ecall_test() {}
 
@@ -37,9 +40,8 @@ void ecall_process_request(uint8_t *data, size_t data_len,
   struct request_msg *msg = (struct request_msg *)data;
   void *value = NULL;
   size_t value_len = 0;
-  int tmp = 0;
+  int ret, tmp = 0, clear_login = 1;
   const char *filepath;
-  int ret;
   login_t login;
   
   eprintf("+ (%s) start\n", __FUNCTION__);
@@ -47,12 +49,54 @@ void ecall_process_request(uint8_t *data, size_t data_len,
   //resp->value_len_max = MAX_VALUE_LEN;
 
   switch (msg->cmd) {
+
+  case PUT_USER:
+    // Assert previous action was BIND_USER
+    // Make sure supplied nonce matches the one that is given so that we can ensure it is the same operation
+    if (last_nonce != msg->nonce) {
+      resp->ret = 1; 
+      break;
+    }
+    memcpy(login.user, msg->key, strlen(msg->key)+1);
+    login.uid = sg_ctx.next_uid++;
+    memcpy(login.password, msg->value, msg->value_len);
+    ret = put_user(&sg_ctx, &saved_login, &login);
+    resp->ret = ret;
+    last_nonce = 0;   
+    if (ret) {
+      eprintf("+ (%s) Failed to add new user.\n", __FUNCTION__);
+    } else {
+      eprintf("+ (%s) Successfull added new user.\n", __FUNCTION__);
+    }
+    break;
+
+  case BIND_USER:
+    // Bind user
+    // Create random nonce to send
+    memcpy(login.user, msg->key, strlen(msg->key)+1);
+    login.uid = get_user_uid(msg->key);
+    memcpy(login.password, msg->value, msg->value_len);
+    ret = auth_user(&sg_ctx, &login);
+    resp->ret = ret;
+    resp->nonce = 0;
+    resp->value_len = 0;
+    if (ret) {  
+      eprintf("+ (%s) Incorrect login\n", __FUNCTION__);
+    } else {
+      eprintf("+ (%s) Correct login\n", __FUNCTION__);
+      sgx_read_rand((unsigned char *)&resp->nonce, sizeof(uint32_t));
+      last_nonce = resp->nonce;
+      memcpy(&saved_login, &login, sizeof(login_t));
+      clear_login = 0;
+    }
+    break;
+
   case AUTH_USER:
     memcpy(login.user, msg->key, strlen(msg->key)+1);
     login.uid = get_user_uid(msg->key);
     memcpy(login.password, msg->value, msg->value_len);
     ret = auth_user(&sg_ctx, &login);
-    resp->ret;
+    resp->ret = ret;
     resp->value_len = 0;
     if (ret) {  
       eprintf("+ (%s) Incorrect login\n", __FUNCTION__);
@@ -118,6 +162,7 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     resp->ret = ret;
     break;
   }
+  if (clear_login) memset(&login, 0, sizeof(login_t));
 }
 /* Should return a response_msg rather than ret
  *

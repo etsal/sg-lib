@@ -74,6 +74,7 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
 
   memset(ctx, 0, sizeof(sg_ctx_t));
   sgx_thread_mutex_init(&ctx->table_lock, NULL);
+  ctx->iterator = NULL;
 
 #ifdef __USE_POLICY__
   next_uid = 0;

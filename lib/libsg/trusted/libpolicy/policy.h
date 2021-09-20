@@ -41,7 +41,7 @@ int append_policy(sg_ctx_t *ctx, const login_t *actor, const login_t *user, cons
  * get_user : Anyone can search for a user 
  * auth_user : Authenticates user against store
  * */
-int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user);
+int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user);
 int auth_user(sg_ctx_t *ctx, const login_t *actor);
 int get_user_by_name(sg_ctx_t *ctx, const char *name, login_t **user);
 int get_user_by_id(sg_ctx_t *ctx, uint32_t uid, login_t **user);

@@ -69,7 +69,7 @@ login_t *create_login(sg_ctx_t *ctx, const char *user, const char *password) {
   memcpy(login->password, password, strlen(password) + 1);
   login->uid = ctx->next_uid++;
 
-  int len = strlen("root") < strlen(user) ? 5 : strlen(user);
+  int len = strlen("root")+1 < strlen(user)+1 ? 5 : strlen(user);
   if (strncmp("root", user, len) == 0) {
     if (login->uid != 0) {
     
@@ -79,7 +79,7 @@ login_t *create_login(sg_ctx_t *ctx, const char *user, const char *password) {
 #ifdef DEBUG_POLICY
     if (login->uid == 0) {
       eprintf("Setting uid of %s to 0 ... aborting\n");
-      exit(1);
+      assert(1);
     }
 #endif
   }
@@ -231,6 +231,27 @@ int search(sg_ctx_t *ctx, const login_t *login, const char **key, void **value, 
 }
 */
 
+static int verify_login(sg_ctx_t *ctx, const login_t *login) {
+  login_t *entry;
+  int len = strlen("root") < strlen(login->user) ? 5 : strlen(login->user);
+  if (strncmp("root", login->user, len) == 0) {
+    if (login->uid != 0) return WRONG_UID;
+  } else {
+    if (login->uid == 0) return WRONG_UID;
+    // Check if user already exists
+    int ret = get_user_by_name(ctx, login->user, &entry);
+    if (ret) {
+      ret = 0; // Did not find existing user
+    } else {
+      // eprintf("\t+ User exists but uids do not match %d != %d\n", __FUNCTION__, login->user, login->uid, entry->uid);
+      ret = USER_EXISTS;
+      //if (entry->uid != login->uid) ret = WRONG_UID; 
+    }
+    free(entry);
+    return ret;
+  }
+  return 0;
+}
 
 /*
  * Wrapper for put that only puts users
@@ -241,11 +262,15 @@ int search(sg_ctx_t *ctx, const login_t *login, const char **key, void **value, 
  * Generates a key "cred:<new_user->user>:uid" and stores login_t the
  * login information as the value
  */
-int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user) {
+int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
 
 #ifdef DEBUG_POLICY
   eprintf("\t + (%s) start\n", __FUNCTION__);
 #endif
+
+  /* Check if the new_user was assigned a valid user/uid */
+  int ret = verify_login(ctx, new_user);
+  if (ret) return ret;
 
   char *resource = gen_resource_key(CREDENTIAL, new_user, NULL);
 
@@ -253,7 +278,7 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, const login_t *new_user) {
   eprintf("\t + (%s) resource %s\n", __FUNCTION__, resource);
 #endif
 
-  int ret = put(ctx, actor, resource, new_user, sizeof(login_t));
+  ret = put(ctx, actor, resource, new_user, sizeof(login_t));
   free(resource);
   if (ret) {
     return ret;

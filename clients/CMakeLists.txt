@@ -15,6 +15,7 @@ add_executable(sgget sg_get.c)
 add_executable(sgsave sg_save.c)
 add_executable(sggetuserby sg_getuserby.c)
 add_executable(sgauthuser sg_authuser.c util.c)
+add_executable(sgputuser sg_putuser.c util.c)
 
 target_include_directories(sgput PUBLIC ${INC_DIR})
 target_link_libraries(sgput ${SGD_LIB})
@@ -30,6 +31,9 @@ target_link_libraries(sggetuserby ${SGD_LIB})
 
 target_include_directories(sgauthuser PUBLIC ${INC_DIR})
 target_link_libraries(sgauthuser ${SGD_LIB})
+
+target_include_directories(sgputuser PUBLIC ${INC_DIR})
+target_link_libraries(sgputuser ${SGD_LIB})
 
 add_custom_target(rebuild_libsgd
 COMMAND cmake .. && gmake
