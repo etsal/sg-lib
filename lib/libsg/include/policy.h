@@ -25,7 +25,7 @@ typedef struct {
 
 
 // Initializes ctx
-void init_sg_with_policy(sg_ctx_t *ctx); // Calls sg_new_init
+void init_sg_with_policy(sg_ctx_t *ctx, void *config, size_t config_len); // Calls sg_new_init
 
 int put(sg_ctx_t *ctx, const login_t *login, const char *key, const void *value, size_t len);
 int get(sg_ctx_t *ctx, const login_t *login, const char *key, void **value, size_t *len);

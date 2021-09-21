@@ -16,7 +16,7 @@ const char admin_policy[] = ".*\n";
  * policies
  * With user=admin, password=admin
  */
-void init_sg_with_policy(sg_ctx_t *ctx) {
+void init_sg_with_policy(sg_ctx_t *ctx, void *config, size_t config_len) {
   login_t login;
   const char *cred_key = CREDENTIALS_PREFIX "root:0";
   login_t *value = create_login(ctx, "root", "root");
@@ -26,7 +26,7 @@ void init_sg_with_policy(sg_ctx_t *ctx) {
   eprintf("\t+ (%s) Initializing new sg\n", __FUNCTION__);
 #endif
 
-  init_new_sg(ctx);
+  init_sg(ctx, config, config_len);
 
 #ifdef DEBUG_POLICY
   eprintf("\t+ (%s) Putting admin credentials\n", __FUNCTION__);
