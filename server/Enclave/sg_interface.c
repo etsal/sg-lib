@@ -29,3 +29,15 @@ int ecall_poll_and_process_updates() {
 }
 
 
+int ecall_get_connection_fds(int *fds, size_t max_len, size_t *len) {
+  get_connection_fds(fds, max_len, len);
+  return 0;
+}
+ 
+
+int ecall_process_updates_sg(int *fds, size_t len) {
+  process_updates_sg(&sg_ctx, fds, len);
+  return 0;
+}
+
+

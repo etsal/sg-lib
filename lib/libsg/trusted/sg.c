@@ -22,7 +22,7 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath);
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath);
 static void init_keycert(sg_ctx_t *ctx);
 static configuration *parse_config(const char *config, size_t config_len);
- 
+
 static configuration *parse_config(const char *config, size_t config_len) {
   int cur = 0;
   configuration *c = malloc(sizeof(configuration));
@@ -51,7 +51,8 @@ static configuration *parse_config(const char *config, size_t config_len) {
 
 static void init_keycert(sg_ctx_t *ctx) {
 #ifdef DEBUG_SG
-//  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n", __FUNCTION__);
+//  eprintf("\t+ (%s) Creating RA-TLS Attestation Keys and Certificate\n",
+//  __FUNCTION__);
 #endif
 
   ctx->kc.der_key_len = DER_KEY_LEN;
@@ -117,7 +118,7 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
     // Verify kvstore
     if (!is_empty_store(&ctx->table)) {
       init_store(&ctx->table, 1); // TODO: specify UID
-      //init_new_db(&ctx->db);
+      // init_new_db(&ctx->db);
     }
 
     eprintf("\t+ (%s) Successfully verified keycert and db\n", __FUNCTION__);
@@ -154,12 +155,13 @@ void init_new_sg(sg_ctx_t *ctx) {
 #endif
 
   init_keycert(ctx);
-  init_store(&ctx->table, 1); //TODO: specify uid 
-  //init_new_db(&ctx->db);
+  init_store(&ctx->table, 1); // TODO: specify uid
+  // init_new_db(&ctx->db);
 
 #ifdef DEBUG_SG
   eprintf("\t+ (%s) Initializing new sg_ctx ... complete\n", __FUNCTION__);
- // eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n", __FUNCTION__);
+  // eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n",
+  // __FUNCTION__);
 #endif
 }
 
@@ -189,9 +191,9 @@ int put_sg(sg_ctx_t *ctx, const char *key, const void *value, size_t len) {
 #ifdef DEBUG_SG
 /*
 if (ret) {
-    eprintf("\t+ (%s) Failed to 'put'  entry with key %s!\n", __FUNCTION__, key);
-  } else {
-    eprintf("\t+ (%s) Successfully 'put' entry with key %s!\n", __FUNCTION__, key);
+    eprintf("\t+ (%s) Failed to 'put'  entry with key %s!\n", __FUNCTION__,
+key); } else { eprintf("\t+ (%s) Successfully 'put' entry with key %s!\n",
+__FUNCTION__, key);
   }
 */
 #endif
@@ -204,16 +206,17 @@ int get_sg(sg_ctx_t *ctx, const char *key, void **value, size_t *len) {
 #ifdef DEBUG_SG
 /*
 if (ret) {
-    eprintf("\t+ (%s) Failed to 'get'  entry with key %s!\n", __FUNCTION__, key);
-  } else {
-    eprintf("\t+ (%s) Successfully 'get' entry with key %s!\n", __FUNCTION__, key);
+    eprintf("\t+ (%s) Failed to 'get'  entry with key %s!\n", __FUNCTION__,
+key); } else { eprintf("\t+ (%s) Successfully 'get' entry with key %s!\n",
+__FUNCTION__, key);
   }
 */
 #endif
   return ret;
 }
 
-int search_sg(sg_ctx_t *ctx,  const char *regex, char **key, void **value, size_t *len) {
+int search_sg(sg_ctx_t *ctx, const char *regex, char **key, void **value,
+              size_t *len) {
   int ret = search_store(&ctx->table, regex, key, value, len);
   return ret;
 }
@@ -224,7 +227,7 @@ int count_sg(sg_ctx_t *ctx) { return 0; }
 
 int save_sg(sg_ctx_t *ctx, const char *filepath) {
   int ret = serialize_and_seal_sg(ctx, filepath);
-  gen_log_msg(SG_SAVE, " " , ret);
+  gen_log_msg(SG_SAVE, " ", ret);
   return ret;
 }
 
@@ -234,26 +237,26 @@ int load_sg(sg_ctx_t *ctx, const char *filepath) {
 }
 
 void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
-//  db_print(&ctx->db, format);
+  //  db_print(&ctx->db, format);
 }
 
-
 /* get_update_size Returns size of update in bytes
- * also creates and stores the update to the ctx 
+ * also creates and stores the update to the ctx
  *
  */
 int get_update_size(sg_ctx_t *ctx) {
 
   if (is_empty_store(&ctx->table)) {
     ctx->update_buf_len = 0;
-  }
-  else {
+  } else {
     free(ctx->update_buf);
     ctx->update_buf = NULL;
     serialize_store(&ctx->table, &ctx->update_buf, &ctx->update_buf_len);
   }
-  return ctx->update_buf_len;
 
+  //eprintf("+ (%s) update_buf_len = %d\n", __FUNCTION__, ctx->update_buf_len);
+
+  return ctx->update_buf_len;
 }
 
 void get_update(sg_ctx_t *ctx, uint8_t *buf, size_t len) {

@@ -23,6 +23,7 @@ struct ipc_conn {
 static int make_connection(struct ipc_conn *conn);
 static struct request_msg *prepare_request(request_type type, const char *key,
                                            const void *value, size_t value_len);
+
 static int make_connection(struct ipc_conn *conn) {
   struct sockaddr_un addr;
 
@@ -40,12 +41,10 @@ static int make_connection(struct ipc_conn *conn) {
     strncpy(addr.sun_path, conn->socket_path, sizeof(addr.sun_path) - 1);
   }
 
-#ifdef DEBUG_SG
-  printf("++ (%s) Calling connect()\n", __FUNCTION__);
-#endif
-
   if (connect(conn->fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-    // return EX_PROTOCOL;
+#ifdef DEBUG_SG
+    printf("+ (%s) connect() failed\n", __FUNCTION__);
+#endif
     return errno;
   }
 
@@ -203,14 +202,12 @@ int sgd_send_requestV2(int *sg_ret, struct request_msg *request) {
   printf("+ (%s) make_connection() successful\n", __FUNCTION__);
 #endif
 
-  /*
-    // Prepare the request message
-    request = prepare_request(type, key, NULL, 0);
-    if (request == NULL) {
-      close(conn.fd);
-      return EX_CANTCREAT;
-    }
-  */
+  // Prepare the request message
+  //  request = prepare_request(type, key, NULL, 0);
+  //  if (request == NULL) {
+  //    close(conn.fd);
+  //    return EX_CANTCREAT;
+  //}
 
   // Prepare the frames
   ret = prepare_frames(0, (uint8_t *)request, sizeof(struct request_msg),
@@ -266,64 +263,49 @@ int sgd_send_requestV2(int *sg_ret, struct request_msg *request) {
   return ret;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 int sgd_sync_make_request(int *sg_ret, struct request_msg *request,
-                     struct response_msg *response) {
+                          struct response_msg *response) {
   struct ipc_conn conn;
   sg_frame_t **frames;
   size_t num_frames;
   int ret, i;
 
 #ifdef DEBUG_SG
-  printf("+ (%s) start\n", __FUNCTION__);
+//  printf("+ (%s) start\n", __FUNCTION__);
 #endif
 
   // Make connection to our service
   conn.socket_path = socket_path;
   ret = make_connection(&conn);
   if (ret) {
+#ifdef DEBUG_SG
+    printf("+ (%s) make_connection() failed\n", __FUNCTION__);
+#endif
     return ret;
   }
-
-#ifdef DEBUG_SG
-  printf("+ (%s) make_connection() successful\n", __FUNCTION__);
-#endif
 
   // Prepare the frames
   ret = prepare_frames(0, (uint8_t *)request, sizeof(struct request_msg),
                        &frames, &num_frames);
   if (ret) {
+#ifdef DEBUG_SG
+    printf("+ (%s) prepare_request() failed \n", __FUNCTION__);
+#endif
     close(conn.fd);
     return EX_CANTCREAT;
   }
-
-#ifdef DEBUG_SG
-  printf("+ (%s) prepare_request() successful\n", __FUNCTION__);
-#endif
-
   // Send the frames
   for (i = 0; i < num_frames; ++i) {
     if (write(conn.fd, frames[i], sizeof(sg_frame_t)) != sizeof(sg_frame_t)) {
+#ifdef DEBUG_SG
+      printf("+ (%s) write() failed\n", __FUNCTION__);
+#endif
       free_frames(&frames, num_frames);
       close(conn.fd);
       return EX_PROTOCOL;
     }
   }
   free_frames(&frames, num_frames);
-
-#ifdef DEBUG_SG
-  printf("+ (%s) write() successful\n", __FUNCTION__);
-#endif
 
   // Read the response & set the return value
   if ((ret = read(conn.fd, response, sizeof(struct response_msg))) > 0) {
@@ -338,15 +320,16 @@ int sgd_sync_make_request(int *sg_ret, struct request_msg *request,
   }
 
 #ifdef DEBUG_SG
-  printf("+ (%s) closing connection to sgd\n", __FUNCTION__);
-  printf("+ (%s) ret = %d\n", __FUNCTION__, ret);
-  char buf[MAX_VALUE_LEN + 1];
-  sprintf(buf, "%s", response->value);
-  printf("+ (%s) Recieved %s \n", __FUNCTION__, buf);
+  // printf("+ (%s) closing connection to sgd\n", __FUNCTION__);
+  // printf("+ (%s) ret = %d\n", __FUNCTION__, ret);
+  // char buf[MAX_VALUE_LEN + 1];
+  // sprintf(buf, "%s", response->value);
+  // printf("+ (%s) Recieved %s \n", __FUNCTION__, buf);
+  printf("+ (%s) Action %s\n", __FUNCTION__,
+         response->ret == 0 ? "SUCCESS" : "FAILED");
 #endif
 
   close(conn.fd);
   return ret;
 }
-
 

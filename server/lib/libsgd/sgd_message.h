@@ -28,21 +28,21 @@ typedef struct request_msg {
 */
 typedef struct request_msg {
   uint8_t cmd;
-  uint32_t nonce;
   union {
     char key[MAX_KEY_LEN];
     char filepath[MAX_FILEPATH];
   };
   uint32_t value_len;
   uint8_t value[MAX_VALUE_LEN];
+  uint32_t nonce;
 } request_msg_t;
 
 typedef struct response_msg {
   uint8_t ret;
-  uint32_t nonce;
   uint32_t value_len;
   uint32_t value_len_max;
   uint8_t value[MAX_VALUE_LEN];
+  uint32_t nonce;
 } response_msg_t;
 
 void print_request_msg(request_msg_t *msg);

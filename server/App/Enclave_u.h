@@ -66,6 +66,8 @@ sgx_status_t ecall_recieve_connections_sg(sgx_enclave_id_t eid, int* retval);
 sgx_status_t ecall_initiate_connections_sg(sgx_enclave_id_t eid, int* retval);
 sgx_status_t ecall_verify_connections_sg(sgx_enclave_id_t eid, int* retval);
 sgx_status_t ecall_poll_and_process_updates(sgx_enclave_id_t eid, int* retval);
+sgx_status_t ecall_get_connection_fds(sgx_enclave_id_t eid, int* retval, int* fds, size_t max_len, size_t* len);
+sgx_status_t ecall_process_updates_sg(sgx_enclave_id_t eid, int* retval, int* fds, size_t len);
 sgx_status_t ecall_add_user(sgx_enclave_id_t eid, int* retval, const char* username, const char* password);
 sgx_status_t ecall_auth_user(sgx_enclave_id_t eid, int* retval, const char* username, const char* password);
 

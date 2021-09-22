@@ -19,6 +19,7 @@ void clear_response_msg(struct response_msg *msg) {
 
 void print_request_msg(struct request_msg *msg) {
 #ifndef __ENCLAVE__
+  printf("--- Request Message ---\n");
   int i;
   switch(msg->cmd) {
     case PUT_REQUEST:
@@ -34,6 +35,7 @@ void print_request_msg(struct request_msg *msg) {
   for(i=0; i<msg->value_len; ++i)
     printf("%c", msg->value[i]);
   printf("\n");
+  printf("-----------------------\n");
 #endif 
 
 }
@@ -50,6 +52,7 @@ struct request_msg *gen_request_msg(uint8_t cmd, char *key, uint8_t *value,
   msg->value_len = value_len;
   memcpy(msg->key, key, strlen(key) + 1);
   memcpy(msg->value, value, value_len);
+
 
   return msg;
 }

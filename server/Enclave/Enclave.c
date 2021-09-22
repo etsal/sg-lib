@@ -64,9 +64,9 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     resp->ret = ret;
     last_nonce = 0;   
     if (ret) {
-      eprintf("+ (%s) Failed to add new user.\n", __FUNCTION__);
+      eprintf("+ (%s) Failed to add new user - %d.\n", __FUNCTION__, ret);
     } else {
-      eprintf("+ (%s) Successfull added new user.\n", __FUNCTION__);
+      eprintf("+ (%s) Successfull added new user - %d.\n", __FUNCTION__, ret);
     }
     break;
 
@@ -162,7 +162,15 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     resp->ret = ret;
     break;
   }
+
   if (clear_login) memset(&login, 0, sizeof(login_t));
+  if (resp->ret == 0) {
+
+eprintf("+ (%s) Attempting to push update ...\n", __FUNCTION__);
+    push_updates_sg(&sg_ctx);
+eprintf("+ (%s) Complete!\n\n", __FUNCTION__);
+  }
+
 }
 /* Should return a response_msg rather than ret
  *

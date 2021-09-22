@@ -28,6 +28,8 @@ int ecall_recieve_connections_sg();
 int ecall_initiate_connections_sg();
 int ecall_verify_connections_sg();
 int ecall_poll_and_process_updates();
+int ecall_get_connection_fds(int* fds, size_t max_len, size_t* len);
+int ecall_process_updates_sg(int* fds, size_t len);
 int ecall_add_user(const char* username, const char* password);
 int ecall_auth_user(const char* username, const char* password);
 

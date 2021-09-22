@@ -1,10 +1,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-
 #include <stddef.h>
-#define MAX_NODES 5
-#define MAX_FILE_PATH_LEN 64
+#include "sg_defs.h"
 
 /* Structure is used by both app and enclave */
 typedef struct {

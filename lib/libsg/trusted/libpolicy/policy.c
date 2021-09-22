@@ -69,10 +69,9 @@ login_t *create_login(sg_ctx_t *ctx, const char *user, const char *password) {
   memcpy(login->password, password, strlen(password) + 1);
   login->uid = ctx->next_uid++;
 
-  int len = strlen("root")+1 < strlen(user)+1 ? 5 : strlen(user);
+  int len = strlen("root") + 1 < strlen(user) + 1 ? 5 : strlen(user);
   if (strncmp("root", user, len) == 0) {
     if (login->uid != 0) {
-    
     }
     login->uid = 0;
   } else {
@@ -126,7 +125,6 @@ int bind_user(sg_ctx_t *ctx, const login_t *login) {
   return ret;
 }
 
-
 int auth_user(sg_ctx_t *ctx, const login_t *actor) {
   return bind_user(ctx, actor);
 }
@@ -142,7 +140,8 @@ static int auth_verify_valid(int action, sg_ctx_t *ctx, const login_t *login,
   }
 
 #ifdef DEBUG_POLICY
-  eprintf("+ (%s) Authenticated user %s against kv-store\n", __FUNCTION__, login->user);
+  eprintf("+ (%s) Authenticated user %s against kv-store\n", __FUNCTION__,
+          login->user);
 #endif
 
   /* Verify key */
@@ -159,26 +158,26 @@ static int auth_verify_valid(int action, sg_ctx_t *ctx, const login_t *login,
   ret = check_against_policy(ctx, login, key, action);
 #ifdef DEBUG_POLICY
   char *action_str;
-  switch(action) {
-    case GET:
-      action_str = "GET";
-      break;
-    case PUT:
-      action_str = "PUT";
-      break;
-    case MODIFY:
-      action_str = "MODIFY";
-      break;
-    case DELETE:
-      action_str = "DELETE";
-      break;
+  switch (action) {
+  case GET:
+    action_str = "GET";
+    break;
+  case PUT:
+    action_str = "PUT";
+    break;
+  case MODIFY:
+    action_str = "MODIFY";
+    break;
+  case DELETE:
+    action_str = "DELETE";
+    break;
   }
-  eprintf("+ (%s) User %s %s %s on %s\n", __FUNCTION__, login->user, ret?"FORBIDDEN":"ALLOWED", action_str, key);
+  eprintf("+ (%s) User %s %s %s on %s\n", __FUNCTION__, login->user,
+          ret ? "FORBIDDEN" : "ALLOWED", action_str, key);
 #endif
   if (ret) {
     return ret;
   }
-
 
   return 0;
 }
@@ -200,7 +199,6 @@ int put(sg_ctx_t *ctx, const login_t *login, const char *key, const void *value,
 #endif
   ret = put_sg(ctx, key, value, len);
   if (ret) {
-
   }
 
   return ret;
@@ -225,7 +223,8 @@ int get(sg_ctx_t *ctx, const login_t *login, const char *key, void **value,
 }
 
 /*
-int search(sg_ctx_t *ctx, const login_t *login, const char **key, void **value, size_t *len) {
+int search(sg_ctx_t *ctx, const login_t *login, const char **key, void **value,
+size_t *len) {
 
   return 0;
 }
@@ -235,17 +234,21 @@ static int verify_login(sg_ctx_t *ctx, const login_t *login) {
   login_t *entry;
   int len = strlen("root") < strlen(login->user) ? 5 : strlen(login->user);
   if (strncmp("root", login->user, len) == 0) {
-    if (login->uid != 0) return WRONG_UID;
+    if (login->uid != 0)
+      return WRONG_UID;
   } else {
-    if (login->uid == 0) return WRONG_UID;
+    if (login->uid == 0) {
+      return WRONG_UID;
+      }
     // Check if user already exists
     int ret = get_user_by_name(ctx, login->user, &entry);
     if (ret) {
       ret = 0; // Did not find existing user
     } else {
-      // eprintf("\t+ User exists but uids do not match %d != %d\n", __FUNCTION__, login->user, login->uid, entry->uid);
+      // eprintf("\t+ User exists but uids do not match %d != %d\n",
+      // __FUNCTION__, login->user, login->uid, entry->uid);
       ret = USER_EXISTS;
-      //if (entry->uid != login->uid) ret = WRONG_UID; 
+      // if (entry->uid != login->uid) ret = WRONG_UID;
     }
     free(entry);
     return ret;
@@ -269,8 +272,13 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
 #endif
 
   /* Check if the new_user was assigned a valid user/uid */
-  int ret = verify_login(ctx, new_user);
-  if (ret) return ret;
+  int ret = verify_login(ctx, actor);
+  if (ret) {
+#ifdef DEBUG_POLICY
+    eprintf("\t + (%s) verify_login failed with %d\n", __FUNCTION__, ret);
+#endif
+    return ret;
+  }
 
   char *resource = gen_resource_key(CREDENTIAL, new_user, NULL);
 
@@ -281,14 +289,27 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
   ret = put(ctx, actor, resource, new_user, sizeof(login_t));
   free(resource);
   if (ret) {
+#ifdef DEBUG_POLICY
+    eprintf("\t + (%s) put failed with %d\n", __FUNCTION__, ret);
+#endif
     return ret;
   }
   char *policy = gen_default_user_policy(new_user->user);
   if (policy == NULL) {
+#ifdef DEBUG_POLICY
+    eprintf("\t + (%s) gen_default_user_policy failed\n", __FUNCTION__);
+#endif
     return ret;
   }
 
   ret = put_policy(ctx, actor, new_user, policy);
+#ifdef DEBUG_POLICY
+  if (ret) {
+    eprintf("\t + (%s) put_policy failed with %d\n", __FUNCTION__, ret);
+  }
+
+#endif
+
   free(policy);
 
   /* TODO: if put_policy fails then we must remove user's login OR
@@ -303,8 +324,7 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
 }
 
 /* Allocates memory for user */
-int get_user_by_name(sg_ctx_t *ctx, const char *name,
-             login_t **user) {
+int get_user_by_name(sg_ctx_t *ctx, const char *name, login_t **user) {
   char *key;
   size_t len;
 
@@ -321,8 +341,7 @@ int get_user_by_name(sg_ctx_t *ctx, const char *name,
 }
 
 /* Allocates memory for user */
-int get_user_by_id(sg_ctx_t *ctx, uint32_t uid,
-             login_t **user) {
+int get_user_by_id(sg_ctx_t *ctx, uint32_t uid, login_t **user) {
   char *key;
   size_t len;
   uint32_t id = uid;

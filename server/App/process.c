@@ -1,149 +1,85 @@
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
+#include <sys/select.h>
+#include <errno.h>
 
-#include "sgx_urts.h"
+#include "Enclave_u.h" 
+#include "sg_defs.h"
+#include "ipc_util.h"
 
-#include "Enclave_u.h"
-#include "sg_interface.h"
-#include "sgd_frame.h"
-#include "sgd_message.h"
-
-#define DEBUG_PROCESS 1
-
-// char *socket_path = "./socket";
-char *socket_path = "/tmp/sg";
 
 extern sgx_enclave_id_t global_eid;
 
-static int process_request(uint8_t *data, size_t data_len) {
-  /*
-struct request_msg *msg;
-  sgx_status_t status;
-  int ret;
-  //assert(data_len == sizeof(struct request_msg));
-
-  msg = (struct request_msg *)data;
-  print_request_msg(msg);
-
-  switch(msg->cmd) {
-    case ADD_CMD:
-      printf("add ");
-      status = ecall_add_user(&ret, msg->key, msg->value);
-    break;
-    case AUTH_CMD:
-      printf("auth ");
-      status = ecall_auth_user(&ret, msg->key, msg->value);
-    break;
-  }
-
-  if (status || ret) {
-  // Error
-  }
-
- // printf("%s %s\n", msg->key, msg->value);
+/* Holds the function to be called if the fd
+ * is ready to process updates
+ * Do we even need this?
  */
-}
-
 void *process() {
-  struct sockaddr_un addr;
-  char buf[100];
-  sg_frame_t frame;
-  int ret, fd, cl, rc;
+  int ipc_fd, max_fd;
+  int fds[MAX_NODES + 1];
+  int check_fds[MAX_NODES + 1];
+  fd_set read_fds;
+  size_t fds_len, num_check = 0;
   sgx_status_t status;
+  int ret, i;
 
-  sg_frame_ctx_t frame_ctx;
-  struct response_msg *response = init_response_msg();
+  ipc_fd = prepare_ipc_socket();
+#ifdef DEBUG_PROCESS
+  if (!(ipc_fd > 0)) {
+    eprintf("\t+ (%s) Failed to create ipc socket\n", __FUNCTION__);
+  }
+#endif
 
-  if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-    perror("socket error");
+  status = ecall_get_connection_fds(global_eid, &ret, &fds[1], MAX_NODES, &fds_len);
+#ifdef DEBUG_PROCESS
+  if (fds_len == 0) {
+    eprintf("\t+ (%s) Not receiving updates from nodes ...\n", __FUNCTION__);
+  }
+  if (status != SGX_SUCCESS) {
+    eprintf("SGX error\n");
     return NULL;
   }
+#endif
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sun_family = AF_UNIX;
-  strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
-  unlink(socket_path);
+  // Set the first entry to be the ipc fd
+  fds[0] = ipc_fd;
+  fds_len += 1;
 
-  // TODO: restrict permissions to socket_path
-
-  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-    perror("bind error");
-    return NULL;
-  }
-
-  if (listen(fd, 5) == -1) {
-    perror("listen error");
-    return NULL;
-  }
-
-  init_sg_frame_ctx(&frame_ctx);
   while (1) {
-    if ((cl = accept(fd, NULL, NULL)) == -1) {
-      perror("accept error");
-      continue;
+    // Prepare read set
+    max_fd = 0;
+    FD_ZERO(&read_fds);
+
+    for (i = 0; i < fds_len; ++i) {
+      max_fd = (max_fd < fds[i]) ? fds[i] : max_fd;
+      if (fds[i] > 0)
+        FD_SET(fds[i], &read_fds);
     }
-  loop:
-    while ((rc = read(cl, &frame, sizeof(sg_frame_t))) > 0) {
-      // print_sg_frame(&frame);
-      if (process_frame(&frame, &frame_ctx)) {
-#ifdef DEBUG_PROCESS
-        printf("All frames recieved\n");
-#endif
-        break;
+    max_fd += 1;
+
+    // Do select()
+    ret = select(max_fd, &read_fds, NULL, NULL, NULL);
+    switch (ret) {
+    case -1:
+      perror("select()");
+      return NULL;
+    case 0:
+      printf("select() returned 0\n");
+      return NULL;
+    default:
+      // ipcs messages
+      if (FD_ISSET(ipc_fd, &read_fds)) {
+        ret = process_ipc_message(ipc_fd);
       }
-    }
-    if (rc == -1) {
-      perror("read");
-      free_sg_frame_ctx(&frame_ctx);
-      return NULL;
-    } else if (rc == 0) {
-      printf("EOF\n");
-      close(cl);
-      return NULL;
-    }
-    // printf("TODO: process frame_ctx-> data, and write result back to
-    // client\n");
-#ifdef DEBUG_PROCESS
-    printf("request recieved (len %d) : '", frame_ctx.data_len);
-    for (int i = 0; i < frame_ctx.data_len; ++i)
-      printf("%c", frame_ctx.data[i]);
-    printf("'\n");
-#endif
-    ret = 0;
-    // enclave will cast it to struct request_msg
-    // ret contains the return value of the sg_XX function, this will be
-    // returned to the client
-    // status = ecall_process_request(global_eid, &ret, frame_ctx.data,
-    // frame_ctx.data_len);
 
-    status = ecall_process_request(global_eid, frame_ctx.data,
-                                   frame_ctx.data_len, response);
-    if (status) {
-      perror("sgx");
-      return NULL;
+      // update messages
+      num_check = 0;
+      for (i = 1; i < fds_len; ++i) {
+        if (fds[i] > 0 && FD_ISSET(fds[i], &read_fds)) {
+          check_fds[num_check++] = fds[i];
+        }
+      }
+      status = ecall_process_updates_sg(global_eid, &ret, check_fds, num_check);
     }
-
-#ifdef DEBUG_PROCESS
-    printf("\t+ (%s) After ecall_process_request() response->ret = %d\n",
-           __FUNCTION__, response->ret);
-#endif
-    fflush(stdout);
-    fflush(stderr);
-
-    if (write(cl, response, sizeof(struct response_msg)) !=
-        sizeof(struct response_msg)) {
-      perror("write error");
-    }
-
-    clear_sg_frame_ctx(&frame_ctx);
-  }
-  free(response);
-  free_sg_frame_ctx(&frame_ctx);
-  return NULL;
+  } // while(1)
 }
 

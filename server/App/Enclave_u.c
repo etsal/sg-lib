@@ -29,6 +29,19 @@ typedef struct ms_ecall_poll_and_process_updates_t {
 	int ms_retval;
 } ms_ecall_poll_and_process_updates_t;
 
+typedef struct ms_ecall_get_connection_fds_t {
+	int ms_retval;
+	int* ms_fds;
+	size_t ms_max_len;
+	size_t* ms_len;
+} ms_ecall_get_connection_fds_t;
+
+typedef struct ms_ecall_process_updates_sg_t {
+	int ms_retval;
+	int* ms_fds;
+	size_t ms_len;
+} ms_ecall_process_updates_sg_t;
+
 typedef struct ms_ecall_add_user_t {
 	int ms_retval;
 	char* ms_username;
@@ -655,6 +668,29 @@ sgx_status_t ecall_poll_and_process_updates(sgx_enclave_id_t eid, int* retval)
 	return status;
 }
 
+sgx_status_t ecall_get_connection_fds(sgx_enclave_id_t eid, int* retval, int* fds, size_t max_len, size_t* len)
+{
+	sgx_status_t status;
+	ms_ecall_get_connection_fds_t ms;
+	ms.ms_fds = fds;
+	ms.ms_max_len = max_len;
+	ms.ms_len = len;
+	status = sgx_ecall(eid, 8, &ocall_table_Enclave, &ms);
+	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
+	return status;
+}
+
+sgx_status_t ecall_process_updates_sg(sgx_enclave_id_t eid, int* retval, int* fds, size_t len)
+{
+	sgx_status_t status;
+	ms_ecall_process_updates_sg_t ms;
+	ms.ms_fds = fds;
+	ms.ms_len = len;
+	status = sgx_ecall(eid, 9, &ocall_table_Enclave, &ms);
+	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
+	return status;
+}
+
 sgx_status_t ecall_add_user(sgx_enclave_id_t eid, int* retval, const char* username, const char* password)
 {
 	sgx_status_t status;
@@ -663,7 +699,7 @@ sgx_status_t ecall_add_user(sgx_enclave_id_t eid, int* retval, const char* usern
 	ms.ms_username_len = username ? strlen(username) + 1 : 0;
 	ms.ms_password = (char*)password;
 	ms.ms_password_len = password ? strlen(password) + 1 : 0;
-	status = sgx_ecall(eid, 8, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 10, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }
@@ -676,7 +712,7 @@ sgx_status_t ecall_auth_user(sgx_enclave_id_t eid, int* retval, const char* user
 	ms.ms_username_len = username ? strlen(username) + 1 : 0;
 	ms.ms_password = (char*)password;
 	ms.ms_password_len = password ? strlen(password) + 1 : 0;
-	status = sgx_ecall(eid, 9, &ocall_table_Enclave, &ms);
+	status = sgx_ecall(eid, 11, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;
 }

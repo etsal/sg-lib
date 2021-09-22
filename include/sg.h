@@ -6,6 +6,7 @@
 #include "config.h"
 #include "ra_tls.h"
 #include "store.h"
+#include "sg_defs.h"
 
 typedef struct {
   key_cert_t kc;     // RA-TLS Keys and Certs
@@ -35,7 +36,10 @@ int initiate_connections_sg(sg_ctx_t *ctx);
 void cleanup_connections_sg();
 
 // Network functions. See sg_network.c
-int poll_and_process_updates_sg(sg_ctx_t *ctx);
+int poll_and_process_updates_sg(sg_ctx_t *ctx); // out of commission
+void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len);
+void get_connection_fds(int *fds, size_t max_len, size_t *len);
+int push_updates_sg(sg_ctx_t *ctx);
 
 // Testing purposes
 int send_msg_sg(sg_ctx_t *ctx, const char *msg);

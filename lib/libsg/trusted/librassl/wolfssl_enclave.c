@@ -5,12 +5,13 @@
 #include <wolfssl/wolfcrypt/types.h>
 
 #include "sg_t.h" // For boundary calls
+#include "sg_defs.h"
 
 #define WOLFTLSv12_CLIENT 1
 #define WOLFTLSv12_SERVER 2
 
-#define MAX_WOLFSSL_CTX 6
-#define MAX_WOLFSSL 6 // Max number of WOLFSSL's
+#define MAX_WOLFSSL_CTX MAX_NODES+1
+#define MAX_WOLFSSL MAX_NODES+1 // Max number of WOLFSSL's
 
 WOLFSSL_CTX* CTX_TABLE[MAX_WOLFSSL_CTX];
 WOLFSSL* SSL_TABLE[MAX_WOLFSSL];

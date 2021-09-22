@@ -1,17 +1,21 @@
 
-#include <string.h>     // memcpy
 #include "sg_messages.h"
-#include "sg_stdfunc.h" //htonl
 #include "sg_common.h"
+#include "sg_stdfunc.h" //htonl
+#include <string.h>     // memcpy
 
 #define DEBUG_SG 1
 
 static const char *get_message_header_type(int type) {
-  switch(type) {
-    case HEARTBEAT: return "HEARTBEAT";
-    case INCOMING: return "INCOMING";
-    case MESSAGE: return "MESSAGE";
-    default: return "UNKNOWN";
+  switch (type) {
+  case HEARTBEAT:
+    return "HEARTBEAT";
+  case INCOMING:
+    return "INCOMING";
+  case MESSAGE:
+    return "MESSAGE";
+  default:
+    return "UNKNOWN";
   }
 }
 
@@ -36,7 +40,7 @@ static void prepare_frame(int type, uint8_t *data, size_t data_len,
     *out_len += sizeof(header);
     break;
 
-  case INCOMING:  // always sizeof(struct message_header)
+  case INCOMING: // always sizeof(struct message_header)
     header.incoming_len = data_len;
     *out = malloc(sizeof(struct message_header));
     memcpy(*out, &header, sizeof(header));
@@ -54,9 +58,9 @@ static void prepare_frame(int type, uint8_t *data, size_t data_len,
     break;
   }
 
-
 #ifdef DEBUG_SG
-  eprintf("\t\t+ (%s) Prepared %s frame '%s'\n", __FUNCTION__, get_message_header_type(header.type), hexstring(*out, *out_len));
+  eprintf("\t\t+ (%s) Prepared %s frame '%s'\n", __FUNCTION__,
+          get_message_header_type(header.type), hexstring(*out, *out_len));
 #endif
 }
 
@@ -69,14 +73,24 @@ int prepare_and_send_updates(ratls_ctx_t *ctx, uint8_t *data, size_t data_len) {
   size_t out_len;
   int ret;
 
+#ifdef DEBUG_SG
+  eprintf("+ (%s) start", __FUNCTION__);
+#endif
+
   prepare_frame(INCOMING, NULL, data_len, &out, &out_len);
+
+  // eprintf("a\n");
   ret = write_ratls(ctx, out, out_len);
+  // eprintf("b\n");
   free(out);
+  // eprintf("c\n");
 
   if (ret != out_len)
     return 1;
 
   prepare_frame(MESSAGE, data, data_len, &out, &out_len);
+  eprintf("d\n");
+
   ret = write_ratls(ctx, out, out_len);
   free(out);
 
@@ -104,11 +118,12 @@ int process_message(ratls_ctx_t *ctx) {
     eprintf("\t+ (%s) ERROR: Connection closed\n", __FUNCTION__);
 #endif
     exit(1);
-    //return 1;
+    // return 1;
   }
   if (ret != sizeof(struct message_header)) {
 #ifdef DEBUG_SG
-    eprintf("\t\t+ (%s) FAILED: Read %d instead of %d \n", __FUNCTION__, ret, sizeof(struct message_header));
+    eprintf("\t\t+ (%s) FAILED: Read %d instead of %d \n", __FUNCTION__, ret,
+            sizeof(struct message_header));
 #endif
     return 1;
   }
@@ -134,7 +149,8 @@ int process_message(ratls_ctx_t *ctx) {
       return 1;
     }
 #ifdef DEBUG_SG
-    eprintf("\t\t+ (%s) Incoming message '%s' \n", __FUNCTION__, buf + sizeof(struct message_header));//hexstring(buf, buf_len));
+    eprintf("\t\t+ (%s) Incoming message '%s' \n", __FUNCTION__,
+            buf + sizeof(struct message_header)); // hexstring(buf, buf_len));
 #endif
     break;
 
@@ -142,8 +158,8 @@ int process_message(ratls_ctx_t *ctx) {
 #ifdef DEBUG_SG
     eprintf("I don't know how to handle MESSAGE\n");
 #endif
-    //exit(1);
-    //break;
+    // exit(1);
+    // break;
   }
 
   return 0;

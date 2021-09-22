@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
   printf("Password: ");
   readPass(password);
 
+  printf("\n");
+
   request = gen_request_msg(BIND_USER, username, password, strlen(password)+1);
   response = init_response_msg();
   ret = sgd_sync_make_request(&sg_ret, request, response);
@@ -54,10 +56,16 @@ int main(int argc, char *argv[]) {
   memset(username, 0, 101);
   memset(password, 0, 101);
 
+  fflush(stdout);
+
   printf("New Username: ");
   readUser(username);
   printf("New Password: ");
   readPass(password);
+  
+  printf("\n");
+
+  //printf("'%s' '%s'\n", username, password);
 
   request = gen_request_msg(PUT_USER, username, password, strlen(password)+1);
   request->nonce = nonce;

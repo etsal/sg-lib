@@ -8,18 +8,22 @@
 #include "sg.h"
 #include "sg_common.h"
 #include "sg_messages.h"
+#include "sg_stdfunc.h"
 #include "sg_util.h"
 #include "wolfssl_enclave.h"
-#include "sg_stdfunc.h"
 
-#include "stdfunc_t.h"
 #include "networking_t.h"
+#include "stdfunc_t.h"
 
 #define DEBUG_SG 1
 #define INET6_ADDRSTRLEN 46 /* copied from <arpa/inet.h> */
 
+/* Keep a global array of client->server
+ * and server-> client connections
+ *
+ */
 struct connection {
-  int ignore; // Ignore this entry when iterating
+  int ignore; // Ignore this struct when iterating
   int is_connected;
   int retries;
   ratls_ctx_t ratls;
@@ -80,6 +84,15 @@ static struct connection *find_connection(const char *ip,
   return NULL;
 }
 
+static struct connection *find_connection_with_fd(int fd,
+                                                  struct connection **c) {
+  for (int i = 0; i < num_hosts; ++i) {
+    if (c[i]->ratls.sockfd == fd)
+      return c[i];
+  }
+  return NULL;
+}
+
 /* init_connections_sg()
  * Initializes connection structures
  * TODO:Remember to set retry count and flags for all connections
@@ -97,7 +110,8 @@ void init_connections(sg_ctx_t *ctx) {
   assert(num_hosts != 0 && num_hosts < MAX_NODES);
 
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) This host is %s - %s out of %d other hosts\n", __FUNCTION__, hostname, ip, num_hosts);
+  eprintf("\t+ (%s) This host is %s - %s out of %d other hosts\n", __FUNCTION__,
+          hostname, ip, num_hosts);
 #endif
 
   // Run server without connection to other nodes
@@ -240,10 +254,17 @@ int push_updates_sg(sg_ctx_t *ctx) {
 #endif
     return 1;
   }
-  update = malloc(update_len);
-  get_update(ctx, update, update_len);
 
-  for (int i = 0; i < num_hosts; ++i) {
+  update = malloc(update_len);
+  if (update == NULL) {
+    eprintf("+ (%s) malloc failed\n", __FUNCTION__);
+    return 1;
+  }
+  get_update(ctx, update, update_len);
+  
+  int i;
+  for (i = 0; i < num_hosts; ++i) {
+
     if (client_connections[i]->ignore)
       continue;
 
@@ -258,9 +279,59 @@ int push_updates_sg(sg_ctx_t *ctx) {
       // break;
     }
   }
-
   free(update);
   return 0;
+}
+
+/*
+ * Fills fds in with server_connection fds
+ */
+void get_connection_fds(int *fds, size_t max_len, size_t *len) {
+
+  int i; // j = 0;
+
+  if (max_len < num_hosts) {
+    *len = 0;
+    return;
+  }
+
+  for (i = 0; i < num_hosts; ++i) {
+    if (server_connections[i]->ignore) {
+      fds[i] = 0; // SGX will not copy  INT_MAX / -1 properly
+    } else {
+      // This connection is set (flag) and not to ourselves (ignore)
+      if (!(!server_connections[i]->ignore &&
+            server_connections[i]->is_connected)) {
+#ifdef DEBUG_SG
+        eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n",
+                __FUNCTION__, server_connections[i]->hostname);
+#endif
+        // return 1;
+      }
+
+      fds[i] = server_connections[i]->ratls.sockfd;
+      // m[j].sockfd = active_fds[i];
+      // m[j].c = server_connections[i];
+      //++j;
+    }
+  }
+  *len = num_hosts;
+}
+
+/* For each fd in the array, find it in the server_connections array
+ * and call process_message on that connection
+ */
+void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len) {
+  struct connection *conn;
+  int i;
+  for (i = 0; i < len; ++i) {
+    conn = find_connection_with_fd(fds[i], server_connections);
+    if (conn == NULL) {
+      // connection not found
+      continue;
+    }
+    process_message(&conn->ratls);
+  }
 }
 
 /* poll_for_updates()
@@ -470,7 +541,9 @@ int initiate_connections_sg(sg_ctx_t *ctx) {
 
 static void close_connections(struct connection **c) {
   for (int i = 0; i < num_hosts; ++i) {
-    if (c[i] == NULL) return; // If we encounter a null connection, than it has already been cleaned up
+    if (c[i] == NULL)
+      return; // If we encounter a null connection, than it has already been
+              // cleaned up
     if (c[i]->is_connected) { // Only cleanup structs that represent a
                               // successful connection (maybe do all?)
 #ifdef DEBUG_SG
