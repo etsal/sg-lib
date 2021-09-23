@@ -50,7 +50,7 @@ int check_against_policy(sg_ctx_t *ctx, const login_t *user, const char *resourc
   size_t value_len;
 
 #ifdef DEBUG_POLICY_UTIL
-  eprintf("\t+ (%s) start\n" , __FUNCTION__);
+  //eprintf("\t+ (%s) Checking action against policy ...\n" , __FUNCTION__);
 #endif
 
   // Generate the key we will use to lookup the policies (p:<user>)
@@ -100,7 +100,7 @@ int check_against_policy(sg_ctx_t *ctx, const login_t *user, const char *resourc
   memcpy(policies, value, strlen(value)+1);
 
 #ifdef DEBUG_POLICY_UTIL
-    eprintf("\t\t+ (%s) key '%s' value '%s'\n", __FUNCTION__, policy_key, value); 
+    //eprintf("\t+ (%s) key '%s' value '%s'\n", __FUNCTION__, policy_key, value); 
 #endif
 
   // Iterate through policies (newline delimited)
@@ -108,7 +108,7 @@ int check_against_policy(sg_ctx_t *ctx, const login_t *user, const char *resourc
   while (policy != NULL) {
 
 #ifdef DEBUG_POLICY_UTIL
-    eprintf("\t\t+ (%s) Found policy '%s'\n", __FUNCTION__, policy);
+    //eprintf("\t+ (%s) Found policy '%s'\n", __FUNCTION__, policy);
 #endif
 
     // Check the action against each policy
@@ -117,7 +117,7 @@ int check_against_policy(sg_ctx_t *ctx, const login_t *user, const char *resourc
     if (ret != -1) {
       ret = 0;
 #ifdef DEBUG_POLICY_UTIL
-    eprintf("\t\t+ (%s) Matched resource '%s' against policy '%s'\n", __FUNCTION__, access, policy);
+    //eprintf("\t+ (%s) Matched resource '%s' against policy '%s'\n", __FUNCTION__, access, policy);
 #endif
       break; // Break we found a match
 

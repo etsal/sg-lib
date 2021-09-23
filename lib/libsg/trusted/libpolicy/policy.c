@@ -268,7 +268,7 @@ static int verify_login(sg_ctx_t *ctx, const login_t *login) {
 int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
 
 #ifdef DEBUG_POLICY
-  eprintf("\t + (%s) start\n", __FUNCTION__);
+  //eprintf("\t + (%s) start\n", __FUNCTION__);
 #endif
 
   /* Check if the new_user was assigned a valid user/uid */
@@ -283,7 +283,7 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
   char *resource = gen_resource_key(CREDENTIAL, new_user, NULL);
 
 #ifdef DEBUG_POLICY
-  eprintf("\t + (%s) resource %s\n", __FUNCTION__, resource);
+  //eprintf("\t + (%s) resource %s\n", __FUNCTION__, resource);
 #endif
 
   ret = put(ctx, actor, resource, new_user, sizeof(login_t));
@@ -318,7 +318,7 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
    */
 
 #ifdef DEBUG_POLICY
-//  eprintf("+ (%s) complete with ret = %d\n", __FUNCTION__, ret);
+  eprintf("+ (%s) Complete with ret = %d\n", __FUNCTION__, ret);
 #endif
   return ret;
 }

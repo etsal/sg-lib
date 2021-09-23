@@ -553,8 +553,12 @@ void serialize_store(table_t *table, uint8_t **buf, size_t *len) {
   ptable.n_entries = HASH_COUNT(table->entries);
   ptable.entries = malloc(ptable.n_entries * sizeof(Entry *));
 
+eprintf("+ (%s) start\n", __FUNCTION__);
+
   int i = 0;
   for (entry_t *p = table->entries; p != NULL; p = p->hh.next) {
+
+  eprintf("+ (%s) entry count %d\n", __FUNCTION__, i+1);
 
     ptable.entries[i] = malloc(sizeof(Entry));
     entry__init(ptable.entries[i]);

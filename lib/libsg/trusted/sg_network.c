@@ -249,7 +249,7 @@ int push_updates_sg(sg_ctx_t *ctx) {
   update_len = get_update_size(ctx);
   if (!update_len) {
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) ERROR : Update is of length %d\n", __FUNCTION__,
+    eprintf("+ (%s) ERROR : Update is of length %d\n", __FUNCTION__,
             update_len);
 #endif
     return 1;

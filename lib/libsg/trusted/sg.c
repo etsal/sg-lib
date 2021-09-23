@@ -116,7 +116,7 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
     }
 
     // Verify kvstore
-    if (!is_empty_store(&ctx->table)) {
+    if (is_empty_store(&ctx->table)) {
       init_store(&ctx->table, 1); // TODO: specify UID
       // init_new_db(&ctx->db);
     }
@@ -245,7 +245,9 @@ void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
  *
  */
 int get_update_size(sg_ctx_t *ctx) {
-
+//eprintf("+ (%s) table->uid = %d\n", __FUNCTION__, ctx->table.uid);
+//eprintf("+ (%s) table->entries = %s\n", __FUNCTION__, ctx->table.entries == NULL ? "NULL" : "FULL");
+//eprintf("+ (%s) table->versions = %s\n", __FUNCTION__, ctx->table.versions == NULL ?  "NULL" : "FULL");
   if (is_empty_store(&ctx->table)) {
     ctx->update_buf_len = 0;
   } else {
@@ -254,7 +256,7 @@ int get_update_size(sg_ctx_t *ctx) {
     serialize_store(&ctx->table, &ctx->update_buf, &ctx->update_buf_len);
   }
 
-  //eprintf("+ (%s) update_buf_len = %d\n", __FUNCTION__, ctx->update_buf_len);
+  eprintf("+ (%s) update_buf_len = %d\n", __FUNCTION__, ctx->update_buf_len);
 
   return ctx->update_buf_len;
 }
