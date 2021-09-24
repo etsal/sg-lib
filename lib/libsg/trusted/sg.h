@@ -22,7 +22,7 @@ typedef struct {
   configuration *config;
 
   uint32_t next_uid; // Used only with policy
-
+  int uid;
 } sg_ctx_t;
 
 typedef enum { SG_PUT, SG_GET, SG_SAVE } sg_cmd;

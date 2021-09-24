@@ -22,6 +22,8 @@ static int serialize_and_seal_sg(sg_ctx_t *ctx, const char *filepath);
 static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath);
 static void init_keycert(sg_ctx_t *ctx);
 static configuration *parse_config(const char *config, size_t config_len);
+void set_uid(sg_ctx_t *ctx);  // defined in sg_network.c
+
 
 static configuration *parse_config(const char *config, size_t config_len) {
   int cur = 0;
@@ -76,6 +78,7 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   memset(ctx, 0, sizeof(sg_ctx_t));
   sgx_thread_mutex_init(&ctx->table_lock, NULL);
   ctx->iterator = NULL;
+  ctx->uid = 0;
 
 #ifdef __USE_POLICY__
   next_uid = 0;
@@ -85,6 +88,11 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   c = unpack_config(config, config_len);
   ctx->config = c;
   assert(c != NULL && verify_config(config));
+
+  set_uid(ctx);
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) UID SET TO %d\n", __FUNCTION__, ctx->uid);
+#endif
 
   init_log(ctx->config->log_file);
   ret = write_blob_log("Initializing sg\n");
@@ -99,8 +107,9 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   ret = unseal_and_deserialize_sg(ctx, NULL);
   if (ret) {
 #ifdef DEBUG_SG
-    eprintf("\t+ (%s) Failed to unseal_and_deserialize(%s) with ret=%x!\n",
-            __FUNCTION__, ctx->config->sealed_sg_ctx_file, ret);
+    eprintf("\t+ (%s) Failed to loaded saved db, initializing new db ...\n", __FUNCTION__);
+    //eprintf("\t+ (%s) Failed to unseal_and_deserialize(%s) with ret=%x!\n",
+    //        __FUNCTION__, ctx->config->sealed_sg_ctx_file, ret);
 #endif
     // Todo: decide whether or not to do brandnew init
     init_new_sg(ctx);
@@ -117,7 +126,7 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
 
     // Verify kvstore
     if (is_empty_store(&ctx->table)) {
-      init_store(&ctx->table, 1); // TODO: specify UID
+      init_store(&ctx->table, ctx->uid); // TODO: specify UID
       // init_new_db(&ctx->db);
     }
 
@@ -149,17 +158,15 @@ void init_new_sg(sg_ctx_t *ctx) {
       enc_wolfSSL_Debugging_ON();
   #endif
   */
-
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Initializing new sg_ctx ... \n", __FUNCTION__);
+  //eprintf("\t+ (%s) Initializing new sg_ctx ... \n", __FUNCTION__);
 #endif
 
   init_keycert(ctx);
-  init_store(&ctx->table, 1); // TODO: specify uid
-  // init_new_db(&ctx->db);
+  init_store(&ctx->table, ctx->uid); // TODO: specify uid
 
 #ifdef DEBUG_SG
-  eprintf("\t+ (%s) Initializing new sg_ctx ... complete\n", __FUNCTION__);
+  //eprintf("\t+ (%s) Initializing new sg_ctx ... complete\n", __FUNCTION__);
   // eprintf("\t+ (%s) Completed initialization of new sg_ctx!\n",
   // __FUNCTION__);
 #endif

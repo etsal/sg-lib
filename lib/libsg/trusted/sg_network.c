@@ -93,6 +93,34 @@ static struct connection *find_connection_with_fd(int fd,
   return NULL;
 }
 
+void set_uid(sg_ctx_t *ctx) {
+  char **hostips;
+  char ip[INET6_ADDRSTRLEN];
+  int i;
+
+  num_hosts = ctx->config->found_ips;
+  hostips = (char **)ctx->config->ips;
+  gethostip(ip);
+
+  eprintf("+(%s) ip = %s\n", __FUNCTION__, ip);
+
+
+  if (num_hosts == 0) {
+    ctx->uid = 1;
+    eprintf("+(%s) uid = 1\n", __FUNCTION__);
+    return;
+  }
+  for (i = 0; i < num_hosts; ++i) {
+    if (strcmp(ip, hostips[i]) == 0) {
+      ctx->uid = i+1;
+      eprintf("+(%s) uid = %d\n", __FUNCTION__, ctx->uid);
+      return;
+    }
+  }
+  ctx->uid = -1;
+  eprintf("+(%s) uid = -1\n", __FUNCTION__);
+}
+
 /* init_connections_sg()
  * Initializes connection structures
  * TODO:Remember to set retry count and flags for all connections
@@ -261,7 +289,7 @@ int push_updates_sg(sg_ctx_t *ctx) {
     return 1;
   }
   get_update(ctx, update, update_len);
-  
+
   int i;
   for (i = 0; i < num_hosts; ++i) {
 
