@@ -381,7 +381,8 @@ void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len) {
         eprintf("+ (%s) Recieved INCOMING message\n", __FUNCTION__);
         // buf should contain serialized store
 #endif
-      break;
+        apply_update(ctx, buf, buf_len);
+        break;
       default:
         break;
     }

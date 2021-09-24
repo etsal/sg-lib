@@ -356,3 +356,21 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
   return 0;
 }
 
+
+void apply_update(sg_ctx_t *ctx, uint8_t *buf, size_t len) {
+
+  table_t table;
+  deserialize_store(&table, buf, len);
+
+#ifdef DEBUG_SG
+  eprintf("--- Received table ---\n");
+  print_store(&table);
+  eprintf("----------------------\n");
+  eprintf("-- Local store ------\n");
+  print_store(&ctx->table);
+  eprintf("----------------------\n");
+  eprintf("Attempting to merge ...\n");
+#endif
+  merge_store(&ctx->table, &table);
+
+}
