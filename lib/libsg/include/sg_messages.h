@@ -17,7 +17,8 @@ struct message_header {
 
 
 int prepare_and_send_updates(ratls_ctx_t *ctx, uint8_t *data, size_t data_len);
-int process_message(ratls_ctx_t *ctx);
+//int process_message(ratls_ctx_t *ctx);
+int receive_message(ratls_ctx_t *ctx, int *type, uint8_t **buf, size_t *buf_len);
 
 
 #endif

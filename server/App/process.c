@@ -1,12 +1,12 @@
+#include <errno.h>
 #include <stdio.h>
 #include <sys/select.h>
-#include <errno.h>
 
-#include "Enclave_u.h" 
-#include "sg_defs.h"
+#include "Enclave_u.h"
 #include "ipc_util.h"
+#include "sg_defs.h"
 
-
+#define DEBUG_PROCESS 1
 extern sgx_enclave_id_t global_eid;
 
 /* Holds the function to be called if the fd
@@ -25,17 +25,18 @@ void *process() {
   ipc_fd = prepare_ipc_socket();
 #ifdef DEBUG_PROCESS
   if (!(ipc_fd > 0)) {
-    eprintf("\t+ (%s) Failed to create ipc socket\n", __FUNCTION__);
+    printf("\t+ (%s) Failed to create ipc socket\n", __FUNCTION__);
   }
 #endif
 
-  status = ecall_get_connection_fds(global_eid, &ret, &fds[1], MAX_NODES, &fds_len);
+  status =
+      ecall_get_connection_fds(global_eid, &ret, &fds[1], MAX_NODES, &fds_len);
 #ifdef DEBUG_PROCESS
   if (fds_len == 0) {
-    eprintf("\t+ (%s) Not receiving updates from nodes ...\n", __FUNCTION__);
+    printf("\t+ (%s) Not receiving updates from nodes ...\n", __FUNCTION__);
   }
   if (status != SGX_SUCCESS) {
-    eprintf("SGX error\n");
+    printf("SGX error\n");
     return NULL;
   }
 #endif
@@ -45,6 +46,7 @@ void *process() {
   fds_len += 1;
 
   while (1) {
+
     // Prepare read set
     max_fd = 0;
     FD_ZERO(&read_fds);
@@ -55,6 +57,17 @@ void *process() {
         FD_SET(fds[i], &read_fds);
     }
     max_fd += 1;
+
+
+#ifdef DEBUG_PROCESS
+/*
+  printf("+ (%s) active fds :\n", __FUNCTION__);
+  for (i = 0; i < fds_len; ++i) {
+    printf("%d, ", fds[i]);
+  }
+  printf("\n");
+*/
+#endif
 
     // Do select()
     ret = select(max_fd, &read_fds, NULL, NULL, NULL);
@@ -68,16 +81,26 @@ void *process() {
     default:
       // ipcs messages
       if (FD_ISSET(ipc_fd, &read_fds)) {
+        printf("+ (%s) IPC message recieved\n", __FUNCTION__);
         ret = process_ipc_message(ipc_fd);
       }
 
       // update messages
       num_check = 0;
+      memset(check_fds, 0, MAX_NODES + 1);
       for (i = 1; i < fds_len; ++i) {
         if (fds[i] > 0 && FD_ISSET(fds[i], &read_fds)) {
+          printf("+ (%s) Update message recieved from fd = %d\n", __FUNCTION__, fds[i]);
           check_fds[num_check++] = fds[i];
         }
       }
+#ifdef DEBUG_PROCESS
+      eprintf("check_fds: ");
+      for (i=0; i<num_check; ++i) {
+        eprintf("%d, ", check_fds[i]);
+      }
+      eprintf("\n");
+#endif
       status = ecall_process_updates_sg(global_eid, &ret, check_fds, num_check);
     }
   } // while(1)

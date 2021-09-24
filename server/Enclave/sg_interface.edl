@@ -9,7 +9,7 @@ enclave {
     public int ecall_verify_connections_sg();
     public int ecall_poll_and_process_updates();
     public int ecall_get_connection_fds([out, size=max_len] int *fds, size_t max_len, [out] size_t *len);
-    public int ecall_process_updates_sg([in, size=len] int *fds, size_t len);
+    public int ecall_process_updates_sg([in, count=len] int *fds, size_t len);
     
   };
 

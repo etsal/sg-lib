@@ -97,28 +97,20 @@ void set_uid(sg_ctx_t *ctx) {
   char **hostips;
   char ip[INET6_ADDRSTRLEN];
   int i;
-
   num_hosts = ctx->config->found_ips;
   hostips = (char **)ctx->config->ips;
   gethostip(ip);
-
-  eprintf("+(%s) ip = %s\n", __FUNCTION__, ip);
-
-
   if (num_hosts == 0) {
     ctx->uid = 1;
-    eprintf("+(%s) uid = 1\n", __FUNCTION__);
     return;
   }
   for (i = 0; i < num_hosts; ++i) {
     if (strcmp(ip, hostips[i]) == 0) {
-      ctx->uid = i+1;
-      eprintf("+(%s) uid = %d\n", __FUNCTION__, ctx->uid);
+      ctx->uid = i + 1;
       return;
     }
   }
   ctx->uid = -1;
-  eprintf("+(%s) uid = -1\n", __FUNCTION__);
 }
 
 /* init_connections_sg()
@@ -344,6 +336,14 @@ void get_connection_fds(int *fds, size_t max_len, size_t *len) {
     }
   }
   *len = num_hosts;
+
+  // Print sockets
+#ifdef DEBUG_SG
+  eprintf("\t+ (%s) active set of fds:\n", __FUNCTION__);
+  for (int i = 0; i < num_hosts; ++i) {
+    eprintf("\t\t sockfd = %d\n", fds[i]);
+  }
+#endif
 }
 
 /* For each fd in the array, find it in the server_connections array
@@ -351,14 +351,41 @@ void get_connection_fds(int *fds, size_t max_len, size_t *len) {
  */
 void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len) {
   struct connection *conn;
-  int i;
+  uint8_t *buf = NULL;
+  size_t buf_len;
+  int ret, i, type;
+
+  eprintf("+ (%s) len = %d\n", __FUNCTION__, len);
+
   for (i = 0; i < len; ++i) {
     conn = find_connection_with_fd(fds[i], server_connections);
     if (conn == NULL) {
+#ifdef DEBUG_SG
+      eprintf("+ (%s) Failed to find server connection fd = %d\n", __FUNCTION__,
+              fds[i]);
+#endif
       // connection not found
       continue;
     }
-    process_message(&conn->ratls);
+
+#ifdef DEBUG_SG
+    eprintf("+ (%s) Calling recieve_message() ...\n", __FUNCTION__);
+#endif
+
+    ret = receive_message(&conn->ratls, &type, &buf, &buf_len);
+    switch(type) {
+      case HEARTBEAT:
+        break;
+      case INCOMING:
+#ifdef DEBUG_SG
+        eprintf("+ (%s) Recieved INCOMING message\n", __FUNCTION__);
+        // buf should contain serialized store
+#endif
+      break;
+      default:
+        break;
+    }
+    if (buf != NULL) free(buf);
   }
 }
 
@@ -424,7 +451,7 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
       eprintf("\t+ (%s) incoming message from host %s\n", __FUNCTION__,
               server_connections[i]->hostname);
 #endif
-      process_message(&server_connections[i]->ratls);
+      //process_message(&server_connections[i]->ratls);
 
       /*
             uint8_t buf[1024];

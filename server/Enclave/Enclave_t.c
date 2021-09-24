@@ -530,8 +530,13 @@ static sgx_status_t SGX_CDECL sgx_ecall_process_updates_sg(void* pms)
 	sgx_status_t status = SGX_SUCCESS;
 	int* _tmp_fds = ms->ms_fds;
 	size_t _tmp_len = ms->ms_len;
-	size_t _len_fds = _tmp_len;
+	size_t _len_fds = _tmp_len * sizeof(int);
 	int* _in_fds = NULL;
+
+	if (sizeof(*_tmp_fds) != 0 &&
+		(size_t)_tmp_len > (SIZE_MAX / sizeof(*_tmp_fds))) {
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
 
 	CHECK_UNIQUE_POINTER(_tmp_fds, _len_fds);
 

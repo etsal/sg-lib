@@ -78,13 +78,9 @@ int prepare_and_send_updates(ratls_ctx_t *ctx, uint8_t *data, size_t data_len) {
 #endif
 
   prepare_frame(INCOMING, NULL, data_len, &out, &out_len);
-
-  // eprintf("a\n");
   ret = write_ratls(ctx, out, out_len);
-  // eprintf("b\n");
   free(out);
-  // eprintf("c\n");
-
+  
   if (ret != out_len)
     return 1;
 
@@ -103,13 +99,16 @@ int prepare_and_send_updates(ratls_ctx_t *ctx, uint8_t *data, size_t data_len) {
 /* process_message
  * Reads the message from (ctx is a server_connections)
  */
-int process_message(ratls_ctx_t *ctx) {
+int receive_message(ratls_ctx_t *ctx, int *type, uint8_t **buf, size_t *buf_len) {
 
   struct message_header header;
-  uint8_t *buf;
-  int buf_len;
+  //uint8_t *buf;
+  //int buf_len;
   size_t incoming_length;
-  int ret;
+  int ret, len;
+
+
+  *buf_len = 0;
 
   ret = read_ratls(ctx, (uint8_t *)&header, sizeof(struct message_header));
 
@@ -139,27 +138,23 @@ int process_message(ratls_ctx_t *ctx) {
 //    eprintf("\t+ (%s) Expecting message of size %d\n", __FUNCTION__,
 //            header.incoming_len);
 #endif
-    buf_len = sizeof(struct message_header) + header.incoming_len;
-    buf = malloc(buf_len + 1);
-    ret = read_ratls(ctx, buf, buf_len);
-    if (ret != buf_len) {
+    len = sizeof(struct message_header) + header.incoming_len;
+    *buf = malloc(len + 1);
+    ret = read_ratls(ctx, *buf, len);
+    *buf_len = ret;
+    *type = INCOMING;
+    if (ret != len) {
 #ifdef DEBUG_SG
       eprintf("\t\t+ (%s) FAILED: to read message\n", __FUNCTION__);
 #endif
       return 1;
     }
-#ifdef DEBUG_SG
-    eprintf("\t\t+ (%s) Incoming message '%s' \n", __FUNCTION__,
-            buf + sizeof(struct message_header)); // hexstring(buf, buf_len));
-#endif
     break;
 
   default:
 #ifdef DEBUG_SG
     eprintf("I don't know how to handle MESSAGE\n");
 #endif
-    // exit(1);
-    // break;
   }
 
   return 0;
