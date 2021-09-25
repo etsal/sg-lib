@@ -4,6 +4,7 @@
 #include "errlist.h"
 #include "keycert.pb-c.h"
 #include "librassl/attester.h"
+//#include "attester.h"
 #include "sg.h"
 #include "sg.pb-c.h"
 #include "sg_common.h"
@@ -262,9 +263,6 @@ int get_update_size(sg_ctx_t *ctx) {
     ctx->update_buf = NULL;
     serialize_store(&ctx->table, &ctx->update_buf, &ctx->update_buf_len);
   }
-
-  eprintf("+ (%s) update_buf_len = %d\n", __FUNCTION__, ctx->update_buf_len);
-
   return ctx->update_buf_len;
 }
 
@@ -360,9 +358,12 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
 void apply_update(sg_ctx_t *ctx, uint8_t *buf, size_t len) {
 
   table_t table;
+ 
+
   deserialize_store(&table, buf, len);
 
 #ifdef DEBUG_SG
+  eprintf("+ serialized store: %s\n", hexstring(buf, len));
   eprintf("--- Received table ---\n");
   print_store(&table);
   eprintf("----------------------\n");

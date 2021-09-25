@@ -284,8 +284,8 @@ int search_store(table_t *table, const char *regex, char **key, void **value,
 #endif
 
   if (key != NULL) {
-    *key = malloc(strlen(entry->key)+1);
-    memcpy(*key, entry->key, strlen(entry->key)+1);
+    *key = malloc(strlen(entry->key) + 1);
+    memcpy(*key, entry->key, strlen(entry->key) + 1);
   }
 
   // Found key, but only return boolean
@@ -553,12 +553,20 @@ void serialize_store(table_t *table, uint8_t **buf, size_t *len) {
   ptable.n_entries = HASH_COUNT(table->entries);
   ptable.entries = malloc(ptable.n_entries * sizeof(Entry *));
 
-eprintf("+ (%s) start\n", __FUNCTION__);
+#ifdef DEBUG_STORE
+  eprintf("+ (%s) start\n", __FUNCTION__);
+#endif
 
   int i = 0;
   for (entry_t *p = table->entries; p != NULL; p = p->hh.next) {
 
-  eprintf("+ (%s) entry count %d\n", __FUNCTION__, i+1);
+#ifdef DEBUG_STORE
+    eprintf("+ (%s) entry count %d\n", __FUNCTION__, i + 1);
+    eprintf("\t + key='%s', value='%s'\n", p->key,
+            hexstring(p->value, p->value_len));
+    eprintf("\t + key len = %d\n\n", strlen(p->key) + 1);
+
+#endif
 
     ptable.entries[i] = malloc(sizeof(Entry));
     entry__init(ptable.entries[i]);
@@ -611,15 +619,25 @@ eprintf("+ (%s) start\n", __FUNCTION__);
 void deserialize_store(table_t *table, uint8_t *buf, size_t len) {
   Table *ptable = NULL;
 
-  assert(table);
+  if (table == NULL) {
+    eprintf("Error\n");
+    assert(1);
+  }
 
   ptable = table__unpack(NULL, len, buf);
   if (!ptable) {
     return;
   }
 
-  free_store(table);
+  init_store(table, 0);
   table->uid = ptable->uid;
+
+#ifdef DEBUG_STORE
+  eprintf("+ (%s) ptable->uid = %d %d\n", __FUNCTION__, table->uid,
+          ptable->uid);
+  eprintf("+ (%s) ptable->n_enries = %d\n", __FUNCTION__, ptable->n_entries);
+#endif
+
   for (int i = 0; i < ptable->n_entries; ++i) {
     // Create pair
     entry_t *entry = malloc(sizeof(entry_t));
@@ -635,8 +653,20 @@ void deserialize_store(table_t *table, uint8_t *buf, size_t len) {
     entry->versions = NULL;
     protobuf_unpack_vvec(&entry->versions, ptable->entries[i]->versions);
 
+#ifdef DEBUG_STORE
+    eprintf("+ (%s) entry %d: \n", __FUNCTION__, i);
+    eprintf("\t + key='%s' value='%s'\n", ptable->entries[i]->key.data,
+            hexstring(ptable->entries[i]->value.data, ptable->entries[i]->value.len));
+    eprintf("\t + key len = %d\n\n", key_len);
+    // print_entry(entry);
+#endif
+
     // Insert pair into table
-    HASH_ADD_KEYPTR(hh, table->entries, entry->key, strlen(entry->key), entry);
+    HASH_ADD_KEYPTR(hh, table->entries, entry->key, key_len - 1, entry);
+
+#ifdef DEBUG_STORE
+    eprintf("++\n");
+#endif
   }
 
   // Load the table's version vector

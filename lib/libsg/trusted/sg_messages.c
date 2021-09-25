@@ -74,7 +74,7 @@ int prepare_and_send_updates(ratls_ctx_t *ctx, uint8_t *data, size_t data_len) {
   int ret;
 
 #ifdef DEBUG_SG
-  eprintf("+ (%s) start", __FUNCTION__);
+  eprintf("+ (%s) start\n", __FUNCTION__);
 #endif
 
   prepare_frame(INCOMING, NULL, data_len, &out, &out_len);
@@ -85,7 +85,6 @@ int prepare_and_send_updates(ratls_ctx_t *ctx, uint8_t *data, size_t data_len) {
     return 1;
 
   prepare_frame(MESSAGE, data, data_len, &out, &out_len);
-  eprintf("d\n");
 
   ret = write_ratls(ctx, out, out_len);
   free(out);

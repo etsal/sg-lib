@@ -95,11 +95,11 @@ void *process() {
         }
       }
 #ifdef DEBUG_PROCESS
-      eprintf("check_fds: ");
+      printf("check_fds: ");
       for (i=0; i<num_check; ++i) {
-        eprintf("%d, ", check_fds[i]);
+        printf("%d, ", check_fds[i]);
       }
-      eprintf("\n");
+      printf("\n");
 #endif
       status = ecall_process_updates_sg(global_eid, &ret, check_fds, num_check);
     }

@@ -40,6 +40,7 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx); // out of commission
 void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len);
 void get_connection_fds(int *fds, size_t max_len, size_t *len);
 int push_updates_sg(sg_ctx_t *ctx);
+void apply_update(sg_ctx_t *ctx, uint8_t *buf, size_t len);
 
 // Testing purposes
 int send_msg_sg(sg_ctx_t *ctx, const char *msg);

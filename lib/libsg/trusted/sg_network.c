@@ -282,12 +282,21 @@ int push_updates_sg(sg_ctx_t *ctx) {
   }
   get_update(ctx, update, update_len);
 
+#ifdef DEBUG_SG
+  eprintf("+ (%s) serialized store: %s\n", __FUNCTION__, hexstring(update, update_len));
+  eprintf("+ (%s) check serialization ...\n", __FUNCTION__);
+  table_t t1;
+  deserialize_store(&t1, update, update_len);
+  eprintf("+ (%s) Completed deserialization\n", __FUNCTION__);
+  print_store(&t1);
+#endif
+
+
+
   int i;
   for (i = 0; i < num_hosts; ++i) {
-
     if (client_connections[i]->ignore)
       continue;
-
     ret = prepare_and_send_updates(&client_connections[i]->ratls, update,
                                    update_len);
     if (ret) {
