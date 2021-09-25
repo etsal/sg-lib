@@ -620,12 +620,13 @@ void deserialize_store(table_t *table, uint8_t *buf, size_t len) {
   Table *ptable = NULL;
 
   if (table == NULL) {
-    eprintf("Error\n");
-    assert(1);
+    eprintf("+ (%s) Error, table is null\n", __FUNCTION__);
+    return;
   }
 
   ptable = table__unpack(NULL, len, buf);
-  if (!ptable) {
+  if (ptable == NULL) {
+    eprintf("+ (%s) Error, ptable is null\n", __FUNCTION__);
     return;
   }
 
@@ -665,7 +666,7 @@ void deserialize_store(table_t *table, uint8_t *buf, size_t len) {
     HASH_ADD_KEYPTR(hh, table->entries, entry->key, key_len - 1, entry);
 
 #ifdef DEBUG_STORE
-    eprintf("++\n");
+  // eprintf("++\n");
 #endif
   }
 

@@ -101,8 +101,8 @@ int prepare_and_send_updates(ratls_ctx_t *ctx, uint8_t *data, size_t data_len) {
 int receive_message(ratls_ctx_t *ctx, int *type, uint8_t **buf, size_t *buf_len) {
 
   struct message_header header;
-  //uint8_t *buf;
-  //int buf_len;
+  //uint8_t *mbuf;
+  //int mbuf_len;
   size_t incoming_length;
   int ret, len;
 
@@ -142,6 +142,10 @@ int receive_message(ratls_ctx_t *ctx, int *type, uint8_t **buf, size_t *buf_len)
     ret = read_ratls(ctx, *buf, len);
     *buf_len = ret;
     *type = INCOMING;
+  
+    *buf = *buf + sizeof(header);
+    *buf_len = *buf_len - sizeof(header);
+
     if (ret != len) {
 #ifdef DEBUG_SG
       eprintf("\t\t+ (%s) FAILED: to read message\n", __FUNCTION__);

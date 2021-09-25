@@ -358,12 +358,14 @@ static int unseal_and_deserialize_sg(sg_ctx_t *ctx, const char *filepath) {
 void apply_update(sg_ctx_t *ctx, uint8_t *buf, size_t len) {
 
   table_t table;
- 
+#ifdef DEBUG_SG
+  eprintf("+ (%s) serialized store: %s\n", __FUNCTION__, hexstring(buf, len));
+#endif
 
   deserialize_store(&table, buf, len);
 
 #ifdef DEBUG_SG
-  eprintf("+ serialized store: %s\n", hexstring(buf, len));
+  eprintf("+ (%s) deserialize_store complete\n", __FUNCTION__);
   eprintf("--- Received table ---\n");
   print_store(&table);
   eprintf("----------------------\n");
