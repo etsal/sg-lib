@@ -46,6 +46,10 @@ void *process() {
   fds_len += 1;
 
   while (1) {
+#ifdef DEBUG_PROCESS
+  printf("\n\n+ Processing ...\n");
+#endif
+
 
     // Prepare read set
     max_fd = 0;
@@ -81,7 +85,6 @@ void *process() {
     default:
       // ipcs messages
       if (FD_ISSET(ipc_fd, &read_fds)) {
-        printf("+ (%s) IPC message recieved\n", __FUNCTION__);
         ret = process_ipc_message(ipc_fd);
       }
 
@@ -95,13 +98,17 @@ void *process() {
         }
       }
 #ifdef DEBUG_PROCESS
+/*
       printf("check_fds: ");
       for (i=0; i<num_check; ++i) {
         printf("%d, ", check_fds[i]);
       }
       printf("\n");
+*/
 #endif
-      status = ecall_process_updates_sg(global_eid, &ret, check_fds, num_check);
+      if (num_check) {
+        status = ecall_process_updates_sg(global_eid, &ret, check_fds, num_check);
+      }
     }
   } // while(1)
 }

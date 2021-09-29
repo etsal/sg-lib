@@ -76,7 +76,7 @@ int process_ipc_message(int fd) {
 #endif
     if (process_frame(&frame, &frame_ctx)) {
 #ifdef DEBUG_IPC_UTIL
-      printf("+ (%s) All frames recieved\n", __FUNCTION__);
+//      printf("+ (%s) All frames recieved\n", __FUNCTION__);
 #endif
       break;
     }
@@ -93,13 +93,14 @@ int process_ipc_message(int fd) {
   }
 
 #ifdef DEBUG_IPC_UTIL
+/*
   printf("+ (%s) request recieved (len %d) : '", __FUNCTION__,
          frame_ctx.data_len);
   for (int i = 0; i < frame_ctx.data_len; ++i)
     printf("%c", frame_ctx.data[i]);
   printf("'\n");
-
-  print_request_msg((struct request_msg *)frame_ctx.data);
+*/
+print_request_msg((struct request_msg *)frame_ctx.data);
 #endif
 
   // enclave will cast it to struct request_msg
@@ -116,7 +117,7 @@ int process_ipc_message(int fd) {
   }
 
 #ifdef DEBUG_IPC_UTIL
-  printf("\t+ (%s) After ecall_process_request() response->ret = %d\n",
+  printf("+ (%s) After ecall_process_request() response->ret = %d\n",
          __FUNCTION__, response->ret);
 #endif
 

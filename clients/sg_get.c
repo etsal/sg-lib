@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     usage();
   }
 
-  ret = sgd_send_request(&status, GET_REQUEST, argv[1], NULL);  
+  ret = sgd_send_request(&status, GET_REQUEST, argv[1], NULL, 0);  
   if (ret) {
     msg = sgd_get_error_msg(ret);
     fprintf(stderr, "%s", msg);

@@ -12,12 +12,16 @@ typedef enum {
 	PUT_REQUEST, 
 	GET_REQUEST, 
 	SAVE_REQUEST,
+  PRINT_REQUEST, 
 	GET_USER_BY_ID,
 	GET_USER_BY_NAME,
   AUTH_USER,
   BIND_USER,
   PUT_USER
 } request_type;
+/* REMEMBER TO UPDATE sgd_message.h */
+
+
 /*
 typedef struct request_msg {
   uint8_t cmd;
@@ -53,5 +57,7 @@ struct request_msg *gen_request_msg(uint8_t cmd, char *key, uint8_t *value,
 struct response_msg *init_response_msg(); // Allocates memory
 
 void clear_response_msg(struct response_msg *msg);
+
+const char *get_str_request_type(int cmd);
 
 #endif

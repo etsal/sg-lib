@@ -59,8 +59,8 @@ static void prepare_frame(int type, uint8_t *data, size_t data_len,
   }
 
 #ifdef DEBUG_SG
-  eprintf("\t\t+ (%s) Prepared %s frame '%s'\n", __FUNCTION__,
-          get_message_header_type(header.type), hexstring(*out, *out_len));
+//  eprintf("\t\t+ (%s) Prepared %s frame '%s'\n", __FUNCTION__,
+//          get_message_header_type(header.type), hexstring(*out, *out_len));
 #endif
 }
 

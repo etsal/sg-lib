@@ -35,6 +35,15 @@ static int get_user_uid(char *username) {
   return ret;
 }
 
+/****************DEBUG**************/
+static const char *request_type_str[] = {
+    "PUT_REQUEST",   "GET_REQUEST",    "SAVE_REQUEST",
+    "PRINT_REQUEST", "GET_USER_BY_ID", "GET_USER_BY_NAME",
+    "AUTH_USER",     "BIND_USER",      "PUT_USER"};
+
+static const char *get_cmd_str(int cmd) { return request_type_str[cmd]; }
+/**********************************/
+
 void ecall_process_request(uint8_t *data, size_t data_len,
                            struct response_msg *resp) {
   struct request_msg *msg = (struct request_msg *)data;
@@ -43,47 +52,52 @@ void ecall_process_request(uint8_t *data, size_t data_len,
   int ret, tmp = 0, clear_login = 1;
   const char *filepath;
   login_t login;
-  
-  eprintf("+ (%s) start\n", __FUNCTION__);
 
-  //resp->value_len_max = MAX_VALUE_LEN;
+  eprintf("+ (%s) Processing request ... %s\n", __FUNCTION__,
+          get_cmd_str(msg->cmd));
+  // resp->value_len_max = MAX_VALUE_LEN;
 
   switch (msg->cmd) {
 
   case PUT_USER:
     // Assert previous action was BIND_USER
-    // Make sure supplied nonce matches the one that is given so that we can ensure it is the same operation
+    // Make sure supplied nonce matches the one that is given so that we can
+    // ensure it is the same operation
     if (last_nonce != msg->nonce) {
-      resp->ret = 1; 
+      resp->ret = 1;
       break;
     }
-    memcpy(login.user, msg->key, strlen(msg->key)+1);
-    login.uid = sg_ctx.next_uid++;
+    memcpy(login.user, msg->key, strlen(msg->key) + 1);
+    login.uid = ++sg_ctx.next_uid;
+
+    eprintf("+ (%s) Request PUT_USER : new user's uid == %d\n", __FUNCTION__,
+            login.uid);
+
     memcpy(login.password, msg->value, msg->value_len);
     ret = put_user(&sg_ctx, &saved_login, &login);
     resp->ret = ret;
-    last_nonce = 0;   
+    last_nonce = 0;
     if (ret) {
-      eprintf("+ (%s) Failed to add new user - %d.\n", __FUNCTION__, ret);
+      eprintf("+ (%s) Request PUT_USER : FAIL \n", __FUNCTION__);
     } else {
-      eprintf("+ (%s) Successfull added new user - %d.\n", __FUNCTION__, ret);
+      eprintf("+ (%s) Request PUT_USER : SUCCESS \n", __FUNCTION__);
     }
     break;
 
   case BIND_USER:
     // Bind user
     // Create random nonce to send
-    memcpy(login.user, msg->key, strlen(msg->key)+1);
+    memcpy(login.user, msg->key, strlen(msg->key) + 1);
     login.uid = get_user_uid(msg->key);
     memcpy(login.password, msg->value, msg->value_len);
     ret = auth_user(&sg_ctx, &login);
     resp->ret = ret;
     resp->nonce = 0;
     resp->value_len = 0;
-    if (ret) {  
-      eprintf("+ (%s) Incorrect login\n", __FUNCTION__);
+    if (ret) {
+      eprintf("+ (%s) Request BIND_USER : Incorrect login\n", __FUNCTION__);
     } else {
-      eprintf("+ (%s) Correct login\n", __FUNCTION__);
+      eprintf("+ (%s) Request BIND_USER : Correct login\n", __FUNCTION__);
       sgx_read_rand((unsigned char *)&resp->nonce, sizeof(uint32_t));
       last_nonce = resp->nonce;
       memcpy(&saved_login, &login, sizeof(login_t));
@@ -92,16 +106,16 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     break;
 
   case AUTH_USER:
-    memcpy(login.user, msg->key, strlen(msg->key)+1);
+    memcpy(login.user, msg->key, strlen(msg->key) + 1);
     login.uid = get_user_uid(msg->key);
     memcpy(login.password, msg->value, msg->value_len);
     ret = auth_user(&sg_ctx, &login);
     resp->ret = ret;
     resp->value_len = 0;
-    if (ret) {  
-      eprintf("+ (%s) Incorrect login\n", __FUNCTION__);
+    if (ret) {
+      eprintf("+ (%s) Request AUTH_USER : Incorrect login\n", __FUNCTION__);
     } else {
-      eprintf("+ (%s) Correct login\n", __FUNCTION__);
+      eprintf("+ (%s) Request AUTH_USER : Correct login\n", __FUNCTION__);
     }
     break;
 
@@ -163,14 +177,19 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     break;
   }
 
-  if (clear_login) memset(&login, 0, sizeof(login_t));
-  if (resp->ret == 0) {
+  eprintf("+ (%s) Printing kvs ...\n", __FUNCTION__);
+  eprintf("--------------------------------------------\n");
+  print_sg(&sg_ctx, NULL);
+  eprintf("--------------------------------------------\n");
 
-eprintf("+ (%s) Attempting to push update ...\n", __FUNCTION__);
+  if (clear_login)
+    memset(&login, 0, sizeof(login_t));
+  if (msg->cmd == PUT_USER && resp->ret == 0) {
+
+    eprintf("+ (%s) Attempting to push update ...\n", __FUNCTION__);
     push_updates_sg(&sg_ctx);
-eprintf("+ (%s) Complete!\n\n", __FUNCTION__);
+    eprintf("+ (%s) Complete!\n", __FUNCTION__);
   }
-
 }
 /* Should return a response_msg rather than ret
  *

@@ -373,14 +373,19 @@ void free_store(table_t *table) {
 void merge_store(table_t *local_set, table_t *remote_set) {
   entry_t *remote_entry, *local_entry, *next_entry;
 
-  int do_remove, do_add = 0;
+  int do_remove = 0, do_add = 0;
+
+eprintf("\t+ (%s) looking for remote removes...\n", __FUNCTION__);
 
   // Remote removes
   HASH_ITER(hh, local_set->entries, local_entry, next_entry) {
 
+eprintf("\t+ (%s) local entry found (key=%s)\n", __FUNCTION__, local_entry->key);
+
+
     remote_entry = NULL;
 
-    HASH_FIND_INT(remote_set->entries, &local_entry->key, remote_entry);
+    HASH_FIND_STR(remote_set->entries, local_entry->key, remote_entry);
 
     if (remote_entry != NULL)
       continue; // Element exists in both sets
@@ -399,16 +404,23 @@ void merge_store(table_t *local_set, table_t *remote_set) {
 
     if (do_remove) {
       HASH_DEL(local_set->entries, local_entry);
+      //TODO: free the key and value?
       free_vvec(&local_entry->versions);
+      free_entry(local_entry);
       free(local_entry);
       do_remove = 0;
     }
   }
 
+eprintf("\t+ (%s) Looking for remote adds ... \n", __FUNCTION__);
+
+
   // Remote adds
   HASH_ITER(hh, remote_set->entries, remote_entry, next_entry) {
     local_entry = NULL;
-    HASH_FIND_INT(local_set->entries, &remote_entry->key, local_entry);
+    HASH_FIND_STR(local_set->entries, remote_entry->key, local_entry);
+
+eprintf("\t+ (%s) remote entry found (key=%s)\n", __FUNCTION__, remote_entry->key);
 
     if (local_entry != NULL)
       continue;
@@ -430,8 +442,12 @@ void merge_store(table_t *local_set, table_t *remote_set) {
     }
   }
 
+
+eprintf("\t+ (%s) Merging version vectors ... \n", __FUNCTION__);
+
   // Merge version vectors
   merge_vvec(&local_set->versions, &remote_set->versions);
+eprintf("\t+ (%s) Done\n", __FUNCTION__);
 }
 
 static void print_entry(entry_t *entry) {

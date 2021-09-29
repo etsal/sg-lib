@@ -68,7 +68,6 @@ int main(int argc, const char *argv[]) {
 
   pthread_create(&tid, NULL, listen_for_exit, (void *)&ret);
 
-  printf("Processing ...\n");
   pthread_create(&tid2, NULL, process, (void *)&ret2);
 
   pthread_join(tid, NULL); // wait for command line exit

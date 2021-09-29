@@ -82,7 +82,7 @@ void init_sg(sg_ctx_t *ctx, void *config, size_t config_len) {
   ctx->uid = 0;
 
 #ifdef __USE_POLICY__
-  next_uid = 0;
+  ctx->next_uid = 1;
 #endif
 
   // Deserialize configuration structure and save it to the sgx context
@@ -245,7 +245,7 @@ int load_sg(sg_ctx_t *ctx, const char *filepath) {
 }
 
 void print_sg(sg_ctx_t *ctx, void (*format)(const void *data)) {
-  //  db_print(&ctx->db, format);
+  print_store(&ctx->table);
 }
 
 /* get_update_size Returns size of update in bytes

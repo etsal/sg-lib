@@ -5,6 +5,22 @@
 
 #include "sgd_message.h"
 
+const char *request_type_str[] = {
+"PUT_REQUEST",
+"GET_REQUEST",
+"SAVE_REQUEST",
+"PRINT_REQUEST",
+"GET_USER_BY_ID",
+"GET_USER_BY_NAME",
+"AUTH_USER",
+"BIND_USER",
+"PUT_USER"
+};
+
+const char *get_str_request_type(int cmd) {
+    return request_type_str[cmd];
+}
+
 struct response_msg *init_response_msg() {
   struct response_msg *msg = malloc(sizeof(struct response_msg));
   memset(msg, 0, sizeof(struct response_msg));

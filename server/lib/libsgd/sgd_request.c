@@ -88,7 +88,7 @@ const char *sgd_get_error_msg(int ret) {
 
 /* 0 on success, >0 on error , status holds the request return code*/
 int sgd_send_request(int *sg_ret, request_type type, const char *key,
-                     const char *value) {
+                     const char *value, size_t value_len) {
   struct ipc_conn conn;
   struct request_msg *request;
   struct response_msg *response = init_response_msg();
@@ -113,7 +113,7 @@ int sgd_send_request(int *sg_ret, request_type type, const char *key,
   }
 
   // Prepare the request message
-  request = prepare_request(type, key, NULL, 0);
+  request = prepare_request(type, key, value, value_len);
   if (request == NULL) {
 #ifdef DEBUG_SG
     printf("+ (%s) prepare_request() failed\n", __FUNCTION__);

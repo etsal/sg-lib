@@ -283,15 +283,16 @@ int push_updates_sg(sg_ctx_t *ctx) {
   get_update(ctx, update, update_len);
 
 #ifdef DEBUG_SG
-  eprintf("+ (%s) serialized store: %s\n", __FUNCTION__, hexstring(update, update_len));
+/*
+  eprintf("+ (%s) serialized store: %s\n", __FUNCTION__,
+          hexstring(update, update_len));
   eprintf("+ (%s) check serialization ...\n", __FUNCTION__);
   table_t t1;
   deserialize_store(&t1, update, update_len);
   eprintf("+ (%s) Completed deserialization\n", __FUNCTION__);
   print_store(&t1);
+*/
 #endif
-
-
 
   int i;
   for (i = 0; i < num_hosts; ++i) {
@@ -332,8 +333,8 @@ void get_connection_fds(int *fds, size_t max_len, size_t *len) {
       if (!(!server_connections[i]->ignore &&
             server_connections[i]->is_connected)) {
 #ifdef DEBUG_SG
-        eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n",
-                __FUNCTION__, server_connections[i]->hostname);
+//        eprintf("\t+ (%s) Error, cannot recieve updates from host %s)\n",
+//                __FUNCTION__, server_connections[i]->hostname);
 #endif
         // return 1;
       }
@@ -348,10 +349,12 @@ void get_connection_fds(int *fds, size_t max_len, size_t *len) {
 
   // Print sockets
 #ifdef DEBUG_SG
+/*
   eprintf("\t+ (%s) active set of fds:\n", __FUNCTION__);
   for (int i = 0; i < num_hosts; ++i) {
     eprintf("\t\t sockfd = %d\n", fds[i]);
   }
+*/
 #endif
 }
 
@@ -363,8 +366,6 @@ void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len) {
   uint8_t *buf = NULL;
   size_t buf_len;
   int ret, i, type;
-
-  eprintf("+ (%s) len = %d\n", __FUNCTION__, len);
 
   for (i = 0; i < len; ++i) {
     conn = find_connection_with_fd(fds[i], server_connections);
@@ -382,20 +383,22 @@ void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len) {
 #endif
 
     ret = receive_message(&conn->ratls, &type, &buf, &buf_len);
-    switch(type) {
-      case HEARTBEAT:
-        break;
-      case INCOMING:
+    switch (type) {
+    case HEARTBEAT:
+      break;
+    case INCOMING:
 #ifdef DEBUG_SG
-        eprintf("+ (%s) Recieved INCOMING message\n", __FUNCTION__);
-        // buf should contain serialized store
+      eprintf("+ (%s) Recieved INCOMING message\n", __FUNCTION__);
+      // buf should contain serialized store
 #endif
-        apply_update(ctx, buf, buf_len);
-        break;
-      default:
-        break;
+      apply_update(ctx, buf, buf_len);
+      break;
+    default:
+      break;
     }
-    if (buf != NULL) free(buf);
+
+    eprintf("+ (%s) TODO: FREE THE BUFFER!!\n", __FUNCTION__);
+    // free(buf);
   }
 }
 
@@ -461,7 +464,7 @@ int poll_and_process_updates_sg(sg_ctx_t *ctx) {
       eprintf("\t+ (%s) incoming message from host %s\n", __FUNCTION__,
               server_connections[i]->hostname);
 #endif
-      //process_message(&server_connections[i]->ratls);
+      // process_message(&server_connections[i]->ratls);
 
       /*
             uint8_t buf[1024];

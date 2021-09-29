@@ -96,14 +96,14 @@ int bind_user(sg_ctx_t *ctx, const login_t *login) {
   cred_key = gen_resource_key(CREDENTIAL, login, NULL);
 
 #ifdef DEBUG_POLICY
-  eprintf("\t + (%s) cred_key %s\n", __FUNCTION__, cred_key);
+//  eprintf("\t + (%s) cred_key %s\n", __FUNCTION__, cred_key);
 #endif
 
   ret = get_sg(ctx, cred_key, (void **)&saved, &len);
   if (ret) {
     free(cred_key);
 #ifdef DEBUG_POLICY
-    eprintf("\t + (%s) get_sg failed\n", __FUNCTION__);
+//    eprintf("\t + (%s) get_sg failed\n", __FUNCTION__);
 #endif
     return USER_NOEXIST;
   }
