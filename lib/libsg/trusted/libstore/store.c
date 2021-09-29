@@ -313,7 +313,7 @@ static void put_entry_store(table_t *table, entry_t *entry) {
 
   assert(entry->value_len < MAX_VALUE_LEN);
   create_entry(&new_entry, entry->key, entry->value, entry->value_len);
-  assert(!new_entry);
+  assert(new_entry != NULL);
 
   // Add version to element's ts array
   uint64_t ts = get_vvec(&table->versions, table->uid);
@@ -375,13 +375,13 @@ void merge_store(table_t *local_set, table_t *remote_set) {
 
   int do_remove = 0, do_add = 0;
 
-eprintf("\t+ (%s) looking for remote removes...\n", __FUNCTION__);
+  eprintf("\t+ (%s) looking for remote removes...\n", __FUNCTION__);
 
   // Remote removes
   HASH_ITER(hh, local_set->entries, local_entry, next_entry) {
 
-eprintf("\t+ (%s) local entry found (key=%s)\n", __FUNCTION__, local_entry->key);
-
+    eprintf("\t+ (%s) local entry found (key=%s)\n", __FUNCTION__,
+            local_entry->key);
 
     remote_entry = NULL;
 
@@ -404,7 +404,7 @@ eprintf("\t+ (%s) local entry found (key=%s)\n", __FUNCTION__, local_entry->key)
 
     if (do_remove) {
       HASH_DEL(local_set->entries, local_entry);
-      //TODO: free the key and value?
+      // TODO: free the key and value?
       free_vvec(&local_entry->versions);
       free_entry(local_entry);
       free(local_entry);
@@ -412,22 +412,30 @@ eprintf("\t+ (%s) local entry found (key=%s)\n", __FUNCTION__, local_entry->key)
     }
   }
 
-eprintf("\t+ (%s) Looking for remote adds ... \n", __FUNCTION__);
-
+  eprintf("\t+ (%s) Looking for remote adds ... \n", __FUNCTION__);
 
   // Remote adds
   HASH_ITER(hh, remote_set->entries, remote_entry, next_entry) {
     local_entry = NULL;
     HASH_FIND_STR(local_set->entries, remote_entry->key, local_entry);
 
-eprintf("\t+ (%s) remote entry found (key=%s)\n", __FUNCTION__, remote_entry->key);
-
     if (local_entry != NULL)
       continue;
 
-    if (lt_vvec(&local_set->versions,
-                &remote_entry->versions)) { // Local remove/ne is older
-                                            // than remote add, add wins
+    eprintf("\t+ (%s) remote entry NOT found locally (key=%s)\n", __FUNCTION__,
+            remote_entry->key);
+
+    eprintf("\t+ (%s) Local set VV: ", __FUNCTION__);
+    print_vvec(&local_set->versions);
+
+    eprintf("\t+ (%s) Remote entry VV: ", __FUNCTION__);
+    print_vvec(&remote_entry->versions);
+
+    if (xor_vvec(&local_set->versions, &remote_entry->versions)) {
+      do_add = 1;
+    } else if (lt_vvec(&local_set->versions,
+                       &remote_entry->versions)) { // Local remove/ne is older
+                                                   // than remote add, add wins
       do_add = 1;
     } else if (cc_vvec(&remote_entry->versions,
                        &local_set->versions)) { // Add wins
@@ -438,16 +446,16 @@ eprintf("\t+ (%s) remote entry found (key=%s)\n", __FUNCTION__, remote_entry->ke
 
     if (do_add) {
       put_entry_store(local_set, remote_entry);
+      eprintf("\t+ (%s) Added entry to local store\n", __FUNCTION__);
       do_add = 0;
     }
   }
 
-
-eprintf("\t+ (%s) Merging version vectors ... \n", __FUNCTION__);
+  eprintf("\t+ (%s) Merging version vectors ... \n", __FUNCTION__);
 
   // Merge version vectors
   merge_vvec(&local_set->versions, &remote_set->versions);
-eprintf("\t+ (%s) Done\n", __FUNCTION__);
+  eprintf("\t+ (%s) Done\n", __FUNCTION__);
 }
 
 static void print_entry(entry_t *entry) {
@@ -673,7 +681,8 @@ void deserialize_store(table_t *table, uint8_t *buf, size_t len) {
 #ifdef DEBUG_STORE
     eprintf("+ (%s) entry %d: \n", __FUNCTION__, i);
     eprintf("\t + key='%s' value='%s'\n", ptable->entries[i]->key.data,
-            hexstring(ptable->entries[i]->value.data, ptable->entries[i]->value.len));
+            hexstring(ptable->entries[i]->value.data,
+                      ptable->entries[i]->value.len));
     eprintf("\t + key len = %d\n\n", key_len);
     // print_entry(entry);
 #endif
@@ -682,7 +691,7 @@ void deserialize_store(table_t *table, uint8_t *buf, size_t len) {
     HASH_ADD_KEYPTR(hh, table->entries, entry->key, key_len - 1, entry);
 
 #ifdef DEBUG_STORE
-  // eprintf("++\n");
+    // eprintf("++\n");
 #endif
   }
 

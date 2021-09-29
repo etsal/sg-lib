@@ -379,7 +379,7 @@ void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len) {
     }
 
 #ifdef DEBUG_SG
-    eprintf("+ (%s) Calling recieve_message() ...\n", __FUNCTION__);
+    eprintf("+ (%s) Reading message into buffer ...\n", __FUNCTION__);
 #endif
 
     ret = receive_message(&conn->ratls, &type, &buf, &buf_len);
@@ -388,8 +388,9 @@ void process_updates_sg(sg_ctx_t *ctx, int *fds, size_t len) {
       break;
     case INCOMING:
 #ifdef DEBUG_SG
-      eprintf("+ (%s) Recieved INCOMING message\n", __FUNCTION__);
+//      eprintf("+ (%s) Recieved INCOMING message\n", __FUNCTION__);
       // buf should contain serialized store
+      eprintf("+ (%s) Applying update ...\n", __FUNCTION__);
 #endif
       apply_update(ctx, buf, buf_len);
       break;

@@ -359,20 +359,20 @@ void apply_update(sg_ctx_t *ctx, uint8_t *buf, size_t len) {
 
   table_t table;
 #ifdef DEBUG_SG
-  eprintf("+ (%s) serialized store: %s\n", __FUNCTION__, hexstring(buf, len));
+//  eprintf("+ (%s) serialized store: %s\n", __FUNCTION__, hexstring(buf, len));
 #endif
 
   deserialize_store(&table, buf, len);
 
 #ifdef DEBUG_SG
-  eprintf("+ (%s) deserialize_store complete\n", __FUNCTION__);
+//  eprintf("+ (%s) deserialize_store complete\n", __FUNCTION__);
   eprintf("--- Received table ---\n");
   print_store(&table);
   eprintf("----------------------\n");
   eprintf("-- Local store ------\n");
   print_store(&ctx->table);
   eprintf("----------------------\n");
-  eprintf("Attempting to merge ...\n");
+  eprintf("+ (%s) Attempting to merge ...\n", __FUNCTION__);
 #endif
   merge_store(&ctx->table, &table);
 
