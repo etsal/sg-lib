@@ -34,6 +34,7 @@ void copy_vvec(vvec_t *vv1, vvec_t *vv2);
 int lt_vvec(vvec_t *vv1, vvec_t *vv2);
 int eq_vvec(vvec_t *vv1, vvec_t *vv2);
 int cc_vvec(vvec_t *vv1, vvec_t *vv2);
+int xor_vvec(vvec_t *vv1, vvec_t *vv2); 
 void merge_vvec(vvec_t *local, vvec_t *remote);
 
 /* Serialization function */

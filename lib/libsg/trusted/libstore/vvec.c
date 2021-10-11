@@ -18,6 +18,32 @@ void init_vvec(vvec_t *vv, uint64_t uid) {
   add_vvec(vv, uid, 0);
 }
 
+int xor_vvec(vvec_t *vv1, vvec_t *vv2) {
+  version_t *v1, *v2 = NULL;
+
+  if (vv1 == NULL || vv2 == NULL)
+    return 0;
+
+  for (v2 = (*vv2); v2 != NULL; v2 = v2->hh.next) {
+    v1 = NULL;
+    HASH_FIND_INT(*vv1, &v2->uid, v1);
+    if (v1 == NULL)
+      continue; // vv2 contains a versions that vv1 has not seen before
+    else
+      return 0;
+  }
+
+  for (v1 = (*vv1); v1 != NULL; v1 = v1->hh.next) {
+    v2 = NULL;
+    HASH_FIND_INT(*vv2, &v1->uid, v2);
+    if (v2 == NULL)
+      continue;
+    else
+      return 0;
+  }
+  return 1;
+}
+
 /*
  * @param vv1
  * @param vv2
@@ -101,13 +127,13 @@ int cc_vvec(vvec_t *vv1, vvec_t *vv2) {
 int add_vvec(vvec_t *vv, uint64_t uid, uint64_t ts) {
   version_t *new_version = NULL;
 
-    if (vv) { // There are no known versions
-        HASH_FIND_INT(*vv, &uid, new_version);
-        if (new_version) {
-            eprintf("Error, version with uid %lu already exists.\n", uid);
-            return 0;
-        }
+  if (vv) { // There are no known versions
+    HASH_FIND_INT(*vv, &uid, new_version);
+    if (new_version) {
+      eprintf("Error, version with uid %lu already exists.\n", uid);
+      return 0;
     }
+  }
   new_version = malloc(sizeof(version_t)); // Each version inserted is malloc'd
   new_version->uid = uid;
   new_version->ts = ts;
