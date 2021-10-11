@@ -22,3 +22,7 @@ Functions make a IPC call to the daemon found in ```../../server```. Server must
 # Quick Test
 1. Run the following: ```pwgetent passwd <user>```
 2. Run the following: ```CC test.c && ./a.out <user>```
+
+# ToDo
+1. Offline mode on jail startup.
+2. Implement *.
