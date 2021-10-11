@@ -230,7 +230,6 @@ size_t *len) {
 }
 */
 
-
 /* returns:
  * WRONG_UID, USER_EXISTS >0 on error, and 0 on success
  */
@@ -243,7 +242,7 @@ static int verify_login(sg_ctx_t *ctx, const login_t *login) {
   } else {
     if (login->uid == 0) {
       return WRONG_UID;
-      }
+    }
     // Check if user already exists
     int ret = get_user_by_name(ctx, login->user, &entry);
     if (ret) {
@@ -272,7 +271,7 @@ static int verify_login(sg_ctx_t *ctx, const login_t *login) {
 int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
 
 #ifdef DEBUG_POLICY
-  //eprintf("\t + (%s) start\n", __FUNCTION__);
+  // eprintf("\t + (%s) start\n", __FUNCTION__);
 #endif
 
   /* Check if the new_user was assigned a valid user/uid */
@@ -287,7 +286,7 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
   char *resource = gen_resource_key(CREDENTIAL, new_user, NULL);
 
 #ifdef DEBUG_POLICY
-  //eprintf("\t + (%s) resource %s\n", __FUNCTION__, resource);
+  // eprintf("\t + (%s) resource %s\n", __FUNCTION__, resource);
 #endif
 
   ret = put(ctx, actor, resource, new_user, sizeof(login_t));
@@ -327,8 +326,8 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
   return ret;
 }
 
-/* Allocates memory for user 
- * @return : 
+/* Allocates memory for user
+ * @return :
  */
 int get_user_by_name(sg_ctx_t *ctx, const char *name, login_t **user) {
   char *key;
@@ -339,7 +338,12 @@ int get_user_by_name(sg_ctx_t *ctx, const char *name, login_t **user) {
   eprintf("\t+ (%s) searching with key %s\n", __FUNCTION__, re_resource);
 #endif
   int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
-  free(re_resource);
+
+#ifdef DEBUG_POLICY
+  eprintf("\t + (%s) search_sg ret =  %d \n", __FUNCTION__, ret);
+#endif
+
+  //free(re_resource);
 
   if (ret) {
     ret = USER_NOEXIST;
@@ -364,9 +368,9 @@ int get_user_by_id(sg_ctx_t *ctx, uint32_t uid, login_t **user) {
   eprintf("\t + (%s) %s\n", __FUNCTION__, re_resource);
 
   int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
-  free(re_resource);
+  //free(re_resource);
 
-  if (ret) { 
+  if (ret) {
     ret = USER_NOEXIST;
   } else {
     ret = ACTION_SUCCESS;

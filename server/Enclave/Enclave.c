@@ -3,6 +3,7 @@
 
 #include "Enclave_t.h"
 #include "policy.h"
+#include "policy_errlist.h"
 #include "sg.h"
 #include "sg_common.h"
 #include "sg_stdfunc.h" // atoi()
@@ -123,6 +124,11 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     ret = get_user_by_name(&sg_ctx, msg->key, (login_t **)&value);
     resp->ret = ret;
     resp->value_len = 0;
+
+    if (ret != ACTION_SUCCESS) {
+      break;    
+    }
+
     if (sizeof(login_t) < resp->value_len_max) {
       memcpy(resp->value, (login_t *)value, sizeof(login_t));
       resp->value_len = sizeof(login_t);
@@ -138,6 +144,12 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     tmp = atoi(msg->key);
     ret = get_user_by_id(&sg_ctx, tmp, (login_t **)&value);
     resp->ret = ret;
+    resp->value_len = 0;
+
+    if (ret != ACTION_SUCCESS) {
+      break;    
+    }
+
     if (sizeof(login_t) < resp->value_len_max) {
       memcpy(resp->value, (login_t *)value, sizeof(login_t));
       resp->value_len = sizeof(login_t);
@@ -171,6 +183,7 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     break;
   }
 
+  eprintf("+ (%s) Action completed\n", __FUNCTION__);
   eprintf("+ (%s) Printing kvs ...\n", __FUNCTION__);
   eprintf("--------------------------------------------\n");
   print_sg(&sg_ctx, NULL);
