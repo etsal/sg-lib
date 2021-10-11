@@ -83,9 +83,7 @@ int nss_sg_getpwnam_r(void *rv, void *mdata, va_list ap) {
   char *buf = va_arg(ap, char *);
   size_t bsize = va_arg(ap, size_t);
   int *res = va_arg(ap, int *);
- 
-//  int *res = va_arg(ap, int *);
-  char *cp;
+
   char *nbuf = NULL;
   int rc, ret, sg_ret;
 
@@ -128,6 +126,7 @@ cleanup:
   free(request);
   free(response);
 
+  *res = ret;
   return ret;
 }
 
@@ -148,27 +147,35 @@ int nss_sg_getpwuid_r(void *rv, void *mdata, va_list ap) {
   printf("%s : called\n", __FUNCTION__);
 #endif
 
+  struct passwd **tmp = (struct passwd **) rv;
+  *tmp = NULL;
+
   struct request_msg *request = gen_request_msg(GET_USER_BY_ID, id_buf, NULL, 0);
   struct response_msg *response = init_response_msg();
 
   ret = sgd_sync_make_request(&sg_ret, request, response); 
   if (ret) {
-    ret = NS_UNAVAIL;
+    goto cleanup;
+  }
+  ret = NS_UNAVAIL;
+
+  if (response->ret == 0 && response->value_len > 0) {
+      login_to_passwd(pbuf, buf, bsize, (login_t *)response->value);
+      *tmp = pbuf;
+      ret = NS_SUCCESS;
+  } else if (response->ret == 0) {
+    assert(1);
   } else {
-    set_ret_val(&ret, response->ret);
+  assert(1);    
   }
 
-#ifdef DEBUG
-  printf("%s : action returned %d\n", __FUNCTION__, ret);
-#endif
+cleanup:
 
   free(request);
   free(response);
 
+  *res = ret;
   return ret;
-
-
-
 }
 
 int nss_sg_getpwent_r(void *rv, void *mdata, va_list ap) {
