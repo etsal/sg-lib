@@ -1,0 +1,185 @@
+
+140737488349504
+225f37e0304cfeba
+
+Password: 
+Loaded
+        ****open called
+ioctl-------------
+cmd is IOC_IN
+cmd is IOC_OUT
+sizeof(descp): 32, cmd len: 32
+max 65535
+ugd_report_type: 0
+sizeof(u2fhid_report_descriptor): 34
+--------ioctl
+ioctl-------------
+cmd is IOC_IN
+cmd is IOC_OUT
+sizeof(descp): 32, cmd len: 32
+max 34
+ugd_report_type: 0
+sizeof(u2fhid_report_descriptor): 34
+--------ioctl
+
+
+
+write()_ (called with len 64)
+        Nonce: aa 88 c3 d1 b1 dd 4b e5 
+
+
+
+read()_ called 1cdbb040
+U2F_INIT Response
+        Frame Type: TYPE_INIT
+        Frame Command: U2FHID_INIT
+                CID     ff ff ff ff 
+                CMD     (0x86) U2FHID_INIT
+                BCNTL   (hi: 0x0 lo: 0x11) 17
+                PAYLOAD  aa 88 c3 d1 b1 dd 4b e5 01 02 03 04 08 00 00 00 b0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+Sending frame ...
+
+
+
+write()_ (called with len 64)
+U2F_VERSION Request
+
+
+
+read()_ called 1cdbb040
+U2F_VERSION Response
+        Frame Type: TYPE_INIT
+        Frame Command: U2FHID_MSG
+                CID     01 02 03 04 
+                CMD     (0x83) U2FHID_MSG
+                BCNTL   (hi: 0x0 lo: 0x8) 8
+                PAYLOAD  55 32 46 5f 56 32 90 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+Sending frame ...
+
+
+
+write()_ (called with len 64)
+U2F_REGISTER Request
+
+
+
+write()_ (called with len 64)
+
+
+
+read()_ called 1cdbb080
+U2F_REGISTER Response
+hex: 49 11 15 c0 
+decimal: 1225856448
+Adding site to device...
+There are 1 sites.
+Found site!
+Next state set to READ_CONT
+        Frame Type: TYPE_INIT
+        Frame Command: U2FHID_MSG
+                CID     01 02 03 04 
+                CMD     (0x83) U2FHID_MSG
+                BCNTL   (hi: 0x2 lo: 0x79) 633
+                PAYLOAD  05 04 ea 6b 57 42 ff d1 b7 ad 1d ae fa 1d 5a b7 88 72 f2 78 48 68 4c 22 5d cf 23 d4 4c 5b 0d 63 dc 11 cc 35 b7 4f d4 4f da 16 f1 48 ac 52 48 f2 5d a7 a7 e7 0c 11 ae 6a cc 
+Sending frame ...
+
+
+
+read()_ called 1cdbb080
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 0
+                PAYLOAD  cc 86 54 85 b4 51 1d 51 7d 20 49 11 15 c0 4d 7e ed 4d e6 a0 3f 3e 78 c1 79 91 8a 1d 80 62 e1 e6 99 40 67 21 6a 27 81 d9 07 48 30 82 01 c8 30 82 01 6e a0 03 02 01 02 02 14 7f 53 
+Sending frame ...
+
+
+
+read()_ called 1cdbb0c0
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 1
+                PAYLOAD  0b 50 00 e0 4d f2 d0 5f 94 7b ae a0 12 42 47 cc ea 30 30 0a 06 08 2a 86 48 ce 3d 04 03 02 30 29 31 0b 30 09 06 03 55 04 06 13 02 43 41 31 0c 30 0a 06 03 55 04 0a 13 03 52 43 53 
+Sending frame ...
+
+
+
+read()_ called 1cdbb080
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 2
+                PAYLOAD  31 0c 30 0a 06 03 55 04 03 13 03 72 63 73 30 1e 17 0d 31 39 30 36 31 39 31 36 33 36 30 37 5a 17 0d 32 31 30 38 33 31 30 37 35 39 35 39 5a 30 37 31 0b 30 09 06 03 55 04 06 13 02 
+Sending frame ...
+
+
+
+read()_ called 1cdbb0c0
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 3
+                PAYLOAD  43 41 31 13 30 11 06 03 55 04 0a 13 0a 55 32 46 20 44 65 76 69 63 65 31 13 30 11 06 03 55 04 03 13 0a 75 32 66 20 64 65 76 69 63 65 30 59 30 13 06 07 2a 86 48 ce 3d 02 01 06 08 
+Sending frame ...
+
+
+
+read()_ called 1cdbb080
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 4
+                PAYLOAD  2a 86 48 ce 3d 03 01 07 03 42 00 04 64 10 c0 0a 5e 59 ad 56 87 65 02 d1 1f cf 0c 6f 96 d8 b7 ad 0c c1 25 ff b9 71 41 e9 6d 01 30 19 26 0f 93 eb 4e 1e 42 2f de 43 5f ec a9 5b 5a 
+Sending frame ...
+
+
+
+read()_ called 1cdbb0c0
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 5
+                PAYLOAD  93 a1 1d e7 15 08 6a 82 87 ab 0c 26 2b 39 58 57 6a a3 66 30 64 30 1f 06 03 55 1d 23 04 18 30 16 80 14 44 f6 f4 f0 cb a3 12 ae 80 b3 b7 4f 7b 99 6a 74 1e 68 a7 a2 30 1d 06 03 55 
+Sending frame ...
+
+
+
+read()_ called 1cdbb080
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 6
+                PAYLOAD  1d 0e 04 16 04 14 aa a9 b7 e0 1f a4 c2 cf c8 59 87 0b 13 1c 04 eb a3 78 ba 5d 30 0c 06 03 55 1d 13 01 01 ff 04 02 30 00 30 14 06 03 55 1d 11 04 0d 30 0b 82 09 6c 6f 63 61 6c 68 
+Sending frame ...
+
+
+
+read()_ called 1cdbb0c0
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 7
+                PAYLOAD  6f 73 74 30 0a 06 08 2a 86 48 ce 3d 04 03 02 03 48 00 30 45 02 20 53 3f fc 16 f0 61 4c 86 99 d1 d0 87 47 63 80 b5 d8 82 e6 64 52 34 ef b6 b2 83 33 9b 4a d6 56 a3 02 21 00 de af 
+Sending frame ...
+
+
+
+read()_ called 1cdbb080
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 8
+                PAYLOAD  41 42 ca 1b 03 da a8 74 c9 66 b5 ec cd b6 3c 84 4f a0 63 f7 c0 f9 6e 1b 7a 19 1d 74 00 8c 30 46 02 21 00 af 40 37 76 51 58 00 3d 17 c1 66 19 97 57 be 63 56 79 e6 61 17 89 78 88 
+Sending frame ...
+
+
+
+read()_ called 1cdbb0c0
+U2F_CONT Response
+Next state set to READ_CONT.
+        Frame Type: TYPE_CONT
+        Frame Sequence Number: 9
+                PAYLOAD  66 f0 eb 96 3f af de a2 02 21 00 d9 e9 12 87 27 8b b7 1f 2b 9b 33 12 ba d2 80 87 7d 0c de a1 9b 34 7d a9 9b f2 52 29 01 88 26 f1 90 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+Sending frame ...
+        ***close called

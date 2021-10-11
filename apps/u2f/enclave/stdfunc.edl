@@ -1,0 +1,9 @@
+enclave {   
+    trusted{
+
+    };
+
+    untrusted {
+        void ocall_printf([in, string] const char *str);
+    };
+};
