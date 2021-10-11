@@ -2,6 +2,8 @@
 #ifndef __POLICY_ERRLIST_H__
 #define __POLICY_ERRLSIT_H__
 
+
+#define ACTION_SUCCESS 0
 #define USER_EXISTS 320
 #define USER_NOEXIST 321
 #define INCORRECT_PW 322

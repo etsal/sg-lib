@@ -223,6 +223,9 @@ __FUNCTION__, key);
   return ret;
 }
 
+
+/* @return : 0 on success, 1 on error */
+
 int search_sg(sg_ctx_t *ctx, const char *regex, char **key, void **value,
               size_t *len) {
   int ret = search_store(&ctx->table, regex, key, value, len);

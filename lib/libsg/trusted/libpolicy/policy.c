@@ -230,6 +230,10 @@ size_t *len) {
 }
 */
 
+
+/* returns:
+ * WRONG_UID, USER_EXISTS >0 on error, and 0 on success
+ */
 static int verify_login(sg_ctx_t *ctx, const login_t *login) {
   login_t *entry;
   int len = strlen("root") < strlen(login->user) ? 5 : strlen(login->user);
@@ -323,7 +327,9 @@ int put_user(sg_ctx_t *ctx, const login_t *actor, login_t *new_user) {
   return ret;
 }
 
-/* Allocates memory for user */
+/* Allocates memory for user 
+ * @return : 
+ */
 int get_user_by_name(sg_ctx_t *ctx, const char *name, login_t **user) {
   char *key;
   size_t len;
@@ -335,6 +341,11 @@ int get_user_by_name(sg_ctx_t *ctx, const char *name, login_t **user) {
   int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
   free(re_resource);
 
+  if (ret) {
+    ret = USER_NOEXIST;
+  } else {
+    ret = ACTION_SUCCESS;
+  }
   /* Optionally we can check here that we were allowed to preform the search */
 
   return ret;
@@ -354,6 +365,12 @@ int get_user_by_id(sg_ctx_t *ctx, uint32_t uid, login_t **user) {
 
   int ret = search_sg(ctx, re_resource, &key, (void **)user, &len);
   free(re_resource);
+
+  if (ret) { 
+    ret = USER_NOEXIST;
+  } else {
+    ret = ACTION_SUCCESS;
+  }
 
   return ret;
 }

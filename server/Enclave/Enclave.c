@@ -123,11 +123,6 @@ void ecall_process_request(uint8_t *data, size_t data_len,
     ret = get_user_by_name(&sg_ctx, msg->key, (login_t **)&value);
     resp->ret = ret;
     resp->value_len = 0;
-    if (ret) {
-      eprintf("+ (%s) get_user_by_name failed with %d\n", __FUNCTION__, ret);
-      resp->ret = 69; // TODO set better return value
-      break;
-    }
     if (sizeof(login_t) < resp->value_len_max) {
       memcpy(resp->value, (login_t *)value, sizeof(login_t));
       resp->value_len = sizeof(login_t);
@@ -135,7 +130,6 @@ void ecall_process_request(uint8_t *data, size_t data_len,
       eprintf("+ (%s) Error sizeof(login_t) %d >= resp->value_len_max %d\n",
               __FUNCTION__, sizeof(login_t), resp->value_len_max);
       resp->value_len = 0;
-      resp->ret = 69; // TODO set better return value
     }
     free(value);
     break;
@@ -149,9 +143,9 @@ void ecall_process_request(uint8_t *data, size_t data_len,
       resp->value_len = sizeof(login_t);
     } else {
       resp->value_len = 0;
-      resp->ret = 1; // TODO set better return value
     }
     break;
+  
   case PUT_REQUEST:
     assert(msg->value_len < MAX_VALUE_LEN);
     ret = put_sg(&sg_ctx, msg->key, msg->value, msg->value_len);

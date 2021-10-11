@@ -263,6 +263,8 @@ int sgd_send_requestV2(int *sg_ret, struct request_msg *request) {
   return ret;
 }
 
+/* @return : 0 on success, 1 on error, must check response for action return val
+ */
 int sgd_sync_make_request(int *sg_ret, struct request_msg *request,
                           struct response_msg *response) {
   struct ipc_conn conn;
