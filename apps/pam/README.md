@@ -1,5 +1,19 @@
 # PAM Module
 
+```pam_start``` creates a new PAM context and initiated the PAM transaction.
+
+## PAM Service Modules
+
+```auth``` - authentication
+  * pam_authenticate
+  * pam_setcred
+```account``` - account management
+  * pam_acc_mgmt
+```session``` - session management
+  * pam_open_session
+```password``` - password management
+  * ??
+
 # Layout
   * ```pam-module/``` contains the PAM module code that is loaded by ```pam_start``` (check this).
   * ```pam-app/``` contains example applications that rely on the pam module.
