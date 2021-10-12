@@ -16,10 +16,11 @@
 ```session``` - session management
 
   * pam_open_session
+  * pam_close_session
 
 ```password``` - password management
 
-  * ??
+  * pam_chauthtok
 
 # Layout
   * ```pam-module/``` contains the PAM module code that is loaded by ```pam_start``` (check this).
