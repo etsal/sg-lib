@@ -5,13 +5,20 @@
 ## PAM Service Modules
 
 ```auth``` - authentication
+  
   * pam_authenticate
   * pam_setcred
+
 ```account``` - account management
+  
   * pam_acc_mgmt
+
 ```session``` - session management
+
   * pam_open_session
+
 ```password``` - password management
+
   * ??
 
 # Layout
