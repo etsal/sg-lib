@@ -18,7 +18,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "client_ipc.h"
+//#include "client_ipc.h"
 
 #define MAX_USERFILE_SIZE 1024
 #define USERSFILE "users"
@@ -38,7 +38,7 @@ bool auth_user(const char *user, const char *password) {
   bool authenticated = false;
   int ret, status = -1;
 
-  ret = ipc_request(&status, AUTH_REQUEST, user, password);
+  //ret = ipc_request(&status, AUTH_REQUEST, user, password);
   if (ret == 0 && status == 0) {
     authenticated = true;
   }
