@@ -23,94 +23,6 @@
 #define MAX_USERFILE_SIZE 1024
 #define USERSFILE "users"
 
-//#define DEBUG_AUTH 1
-
-bool auth_user(const char *, const char *);
-void change_pass(const char *, const char *);
-/**
- * @brief R
- *
- * @param user
- * @param password
- */
-bool auth_user(const char *user, const char *password) {
-
-  bool authenticated = false;
-  int ret, status = -1;
-
-  //ret = ipc_request(&status, AUTH_REQUEST, user, password);
-  if (ret == 0 && status == 0) {
-    authenticated = true;
-  }
-
-  // printf("%s : ret %d, status %d, auth %d\n", __FUNCTION__, ret, status,
-  // authenticated);
-
-  return authenticated;
-
-  /*
-    FILE *f = fopen(USERSFILE, "r");
-    char content[MAX_USERFILE_SIZE];
-    int pos = 0;
-    bool authenticated = false;
-
-    int c;
-    // Reading the file until EOF and filling content
-    while ((c = fgetc(f)) != EOF) {
-      content[pos++] = c;
-    }
-
-    char *userfield = strtok(content, ":");
-    char *passfield = strtok(NULL, "\n");
-
-    while (1) {
-      if (strcmp(user, userfield) == 0 && strcmp(password, passfield) == 0) {
-        authenticated = true;
-        break;
-      }
-      userfield = strtok(NULL, ":");
-      if (userfield == NULL)
-        break;
-      passfield = strtok(NULL, "\n");
-      if (passfield == NULL)
-        break;
-    }
-    return authenticated;
-
-  */
-}
-
-void change_pass(const char *username, const char *password) {
-  FILE *f = fopen(USERSFILE, "wr");
-  char content[MAX_USERFILE_SIZE];
-  int pos = 0;
-  bool authenticated = false;
-
-  int filepos = 0;
-
-  int c;
-  /* Reading the file until EOF and filling content */
-  while ((c = fgetc(f)) != EOF) {
-    content[pos++] = c;
-  }
-
-  char *userfield = strtok(content, ":");
-  char *passfield = strtok(NULL, "\n");
-  filepos += strlen(userfield) + strlen(passfield) + 2;
-  while (1) {
-    if (strcmp(username, userfield) == 0 && strcmp(password, passfield) == 0) {
-      authenticated = true;
-      break;
-    }
-    userfield = strtok(NULL, ":");
-    if (userfield == NULL)
-      break;
-    passfield = strtok(NULL, "\n");
-    if (passfield == NULL)
-      break;
-  }
-}
-
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
                                    const char **argv) {
   int pam_code;
@@ -158,8 +70,8 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
 #endif
 
   /*Auth user reads a file with usernames and passwords and returns true if
-   * username
-   * and password are correct. Obviously, you must not save clear text passwords
+   * username and password are correct. Obviously, you must not save clear text
+   * passwords
    */
   if (auth_user(username, password)) {
     printf("Welcome, user\n");
@@ -169,10 +81,6 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
     return PAM_PERM_DENIED;
   }
 
-  /* Auth user by calling auth_user provided by sg_daemon
-   * must preform IPC with sg_daemon to pass and recieve requests
-   * Sends: username + password, expects boolean
-   */
 }
 
 PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
@@ -231,9 +139,8 @@ PAM_EXTERN int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc,
 
     // Got old password
     fprintf(stderr, "Old password: %s\n", old_pass);
-    
-    // Verify old password
 
+    // Verify old password
 
     return (retval);
   } else if (flags & PAM_UPDATE_AUTHTOK) {

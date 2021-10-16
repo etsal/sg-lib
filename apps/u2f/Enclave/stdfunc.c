@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "stdfunc.h"
-#include "enclave_t.h"
+#include "Enclave_t.h"
 
 void
 exit(int status)

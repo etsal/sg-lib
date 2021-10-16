@@ -4,7 +4,8 @@ SGX_MODE ?= HW
 SGX_ARCH ?= x64
 SGX_DEBUG ?= 1
 
-WOLFSSL_ROOT    := /net/charm/usr/home/smdukova/sg/deps/wolfssl
+SG_LIB_ROOT     := /net/charm/usr/home/smdukova/sg-lib/lib/libsg
+WOLFSSL_ROOT    := $(SG_LIB_ROOT)/../../deps/wolfssl
 SGX_WOLFSSL_LIB := $(WOLFSSL_ROOT)/IDE/LINUX-SGX
 WOLFSSL_C_FLAGS := -DWOLFSSL_SGX -DUSER_TIME -DWOLFSSL_SGX_ATTESTATION \
                    -DWOLFSSL_KEY_GEN -DWOLFSSL_CERT_GEN -DWOLFSSL_CERT_EXT \
@@ -66,7 +67,7 @@ App_Include_Paths :=-I. \
 					-I$(SGX_SDK)/include \
 					-Iapp -Iapp/include \
 					-Ideps  \
-					-I/net/charm/usr/home/smdukova/sg/include\
+					-I$(SG_LIB_ROOT)/include\
 					-I$(WOLFSSL_ROOT)/ \
 					-I$(WOLFSSL_ROOT)/wolfcrypt/
 
@@ -90,7 +91,7 @@ App_Link_Flags := -L$(SGX_LIBRARY_PATH) \
 			 	  -lpthread \
 				  -lcuse \
 				  -lcurl \
-				  -L/net/charm/usr/home/smdukova/sg -l:libusg.a \
+				  -L${SG_LIB_ROOT}/build -l:libsguntrusted.a \
 				  $(Common_Link_Flags)
 
 #ifneq ($(SGX_MODE), HW)
@@ -121,7 +122,7 @@ Enclave_Include_Paths :=-I. \
 						-Ienclave -Ienclave/x509 \
 						-Ideps \
 						-Ideps/protobuf-c \
-						-I/net/charm/usr/home/smdukova/sg/include\
+						-I$(SG_LIB_ROOT)/include\
 						-I$(WOLFSSL_ROOT)/ \
 						-I$(WOLFSSL_ROOT)/wolfcrypt/
 

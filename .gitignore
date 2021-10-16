@@ -60,6 +60,7 @@ build
 CMakeFiles
 
 #deps/*
+apps/tls
 build/*
 CMakeFiles/*
 deps/protobuf-c
