@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h> /* Necessary for reading secret password from console */
+#include <sys/time.h>
 
 #include <unistd.h> //STDIN_FILENO
 
@@ -84,6 +85,8 @@ int conversation(
      * just like when you digit your password on sudo. I'll publish this soon */
     readPass(pass);
 
+    printf("\n");
+
     /* Malloc-ing the resp string of the i-th response */
     array_resp[i].resp = (char *)malloc(strlen(pass) + 1);
 
@@ -119,56 +122,77 @@ int main() {
   int retval;
   char *username; /* This will be set by PAM with pam_get_item (see below) */
 
-  printf("\n\t+ (%s) Calling pam_start\n", __FUNCTION__);
+  struct timeval st, et;
+/*
+  gettimeofday(&st,NULL);
+//  bubble(a,n);
+  gettimeofday(&et,NULL);
+
+  int elapsed = ((et.tv_sec - st.tv_sec) * 1000000) + (et.tv_usec - st.tv_usec)
+  printf("Sorting time: %d micro seconds\n",elapsed);
+*/
+
+  printf("+ (%s) Calling pam_start\n", __FUNCTION__);
 
   retval = pam_start(service_name, NULL, &conv, &handle); /* Initializing PAM */
   if (retval != PAM_SUCCESS) {
-    fprintf(stderr, "Failure in pam initialization: %s %d\n",
+    fprintf(stderr, "Failure: %s %d\n",
             pam_strerror(handle, retval), retval);
     return 1;
   }
 
-  printf("\n\t+ (%s) Calling pam_authenticate\n", __FUNCTION__);
+  printf("+ (%s) Calling pam_authenticate\n", __FUNCTION__);
+
+  gettimeofday(&st,NULL);
 
   retval = pam_authenticate(
       handle,
       0); /* Do authentication (user will be asked for username and password)*/
   if (retval != PAM_SUCCESS) {
-    fprintf(stderr, "Failure in pam authentication: %s",
+    fprintf(stderr, "Failure: %s",
             pam_strerror(handle, retval));
     return 1;
   }
 
-  printf("\n\t +(%s) Done pam_authenticate\n", __FUNCTION__);
+  gettimeofday(&et,NULL);
 
-  printf("\n\t+ (%s) Calling pam_acc_mgmt\n", __FUNCTION__);
+  int elapsed = ((et.tv_sec - st.tv_sec) * 1000000) + (et.tv_usec - st.tv_usec);
+  printf("Sorting time: %d micro seconds\n",elapsed);
+
+/*
+  printf("+ (%s) Calling pam_acc_mgmt\n", __FUNCTION__);
 
   retval = pam_acct_mgmt(
       handle,
-      0); /* Do account management (check the account can access the system) */
+      0); // Do account management (check the account can access the system)
   if (retval != PAM_SUCCESS) {
-    fprintf(stderr, "Failure in pam account management: %s",
+    fprintf(stderr, "Failure: %s",
             pam_strerror(handle, retval));
     return 1;
   }
+*/
+
+  printf("+ (%s) Calling pam_get_item\n", __FUNCTION__);
 
   /* We now get the username given by the user */
   pam_get_item(handle, PAM_USER, (const void **)&username);
-  printf("WELCOME, %s\n", username);
 
   printf("Do you want to change your password? (answer y/n): ");
   char answer = getc(stdin); /* Taking user answer */
   if (answer == 'y') {
-    retval = pam_chauthtok(
-        handle,
-        0); /* Do update (user will be asked for current and new password) */
+    retval = pam_chauthtok(handle,0); 
+    /* Do update (user will be asked for current and new password) */
     if (retval != PAM_SUCCESS) {
-      fprintf(stderr, "Failure in pam password: %s",
+      fprintf(stderr, "Failure: %s",
               pam_strerror(handle, retval));
       return 1;
     }
   }
 
+  printf("+ (%s) Calling pam_end\n", __FUNCTION__);
+
   pam_end(handle, retval); /* ALWAYS terminate the pam transaction!! */
+
+  printf("+ (%s) Done\n", __FUNCTION__);
 }
 

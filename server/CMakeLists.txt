@@ -10,7 +10,7 @@ set(CMAKE_CXX_COMPILER /usr/local/bin/g++48)
 set(SGX_SDK "/opt/intel/sgxsdk")
 set(SGX_MODE "HW")
 set(SGX_ARCH "x64")
-set(SGX_DEBUG 1)
+set(SGX_DEBUG 0)
 
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps")
 set(LIBSG_ROOT "${CMAKE_SOURCE_DIR}/../lib/libsg")

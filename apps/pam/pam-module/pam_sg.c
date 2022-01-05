@@ -16,15 +16,18 @@
 #endif
 
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "policy_errlist.h"
 #include "sgd_request.h"
 
+#include <pwd.h>
+
 #define MAX_USERFILE_SIZE 1024
 #define USERSFILE "users"
 
-#define DEBUG_AUTH 1
+//#define DEBUG_AUTH 1
 
 
 int sg_ret = 0;
@@ -81,7 +84,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
 
   const char *username = NULL;
   const char *password = NULL;
-
+  struct passwd *pwd;
 #ifdef DEBUG_AUTH
   printf("\n\t+ (%s) Calling pam_get_user\n", __FUNCTION__);
 #endif
@@ -91,6 +94,10 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
   if (pam_code != PAM_SUCCESS) {
     fprintf(stderr, "Can't get username");
     return PAM_PERM_DENIED;
+  }
+
+  if ((pwd = getpwnam(username)) == NULL) {
+    return (PAM_USER_UNKNOWN);
   }
 
 #ifndef DEBUG_AUTH
@@ -126,11 +133,15 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
    * passwords
    */
   if (auth_user(username, password)) {
+#ifdef DEBUG_AUTH
     printf("Welcome, user\n");
+#endif
     return PAM_SUCCESS;
   } else {
+#ifdef DEBUG_AUTH
     fprintf(stderr, "Wrong username or password\n");
-    return PAM_PERM_DENIED;
+#endif
+  return PAM_PERM_DENIED;
   }
 
 }
