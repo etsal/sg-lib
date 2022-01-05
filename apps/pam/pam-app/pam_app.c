@@ -115,7 +115,7 @@ static struct pam_conv conv = {
  */
 int main() {
   pam_handle_t *handle = NULL;
-  const char *service_name = "pam_sg";
+  const char *service_name = "pam_app";
   int retval;
   char *username; /* This will be set by PAM with pam_get_item (see below) */
 
@@ -123,8 +123,8 @@ int main() {
 
   retval = pam_start(service_name, NULL, &conv, &handle); /* Initializing PAM */
   if (retval != PAM_SUCCESS) {
-    fprintf(stderr, "Failure in pam initialization: %s",
-            pam_strerror(handle, retval));
+    fprintf(stderr, "Failure in pam initialization: %s %d\n",
+            pam_strerror(handle, retval), retval);
     return 1;
   }
 
@@ -138,6 +138,8 @@ int main() {
             pam_strerror(handle, retval));
     return 1;
   }
+
+  printf("\n\t +(%s) Done pam_authenticate\n", __FUNCTION__);
 
   printf("\n\t+ (%s) Calling pam_acc_mgmt\n", __FUNCTION__);
 

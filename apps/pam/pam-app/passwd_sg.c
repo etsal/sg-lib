@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
 
   uid = getuid();
 
+  printf("Before switch\n");
+
   switch (argc) {
   case 0:
     if ((pwd = getpwuid(uid)) == NULL)
@@ -63,6 +65,8 @@ int main(int argc, char *argv[]) {
     break;
   default:
     usage();
+    exit(1);
+    break;
   }
 
   if (uid != 0 && uid != pwd->pw_uid)

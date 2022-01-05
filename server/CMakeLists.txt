@@ -147,7 +147,6 @@ set(Enclave_Link_Flags
 "-Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
 -L${LIBSG_ROOT}/build -l:libsgtrusted.a \
 -L${PROTOBUF_ROOT}/build -l:libprotobuf-c.a \
--L${BEARSSL_ROOT}/build -l:libbearssl.a \
 -L${WOLFSSL_ROOT}/IDE/LINUX-SGX -l:libwolfssl.sgx.static.lib.a \
 -Wl,--whole-archive -l${Trts_Library_Name} -Wl,--no-whole-archive \
 -Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l${Crypto_Library_Name} -l${Service_Library_Name} -Wl,--end-group \
@@ -155,6 +154,8 @@ set(Enclave_Link_Flags
 -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 -Wl,--defsym,__ImageBase=0"
 )
+
+#-L${BEARSSL_ROOT}/build -l:libbearssl.a \
 
 ### Start
 add_custom_target(UntrustedEdger8r

@@ -9,8 +9,8 @@
 
 #ifdef HAVE_PAM_EXT
 #include <security/pam_ext.h>
-//#endif
-//#ifdef HAVE_PAM_APPL
+#endif
+#ifdef HAVE_PAM_APPL
 #else
 #include <security/pam_appl.h>
 #endif
@@ -18,10 +18,62 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-//#include "client_ipc.h"
+#include "policy_errlist.h"
+#include "sgd_request.h"
 
 #define MAX_USERFILE_SIZE 1024
 #define USERSFILE "users"
+
+#define DEBUG_AUTH 1
+
+
+int sg_ret = 0;
+
+/* return 0 on success, 1 on error
+ * on success, response will be populated
+ */
+int client_make_request(int action, struct request_msg *request,
+                         struct response_msg **response) {
+
+  *response = init_response_msg();
+
+  int ret = sgd_sync_make_request(&sg_ret, request, *response);
+  if (ret == 0) {
+    goto exit;
+  }
+  free(*response);
+  *response = NULL;
+
+exit:
+  return ret;
+}
+
+int auth_user(const char *user, const char *password) {
+
+  int ret;
+
+  struct response_msg *response;
+  struct request_msg *request =
+      gen_request_msg(AUTH_USER, user, password, strlen(password) + 1);
+
+  ret = client_make_request(0, request, &response);
+  if (ret) {
+    goto exit;
+  }
+
+  if (response->ret == ACTION_SUCCESS) {
+    ret = 1;
+  } else {
+    ret = 0;
+  }
+
+  free(response);
+
+exit:
+  free(request);
+  return ret;
+}
+
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc,
                                    const char **argv) {
@@ -159,7 +211,8 @@ PAM_EXTERN int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc,
     }
     fprintf(stderr, "Got new password\n");
     if (retval != PAM_SUCCESS) {
-      PAM_VERBOSE_ERROR("Unable to get new password");
+      //PAM_VERBOSE_ERROR("Unable to get new password");
+      fprintf(stderr, "Unable to get new password\n");
       return retval;
     }
 

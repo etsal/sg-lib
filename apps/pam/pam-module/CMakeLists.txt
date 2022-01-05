@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(pam_sg)
 
 # LIBSGD
-set(SGD_ROOT ../../../lib/libsgd)
+set(SGD_ROOT ../../../server/lib/libsgd)
 find_library(SGD_LIB sgd HINTS ${SGD_ROOT}/build)
 
 set(INC_DIR
