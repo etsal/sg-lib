@@ -1,15 +1,22 @@
 [submodule "deps/wolfssl"]
 	path = deps/wolfssl
-	url = https://github.com/wolfSSL/wolfssl.git
+	url = https://github.com/rcslab/wolfssl.git
+	branch = seeds
 [submodule "deps/BearSSL"]
 	path = deps/BearSSL
 	url = https://www.bearssl.org/git/BearSSL
+	commit = 79b1a9996c094ff593ae50bc4edc1f349f39dd6d
 [submodule "deps/uthash"]
 	path = deps/uthash
 	url = https://github.com/troydhanson/uthash.git
+	commit = bf15263081be6229be31addd48566df93921cb46
 [submodule "deps/inih"]
 	path = deps/inih
 	url = https://github.com/benhoyt/inih.git
+	commit = 4f251f0ff766052c342823dfa52a04f486cc4f94
 [submodule "deps/tiny-regex-c"]
 	path = deps/tiny-regex-c
-	url = https://github.com/kokke/tiny-regex-c.git
+	url = https://github.com/rcslab/tiny-regex-c.git
+[submodule "deps/seeds-protobuf"]
+	path = deps/protobuf-c
+	url = git@github.com:rcslab/seeds-protobuf.git

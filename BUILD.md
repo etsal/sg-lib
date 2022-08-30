@@ -1,33 +1,16 @@
 You can find the bash script `install_instructions.sh` in the `scripts` directory. Otherwise, you can follow each step below:
 
-    git submodule init
-    git submodule update
-
 ## Dependencies
 ### BearSSL
-    cd deps/BearSSL && gmake CC="gcc48"
-    cd ..
+    cd <BASEDIR>/deps/BearSSL; CC=gcc48 gmake 
 
-### Protobuf-c (old version 1.3.3)
-    tar -xvf protobuf-c-1.3.3.tar.gz
-    mv protobuf-c-1.3.3 protobuf-c
-    patch -p1 < stef.patch  
-    cd protobuf-c && mkdir build && cd build && cmake -D CMAKE_C_COMPILER=gcc48 ../build-cmake && gmake
-    cd ../../..
-
+### Protobuf-c (old version 1.3.3) 
+### [CAREFUL: CMake defaults to g++ if g++11 is installed, causing C++ compilation errors]
+    cd <BASEDIR>/deps/protobuf-c; mkdir build; cd build;
+    cmake -D CMAKE_C_COMPILER=gcc48 CMAKE_CXX_COMPILER="clang++" ../build-cmake; gmake
 
 ### WolfSSL with SGX
-    touch deps/wolfssl/wolfssl/options.h
-    cp scripts/wolfssl/build_ratls.sh deps/wolfssl/IDE/LINUX-SGX/
-    patch -p1 -d deps/wolfssl < scripts/wolfssl/wolfssl.patch 
-    # When promted enter 'y'.
-    cd deps/wolfssl/IDE/LINUX-SGX
-    ./build_ratls.sh
-    cd -
-### Tiny Regex
-    patch -p1 -d deps/tiny-regex-c < scripts/patch_tiny_regex_sgx.patch
-
-
+    cd <BASEDIR>/deps/wolfssl/IDE/LINUX-SGX; ./build_ratls.sh
 
 ## Code
 ### Before starting
